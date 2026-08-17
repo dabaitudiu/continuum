@@ -1,6 +1,6 @@
 # Continuum 36-Hour Falsification Gate Design
 
-**Status:** Awaiting written-spec review
+**Status:** Approved
 
 **Date:** 2026-08-17
 **Scope:** Falsification prototype only; this is not authorization for the full product build.
