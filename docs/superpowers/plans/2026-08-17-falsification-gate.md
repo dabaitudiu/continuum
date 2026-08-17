@@ -773,7 +773,7 @@ git commit -m "feat: visualize policy drift graph"
 - Produces: browser evidence for reset → drift → revalidation.
 - Produces: gate report separating automated PASS evidence from the still-human 5-person visual observation.
 
-- [ ] **Step 1: Write the failing Playwright browser contract**
+- [x] **Step 1: Write the failing Playwright browser contract**
 
 Install Playwright test support and its Chromium browser:
 
@@ -805,7 +805,7 @@ test('policy drift preserves D43 and dispatches only D42', async ({ page }) => {
 
 Production mutations caught: UI detached from the real API, wrong post-drift statuses, or accidental sibling rerun.
 
-- [ ] **Step 2: Run E2E and verify RED**
+- [x] **Step 2: Run E2E and verify RED**
 
 Start backend and frontend, then run:
 
@@ -815,7 +815,7 @@ cd frontend && npx playwright test e2e/gate.spec.ts
 
 Expected: test fails until the webServer/start commands and any missing selectors are implemented.
 
-- [ ] **Step 3: Implement repeatable local commands**
+- [x] **Step 3: Implement repeatable local commands**
 
 `scripts/dev.sh` starts `uv run uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000` and `npm --prefix frontend run dev -- --host 127.0.0.1`, records both PIDs, and traps `EXIT INT TERM` to terminate them.
 
@@ -835,7 +835,7 @@ dev:
 	./scripts/dev.sh
 ```
 
-- [ ] **Step 4: Configure Playwright web servers and verify GREEN**
+- [x] **Step 4: Configure Playwright web servers and verify GREEN**
 
 Configure Playwright to start backend on 8000 and Vite on 4173, use `baseURL: "http://127.0.0.1:4173"`, and retain trace/screenshot on failure.
 
@@ -847,11 +847,11 @@ cd frontend && npx playwright test e2e/gate.spec.ts
 
 Expected: 1 passed in Chromium.
 
-- [ ] **Step 5: Update README with exact gate commands**
+- [x] **Step 5: Update README with exact gate commands**
 
 Document prerequisites, `make setup`, `make test`, `make dev`, the four endpoints, the exact expected state, and the explicit exclusions. Keep the repository’s design-pack links.
 
-- [ ] **Step 6: Run the complete automated gate**
+- [x] **Step 6: Run the complete automated gate**
 
 ```bash
 make test
@@ -862,7 +862,7 @@ git status -sb
 
 Expected: backend tests, frontend tests, build, and browser test all pass; no whitespace errors; only intended report/doc changes remain.
 
-- [ ] **Step 7: Write the gate report from observed evidence**
+- [x] **Step 7: Write the gate report from observed evidence**
 
 Create `docs/reports/36h-gate-report.md` with:
 
@@ -876,7 +876,7 @@ Create `docs/reports/36h-gate-report.md` with:
 
 Do not claim the complete 36-hour gate passes while the human observation remains pending.
 
-- [ ] **Step 8: Commit Task 6**
+- [x] **Step 8: Commit Task 6**
 
 ```bash
 git add Makefile scripts frontend README.md docs/reports/36h-gate-report.md

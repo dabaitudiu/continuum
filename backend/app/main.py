@@ -133,10 +133,11 @@ def _graph_read_model(
     )
     nodes.extend(
         {
+            **node.model_dump(mode="json"),
             "id": node.evidence_id,
             "kind": "evidence",
             "label": node.kind,
-            **node.model_dump(mode="json"),
+            "evidence_kind": node.kind,
         }
         for node in snapshot.evidences.values()
     )

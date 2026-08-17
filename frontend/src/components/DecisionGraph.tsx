@@ -49,6 +49,9 @@ function RuntimeNode({ data, selected }: NodeProps<Node<GraphNodeDto>>) {
       data-testid={`node-${data.id}`}
     >
       <Handle type="target" position={Position.Left} />
+      {data.kind === 'artifact' ? (
+        <Handle id="supersedes-target" type="target" position={Position.Top} />
+      ) : null}
       <div className="runtime-node__header">
         <KindIcon aria-hidden="true" />
         <span>{data.kind}</span>
@@ -64,6 +67,9 @@ function RuntimeNode({ data, selected }: NodeProps<Node<GraphNodeDto>>) {
         {detail ? <span className="node-detail">{String(detail)}</span> : null}
       </div>
       <Handle type="source" position={Position.Right} />
+      {data.kind === 'artifact' ? (
+        <Handle id="supersedes-source" type="source" position={Position.Bottom} />
+      ) : null}
     </article>
   )
 }
@@ -99,6 +105,7 @@ export function DecisionGraph({
   return (
     <section className="graph-panel" aria-label="Decision dependency graph">
       <ReactFlow
+        key={`${graph.mission_id}:${graph.phase}`}
         nodes={elements.nodes}
         edges={elements.edges}
         nodeTypes={nodeTypes}

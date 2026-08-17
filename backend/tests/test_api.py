@@ -31,6 +31,7 @@ def test_reset_then_upgrade_returns_required_graph_without_direct_status_writes(
     body = drift.json()
     assert body["summary"] == {"stale": 2, "preserved": 1, "blocked": 1}
     statuses = {node["id"]: node["status"] for node in body["nodes"]}
+    kinds = {node["id"]: node["kind"] for node in body["nodes"]}
     assert {
         node_id: statuses[node_id]
         for node_id in ("D42", "D43", "D50", "activate-vendor")
@@ -40,6 +41,8 @@ def test_reset_then_upgrade_returns_required_graph_without_direct_status_writes(
         "D50": "STALE",
         "activate-vendor": "BLOCKED",
     }
+    assert kinds["soc2-A31"] == "evidence"
+    assert kinds["financial-F7"] == "evidence"
 
 
 def reset_mission(client: TestClient) -> str:

@@ -32,14 +32,15 @@ export function toFlowElements(readModel: GraphReadModel): FlowElements {
 
   const supersessionEdges = readModel.nodes.flatMap((node) => {
     if (node.kind !== 'artifact' || !node.supersedes_artifact_id) return []
-    layout.setEdge(node.id, node.supersedes_artifact_id)
     return [
       {
         id: `supersedes:${node.id}:${node.supersedes_artifact_id}`,
         source: node.id,
         target: node.supersedes_artifact_id,
+        sourceHandle: 'supersedes-source',
+        targetHandle: 'supersedes-target',
         label: 'SUPERSEDES',
-        type: 'smoothstep',
+        type: 'straight',
         className: 'graph-edge graph-edge--change',
         markerEnd: { type: MarkerType.ArrowClosed },
       } satisfies Edge,

@@ -2,7 +2,7 @@
 
 Continuum is a mission-control runtime concept for long-lived enterprise agents. It detects when the assumptions behind earlier AI decisions have become stale and selectively revalidates only the affected execution branches.
 
-This repository is currently the canonical product and architecture handoff for a Google All Things Agentic hackathon prototype in the Fortified Enterprise Fleet track. The full product build has not started.
+This repository is the canonical product and architecture handoff for a Google All Things Agentic hackathon prototype in the Fortified Enterprise Fleet track. It currently contains only the Phase G falsification prototype; the full product build has not started.
 
 ## Current gate
 
@@ -17,14 +17,62 @@ ActivateVendor -> BLOCKED
 selective branch re-execution
 ```
 
-Do not proceed to the full product until the deterministic and visual gate passes.
+The automated portion of this gate is implemented. Do not proceed to the full product until the five-person visual comprehension observation is also complete.
+
+## Run the gate
+
+Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 20+, npm, and Chromium for Playwright.
+
+```bash
+make setup
+npx --prefix frontend playwright install chromium
+make test
+make test-e2e
+```
+
+Start the interactive prototype at `http://127.0.0.1:5173`:
+
+```bash
+make dev
+```
+
+The screen starts from a fresh canonical mission. Select `Inject policy v13` and confirm the deterministic outcome:
+
+```text
+D42              STALE
+D43              VALID / PRESERVED
+D50              STALE / WAITING
+ActivateVendor   BLOCKED
+Run now          D42 only
+```
+
+Selecting `Run affected branch` changes only D42 to `REVALIDATING`; it does not invent a replacement approval.
+
+## Gate API
+
+The local FastAPI control plane exposes exactly the four gate operations:
+
+```text
+POST /api/demo/reset
+POST /api/demo/policy/upgrade
+GET  /api/missions/{mission_id}/graph
+POST /api/missions/{mission_id}/revalidate
+```
+
+The simulator creates world input only. Decision and Action state transitions remain owned by the deterministic domain services.
+
+## Explicit exclusions
+
+This gate intentionally contains no Gemini or Google ADK integration, Firestore/Pub/Sub adapter, cloud deployment, commitment protocol, real side effects, generic agent builder, workflow editor, IAM system, memory platform, or Temporal replacement. Those hypotheses remain untested here.
 
 ## Start here
 
 1. Read [AGENTS.md](AGENTS.md).
 2. Read the [design-pack index](docs/README.md).
 3. Review the [36-hour falsification gate](docs/17_36H_FALSIFICATION_GATE.md).
-4. Review the approved-for-review [Phase G design specification](docs/superpowers/specs/2026-08-17-falsification-gate-design.md).
+4. Review the approved [Phase G design specification](docs/superpowers/specs/2026-08-17-falsification-gate-design.md).
+5. Follow the [implementation plan](docs/superpowers/plans/2026-08-17-falsification-gate.md).
+6. Read the [gate report](docs/reports/36h-gate-report.md) for observed evidence and remaining human work.
 
 ## Core invariant
 

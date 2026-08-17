@@ -28,6 +28,7 @@ export interface GraphNodeDto {
   version?: string
   supersedes_artifact_id?: string | null
   evidence_id?: string
+  evidence_kind?: string
   revision?: string
   decision_id?: string
   decision_type?: string

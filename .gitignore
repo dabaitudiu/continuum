@@ -12,4 +12,6 @@ dist/
 coverage/
 .coverage
 coverage.xml
+playwright-report/
+test-results/
 .worktrees/
