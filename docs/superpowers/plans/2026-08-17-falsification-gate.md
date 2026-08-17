@@ -448,7 +448,7 @@ def invalidated_canonical_runtime() -> tuple[InMemoryGraphRepository, str]:
     return repo, mission_id
 ```
 
-- [ ] **Step 1: Write the failing plan test**
+- [x] **Step 1: Write the failing plan test**
 
 ```python
 def test_plan_runs_stale_root_waits_on_stale_dependent_and_retains_valid_sibling() -> None:
@@ -470,7 +470,7 @@ def test_plan_runs_stale_root_waits_on_stale_dependent_and_retains_valid_sibling
 
 Production mutations caught: rerunning all decisions, dispatching a dependent before its stale prerequisite, or dropping causal explanation.
 
-- [ ] **Step 2: Run and verify RED**
+- [x] **Step 2: Run and verify RED**
 
 ```bash
 cd backend && uv run --group dev pytest tests/test_revalidation.py::test_plan_runs_stale_root_waits_on_stale_dependent_and_retains_valid_sibling -v
@@ -478,11 +478,11 @@ cd backend && uv run --group dev pytest tests/test_revalidation.py::test_plan_ru
 
 Expected: import failure for `RevalidationService`.
 
-- [ ] **Step 3: Implement deterministic plan derivation**
+- [x] **Step 3: Implement deterministic plan derivation**
 
 Sort output IDs lexically for stable API/tests. A stale Decision is waiting if any incoming critical `REQUIRES`/`DERIVED_FROM` edge originates from a stale Decision; otherwise it is runnable. Retained Decisions are all valid Decisions not in the stale set.
 
-- [ ] **Step 4: Write the failing dispatch tests**
+- [x] **Step 4: Write the failing dispatch tests**
 
 ```python
 def test_dispatch_revalidates_only_currently_runnable_root() -> None:
@@ -511,7 +511,7 @@ def test_duplicate_dispatch_request_is_idempotent() -> None:
     assert repo.get_snapshot(mission_id).decisions["D42"].execution_count == 2
 ```
 
-- [ ] **Step 5: Implement dispatch and verify GREEN**
+- [x] **Step 5: Implement dispatch and verify GREEN**
 
 Dispatch records contain `dispatch_id`, `request_id`, `decision_id`, `work_type`, and `status="DISPATCHED"`. The service stores the result keyed by request ID so duplicates return the original response without increments.
 
@@ -520,7 +520,7 @@ cd backend && uv run --group dev pytest tests/test_revalidation.py -v
 cd backend && uv run --group dev pytest -v
 ```
 
-- [ ] **Step 6: Commit Task 3**
+- [x] **Step 6: Commit Task 3**
 
 ```bash
 git add backend/app/domain/revalidation.py backend/tests/test_revalidation.py
