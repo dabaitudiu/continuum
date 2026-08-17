@@ -653,7 +653,7 @@ git commit -m "feat: expose falsification gate API"
 - Produces: `toFlowElements(readModel: GraphReadModel): { nodes: Node[]; edges: Edge[] }`.
 - Produces: `<App api={ContinuumApi}>` with injectable API boundary for real component tests.
 
-- [ ] **Step 1: Create frontend test configuration**
+- [x] **Step 1: Create frontend test configuration**
 
 Use npm to create a lockfile and install runtime/dev dependencies:
 
@@ -666,7 +666,7 @@ npm install -D typescript vite @vitejs/plugin-react vitest jsdom @testing-librar
 
 Set scripts to `dev`, `build`, `test`, and `test:run`. Configure Vitest `environment: "jsdom"`, `setupFiles: ["./src/test/setup.ts"]`, and Vite proxy `/api -> http://127.0.0.1:8000`.
 
-- [ ] **Step 2: Write failing pure graph transformation tests**
+- [x] **Step 2: Write failing pure graph transformation tests**
 
 ```typescript
 it('maps drifted statuses and causal edges without ID-specific styling', () => {
@@ -688,7 +688,7 @@ it('maps drifted statuses and causal edges without ID-specific styling', () => {
 
 Production mutation caught: status derived from IDs, dropped supersession edge, or wrong node type mapping.
 
-- [ ] **Step 3: Run and verify RED, then implement graph DTOs/transformation**
+- [x] **Step 3: Run and verify RED, then implement graph DTOs/transformation**
 
 ```bash
 cd frontend && npm run test:run -- src/graph-model.test.ts
@@ -696,7 +696,7 @@ cd frontend && npm run test:run -- src/graph-model.test.ts
 
 Expected RED: `toFlowElements` missing. Implement strict DTO unions and a relation-driven transformation. Use Dagre with edge direction and node dimensions for layout; never use canonical node IDs to choose positions or styles.
 
-- [ ] **Step 4: Write failing App behavior tests with a complete fake API**
+- [x] **Step 4: Write failing App behavior tests with a complete fake API**
 
 ```typescript
 it('shows drift impact, preserved work, and dispatches only D42', async () => {
@@ -718,7 +718,7 @@ it('shows drift impact, preserved work, and dispatches only D42', async () => {
 
 The fake mirrors the complete `GraphReadModel`; assertions target rendered behavior. Network transport is the only substituted boundary.
 
-- [ ] **Step 5: Run App test and verify RED**
+- [x] **Step 5: Run App test and verify RED**
 
 ```bash
 cd frontend && npm run test:run -- src/App.test.tsx
@@ -726,7 +726,7 @@ cd frontend && npm run test:run -- src/App.test.tsx
 
 Expected: import failure or missing button/content.
 
-- [ ] **Step 6: Implement UI matching the approved benchmark**
+- [x] **Step 6: Implement UI matching the approved benchmark**
 
 Implement:
 
@@ -740,7 +740,7 @@ Implement:
 - 8px spacing tokens, 4px radius, no shadows/gradients/dark mode/card wall;
 - tablet layout that stacks the provenance rail below the graph.
 
-- [ ] **Step 7: Verify unit tests and production build**
+- [x] **Step 7: Verify unit tests and production build**
 
 ```bash
 cd frontend && npm run test:run
@@ -749,7 +749,7 @@ cd frontend && npm run build
 
 Expected: all tests pass; TypeScript/Vite build exits 0 without warnings.
 
-- [ ] **Step 8: Commit Task 5**
+- [x] **Step 8: Commit Task 5**
 
 ```bash
 git add frontend
