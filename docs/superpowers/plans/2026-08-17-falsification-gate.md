@@ -214,7 +214,7 @@ git commit -m "feat: seed gate domain graph"
 - Consumes: `GraphRepository`, `DomainEvent`, graph-domain models.
 - Produces: `InvalidationService.process_artifact_change(mission_id: str, event: DomainEvent) -> GraphSnapshot`.
 
-- [ ] **Step 1: Write the failing exact-gate and genericity tests**
+- [x] **Step 1: Write the failing exact-gate and genericity tests**
 
 Create `backend/tests/test_invalidation.py` with literal expectations:
 
@@ -283,7 +283,7 @@ def test_alternate_ids_and_artifact_type_use_same_rules() -> None:
 
 Production mutations caught: any ID-specific branch, missing direct invalidation, missing propagation, or sibling over-invalidation.
 
-- [ ] **Step 2: Run targeted tests and verify RED**
+- [x] **Step 2: Run targeted tests and verify RED**
 
 ```bash
 cd backend && uv run --group dev pytest tests/test_invalidation.py -v
@@ -291,7 +291,7 @@ cd backend && uv run --group dev pytest tests/test_invalidation.py -v
 
 Expected: import failure for `InvalidationService`.
 
-- [ ] **Step 3: Implement direct invalidation and propagation**
+- [x] **Step 3: Implement direct invalidation and propagation**
 
 Implement:
 
@@ -319,7 +319,7 @@ The algorithm must:
 7. Mark dependent Actions blocked only for `AUTHORIZES`.
 8. Append one event record and persist once.
 
-- [ ] **Step 4: Add edge, cycle, and idempotency RED tests**
+- [x] **Step 4: Add edge, cycle, and idempotency RED tests**
 
 Add tests proving:
 
@@ -396,7 +396,7 @@ def test_mismatched_artifact_version_is_rejected_without_mutation() -> None:
 
 Each test asserts full observable statuses/event counts, not helper calls.
 
-- [ ] **Step 5: Run tests, complete minimal behavior, and verify GREEN**
+- [x] **Step 5: Run tests, complete minimal behavior, and verify GREEN**
 
 ```bash
 cd backend && uv run --group dev pytest tests/test_invalidation.py -v
@@ -405,7 +405,7 @@ cd backend && uv run --group dev pytest -v
 
 Expected: all backend tests pass with no warnings.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 ```bash
 git add backend/app/domain/invalidation.py backend/app/demo/fixture.py backend/tests/test_invalidation.py
