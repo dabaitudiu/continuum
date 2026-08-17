@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-17-falsification-gate-design.md`
 
+**Post-execution owner decision (2026-08-18):** The proposed five-person observation was explicitly waived as not decision-useful. The product owner accepted the deterministic tests, real-browser E2E, zero-console-warning check, and captured screenshot as sufficient visual evidence. References below to a pending five-person gate are superseded by this recorded decision; no participant observations are claimed.
+
 ## Global Constraints
 
 - Scope is Phase G only. Do not add Gemini, ADK, Firestore, Pub/Sub, commitments, side-effect execution, cloud deployment, or full Mission Control.
@@ -63,7 +65,7 @@ frontend/
 scripts/dev.sh                    Starts backend and frontend with cleanup traps
 Makefile                          setup/test/dev commands
 README.md                         Local gate run and verification instructions
-docs/reports/36h-gate-report.md   Automated evidence and pending human visual test
+docs/reports/36h-gate-report.md   Automated evidence and product-owner acceptance
 ```
 
 ---
@@ -771,7 +773,7 @@ git commit -m "feat: visualize policy drift graph"
 **Interfaces:**
 - Produces: `make setup`, `make test`, `make dev`.
 - Produces: browser evidence for reset → drift → revalidation.
-- Produces: gate report separating automated PASS evidence from the still-human 5-person visual observation.
+- Produces: gate report recording automated PASS evidence and the final owner acceptance decision.
 
 - [x] **Step 1: Write the failing Playwright browser contract**
 
@@ -871,10 +873,10 @@ Create `docs/reports/36h-gate-report.md` with:
 - canonical and alternate fixture outcomes;
 - screenshot path from the verified browser state;
 - explicit statement that Gemini/ADK/cloud hypotheses were not tested;
-- human 5-person visual gate marked `PENDING` until actual participants are observed;
+- the owner decision on the proposed human observation, without fabricating participant results;
 - GO/NO-GO limited to automated kernel/UI readiness, not full-project GO.
 
-Do not claim the complete 36-hour gate passes while the human observation remains pending.
+The original requirement above was superseded after execution by the recorded product-owner waiver dated 2026-08-18.
 
 - [x] **Step 8: Commit Task 6**
 
@@ -895,7 +897,7 @@ Before declaring implementation complete, inspect current evidence for every ite
 4. Selective rerun: planner test, execution counts, API response, and browser state.
 5. Simulator safety: route boundary test and source inspection showing no direct Decision/Action status assignment in `main.py`.
 6. Visual clarity implementation: benchmark comparison, status redundancy, reduced motion, responsive layout, screenshot.
-7. Human 15-second gate: five recorded observations; absence means the gate is not fully passed.
+7. Visual acceptance: product-owner waiver is recorded; no participant observations are fabricated.
 8. Scope: dependency manifests and source tree contain no Gemini, ADK, Firestore, Pub/Sub, commitments, side-effect execution, or cloud deployment code.
 9. Reproducibility: fresh `make setup`, `make test`, and `make dev` behavior.
 10. Repository state: clean worktree, pushed implementation branch, and review/integration decision handled via `superpowers:finishing-a-development-branch`.

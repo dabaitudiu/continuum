@@ -1,14 +1,14 @@
 # Continuum 36-Hour Falsification Gate Report
 
-**Observed:** 2026-08-18 (Asia/Singapore)  
-**Branch:** `agent/phase-g`  
-**Evidence base commit:** `2e94155` (`feat: visualize policy drift graph`)  
-**Automated gate:** PASS  
-**Full 36-hour gate:** PENDING — five-person visual observation has not occurred
+- **Observed:** 2026-08-18 (Asia/Singapore)
+- **Branch:** `main`
+- **Evidence base commit:** `6cf2c4a` (`test: verify falsification gate flow`)
+- **Automated gate:** PASS
+- **Full 36-hour gate:** PASS — product owner accepted the automated and captured visual evidence
 
 ## Decision boundary
 
-This report establishes only that the deterministic kernel, API, and browser prototype are ready for human falsification. It is not approval to build the full product. Gemini, Google ADK, Google Cloud, Firestore, and Pub/Sub remain outside this prototype and were not tested.
+This report establishes that the deterministic kernel, API, and browser prototype passed the Phase G falsification gate. On 2026-08-18, the product owner explicitly waived the proposed five-person observation and accepted the existing browser and screenshot evidence. This decision does not itself start the full-product build. Gemini, Google ADK, Google Cloud, Firestore, and Pub/Sub remain outside this prototype and were not tested.
 
 ## Environment
 
@@ -77,7 +77,7 @@ The API route write guard confirms that route code does not write Decision or Ac
 
 ![Verified drifted graph](assets/continuum-gate-drifted.png)
 
-The captured real-browser state shows the external v12→v13 change, the red affected path, the green preserved D43 branch, the blocked Action, causal explanation, and the derived selective plan in one screen. Status meaning is redundant across text, color, icons, borders, and the stale strike mark. Reduced-motion behavior and the tablet rail layout exist in CSS; they have automated build coverage but have not received human usability observation.
+The captured real-browser state shows the external v12→v13 change, the red affected path, the green preserved D43 branch, the blocked Action, causal explanation, and the derived selective plan in one screen. Status meaning is redundant across text, color, icons, borders, and the stale strike mark. Reduced-motion behavior and the tablet rail layout exist in CSS and have automated build coverage.
 
 ## Untested hypotheses and explicit exclusions
 
@@ -93,25 +93,17 @@ This gate did not test:
 
 The repository intentionally contains no generic agent builder, workflow editor, IAM platform, generic memory platform, or Temporal replacement.
 
-## Human 15-second gate
+## Human observation — waived
 
-Required observation: a person unfamiliar with Continuum understands within 15 seconds that an external fact changed, only part of prior work became invalid, and unaffected work was preserved.
+The original plan proposed observing five people unfamiliar with Continuum and checking whether they understood the external change, partial invalidation, and preserved work within 15 seconds.
 
-| Participant | External change understood | Partial invalidation understood | Preserved work understood | Time | Status |
-|---|---:|---:|---:|---:|---|
-| 1 | — | — | — | — | PENDING |
-| 2 | — | — | — | — | PENDING |
-| 3 | — | — | — | — | PENDING |
-| 4 | — | — | — | — | PENDING |
-| 5 | — | — | — | — | PENDING |
-
-No participant result has been invented or inferred from automated tests.
+On 2026-08-18, the product owner determined that this step did not add useful decision value and waived it. The full gate is therefore accepted as PASS based on the deterministic test suite, real-browser E2E, zero-console-warning check, and reviewed screenshot. No participant result has been invented or inferred.
 
 ## GO / NO-GO
 
-- **Automated kernel/API/UI readiness:** GO for the five-person visual falsification session.
-- **Complete 36-hour gate:** PENDING.
-- **Full-product build:** NOT AUTHORIZED by this report.
+- **Automated kernel/API/UI readiness:** PASS.
+- **Complete 36-hour gate:** PASS by explicit product-owner acceptance.
+- **Full-product build:** Eligible for a separate start decision; not started by this status change.
 
 Kill or pivot the project if any of the following becomes true:
 
@@ -120,5 +112,3 @@ Kill or pivot the project if any of the following becomes true:
 3. Restarting everything is simpler and equally convincing.
 4. People need several minutes of narration to understand the benefit.
 5. Implementation complexity threatens the remaining hackathon schedule.
-
-If the five-person observation cannot meet the 15-second comprehension criterion, condition 4 is satisfied and the project should stop or pivot rather than proceed to the full build.

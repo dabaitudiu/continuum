@@ -48,6 +48,10 @@ A person unfamiliar with the project should understand in under 15 seconds that:
 - only a portion of previous work became invalid;
 - unaffected work was preserved.
 
+### Product-owner acceptance
+
+On 2026-08-18, the product owner waived live participant observation for this hackathon gate and accepted the verified Chromium E2E flow plus the captured drifted-state screenshot as sufficient visual evidence. No participant observations are claimed or fabricated.
+
 ## PASS
 
 Proceed if:

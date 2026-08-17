@@ -17,7 +17,7 @@ ActivateVendor -> BLOCKED
 selective branch re-execution
 ```
 
-The automated portion of this gate is implemented. Do not proceed to the full product until the five-person visual comprehension observation is also complete.
+This gate passed on 2026-08-18. The product owner explicitly waived the proposed five-person observation and accepted the deterministic tests, real-browser E2E, and captured UI evidence as sufficient for this hackathon gate. This decision does not itself start the full-product build.
 
 ## Run the gate
 
@@ -72,7 +72,7 @@ This gate intentionally contains no Gemini or Google ADK integration, Firestore/
 3. Review the [36-hour falsification gate](docs/17_36H_FALSIFICATION_GATE.md).
 4. Review the approved [Phase G design specification](docs/superpowers/specs/2026-08-17-falsification-gate-design.md).
 5. Follow the [implementation plan](docs/superpowers/plans/2026-08-17-falsification-gate.md).
-6. Read the [gate report](docs/reports/36h-gate-report.md) for observed evidence and remaining human work.
+6. Read the [gate report](docs/reports/36h-gate-report.md) for observed evidence and the recorded owner waiver.
 
 ## Core invariant
 
