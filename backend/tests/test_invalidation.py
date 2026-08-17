@@ -146,3 +146,45 @@ def test_mismatched_artifact_version_is_rejected_without_mutation() -> None:
         service.process_artifact_change(mission_id, event)
 
     assert repo.get_snapshot(mission_id) == before
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda event: event.payload.pop("new_version"), "missing fields"),
+        (
+            lambda event: event.payload.update(old_artifact_id="unknown-policy"),
+            "unknown old artifact",
+        ),
+        (
+            lambda event: event.payload.update(logical_key="other-policy"),
+            "logical key",
+        ),
+    ],
+)
+def test_invalid_artifact_identity_is_rejected_without_mutation(
+    mutation,  # type: ignore[no-untyped-def]
+    message: str,
+) -> None:
+    repo, mission_id, service = canonical_runtime()
+    before = deepcopy(repo.get_snapshot(mission_id))
+    event = policy_v13_event()
+    mutation(event)
+
+    with pytest.raises(ValueError, match=message):
+        service.process_artifact_change(mission_id, event)
+
+    assert repo.get_snapshot(mission_id) == before
+
+
+def test_superseded_old_artifact_is_rejected_without_mutation() -> None:
+    repo, mission_id, service = canonical_runtime()
+    snapshot = repo.get_snapshot(mission_id)
+    snapshot.artifacts["policy-v12"].status = ArtifactStatus.SUPERSEDED
+    repo.save_snapshot(snapshot)
+    before = deepcopy(repo.get_snapshot(mission_id))
+
+    with pytest.raises(ValueError, match="not current"):
+        service.process_artifact_change(mission_id, policy_v13_event())
+
+    assert repo.get_snapshot(mission_id) == before

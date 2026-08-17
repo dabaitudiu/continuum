@@ -540,7 +540,7 @@ git commit -m "feat: plan selective revalidation"
 - Produces: `create_app(repository: GraphRepository | None = None) -> FastAPI`.
 - Produces: four endpoints defined by the approved spec.
 
-- [ ] **Step 1: Write failing API reset and upgrade tests**
+- [x] **Step 1: Write failing API reset and upgrade tests**
 
 ```python
 def test_reset_then_upgrade_returns_required_graph_without_direct_status_writes() -> None:
@@ -570,7 +570,7 @@ def test_reset_then_upgrade_returns_required_graph_without_direct_status_writes(
 
 Use a repository test spy that rejects `save_snapshot` when called directly from the route module; only domain services receive write authority. The assertion concerns the boundary, not FastAPI internals.
 
-- [ ] **Step 2: Run API test and verify RED**
+- [x] **Step 2: Run API test and verify RED**
 
 ```bash
 cd backend && uv run --group dev pytest tests/test_api.py -v
@@ -578,7 +578,7 @@ cd backend && uv run --group dev pytest tests/test_api.py -v
 
 Expected: import failure for `create_app`.
 
-- [ ] **Step 3: Implement app factory and graph read model**
+- [x] **Step 3: Implement app factory and graph read model**
 
 Endpoint contracts:
 
@@ -606,11 +606,11 @@ The read model returns:
 
 Add CORS only for local Vite origins `http://localhost:5173` and `http://127.0.0.1:5173`.
 
-- [ ] **Step 4: Add failing duplicate, revalidation, and error contract tests**
+- [x] **Step 4: Add failing duplicate, revalidation, and error contract tests**
 
 Cover duplicate event responses, duplicate request responses, unknown mission 404, mismatched policy version 409, and revalidation before drift 409. Assert status codes and stable machine-readable `detail.code` values.
 
-- [ ] **Step 5: Implement minimal errors and verify GREEN**
+- [x] **Step 5: Implement minimal errors and verify GREEN**
 
 ```bash
 cd backend && uv run --group dev pytest tests/test_api.py -v
@@ -619,7 +619,7 @@ cd backend && uv run --group dev pytest --cov=app --cov-report=term-missing -v
 
 Expected: all backend tests pass; domain service branch coverage is at least 90%.
 
-- [ ] **Step 6: Commit Task 4**
+- [x] **Step 6: Commit Task 4**
 
 ```bash
 git add backend/app/main.py backend/tests/test_api.py

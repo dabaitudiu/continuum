@@ -19,12 +19,18 @@ class RevalidationService:
             for decision_id, decision in snapshot.decisions.items()
             if decision.status is DecisionStatus.STALE
         }
+        unresolved_prerequisite_ids = {
+            decision_id
+            for decision_id, decision in snapshot.decisions.items()
+            if decision.status
+            in {DecisionStatus.STALE, DecisionStatus.REVALIDATING}
+        }
         waiting_ids = {
             edge.to_node_id
             for edge in snapshot.edges
             if edge.critical
             and edge.relation_type in DECISION_PROPAGATION_RELATIONS
-            and edge.from_node_id in stale_ids
+            and edge.from_node_id in unresolved_prerequisite_ids
             and edge.to_node_id in stale_ids
         }
         blocked_action_ids = {
