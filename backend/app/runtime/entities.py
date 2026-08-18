@@ -131,6 +131,17 @@ class OutboxMessage(BaseModel):
     published_at: datetime | None = None
 
 
+class RuntimeEvent(BaseModel):
+    event_id: str
+    event_type: str
+    mission_id: str
+    producer: str
+    correlation_id: str
+    trace_id: str | None = None
+    payload: dict[str, str]
+    occurred_at: datetime = Field(default_factory=utc_now)
+
+
 class RuntimeSnapshot(BaseModel):
     mission: Mission
     graph: GraphSnapshot
