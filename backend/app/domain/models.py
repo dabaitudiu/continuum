@@ -19,6 +19,8 @@ class DecisionStatus(StrEnum):
     VALID = "VALID"
     STALE = "STALE"
     REVALIDATING = "REVALIDATING"
+    INVALID = "INVALID"
+    SUPERSEDED = "SUPERSEDED"
 
 
 class ActionStatus(StrEnum):
@@ -107,4 +109,3 @@ class GraphSnapshot(BaseModel):
     dispatches: list[DispatchRecord] = Field(default_factory=list)
     cause_by_node_id: dict[str, str] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
-
