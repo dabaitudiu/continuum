@@ -1,5 +1,7 @@
 # Continuum
 
+[![CI](https://github.com/dabaitudiu/continuum/actions/workflows/ci.yml/badge.svg)](https://github.com/dabaitudiu/continuum/actions/workflows/ci.yml)
+
 Continuum is a mission-control runtime for long-lived enterprise agents. It prevents agents from continuing blindly when the assumptions behind earlier decisions are no longer valid, then selectively revalidates only the affected execution branches.
 
 This repository is the canonical product and architecture handoff for a Google All Things Agentic hackathon prototype in the Fortified Enterprise Fleet track.

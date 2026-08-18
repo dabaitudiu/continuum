@@ -7,6 +7,7 @@ const frontendRoot = fileURLToPath(new URL('.', import.meta.url))
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
+  workers: process.env.CI ? 1 : undefined,
   retries: 0,
   reporter: 'list',
   use: {
