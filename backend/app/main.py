@@ -5,6 +5,8 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
 
 from app.api.runtime_routes import build_runtime_router
@@ -47,6 +49,7 @@ def create_app(
     repository: GraphRepository | None = None,
     *,
     runtime_repository: RuntimeRepository | None = None,
+    static_dir: Path | None = None,
 ) -> FastAPI:
     runtime_repo = runtime_repository or _default_runtime_repository(
         isolated=repository is not None
@@ -92,6 +95,16 @@ def create_app(
         )
 
     app.include_router(build_runtime_router(coordinator))
+
+    @app.get("/api/health")
+    def health() -> dict[str, str]:
+        return {
+            "status": "ok",
+            "runtime": "continuum",
+            "agent_mode": (
+                "google_adk" if agent_reasoner is not None else "local"
+            ),
+        }
 
     @app.post("/api/demo/reset")
     def reset_demo() -> dict[str, str]:
@@ -188,7 +201,32 @@ def create_app(
         except KeyError as error:
             raise _http_error(404, "MISSION_NOT_FOUND", str(error)) from error
 
+    resolved_static = static_dir or _configured_static_dir()
+    if resolved_static is not None and resolved_static.is_dir():
+        app.mount("/", SpaStaticFiles(directory=resolved_static, html=True))
+
     return app
+
+
+class SpaStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):  # type: ignore[no-untyped-def]
+        try:
+            response = await super().get_response(path, scope)
+        except StarletteHTTPException as error:
+            if error.status_code == 404 and "." not in Path(path).name:
+                return await super().get_response("index.html", scope)
+            raise
+        if response.status_code == 404 and "." not in Path(path).name:
+            return await super().get_response("index.html", scope)
+        return response
+
+
+def _configured_static_dir() -> Path | None:
+    configured = os.environ.get("CONTINUUM_STATIC_DIR")
+    if configured:
+        return Path(configured)
+    bundled = Path(__file__).resolve().parents[1] / "static"
+    return bundled if bundled.is_dir() else None
 
 
 def _default_runtime_repository(*, isolated: bool) -> RuntimeRepository:

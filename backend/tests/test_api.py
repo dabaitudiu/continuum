@@ -15,6 +15,19 @@ class RouteWriteGuardRepository(InMemoryGraphRepository):
         super().save_snapshot(snapshot, **kwargs)
 
 
+def test_health_reports_runtime_and_agent_mode() -> None:
+    client = TestClient(create_app(InMemoryGraphRepository()))
+
+    response = client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "runtime": "continuum",
+        "agent_mode": "local",
+    }
+
+
 def test_reset_then_upgrade_returns_required_graph_without_direct_status_writes() -> None:
     repo = RouteWriteGuardRepository()
     client = TestClient(create_app(repo))
