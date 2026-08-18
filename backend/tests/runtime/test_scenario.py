@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from app.domain.models import ActionStatus, DecisionStatus
 from app.repository.runtime_memory import InMemoryRuntimeRepository
+from app.repository.runtime_sqlite import SQLiteRuntimeRepository
 from app.runtime.coordinator import RuntimeCoordinator
 from app.runtime.entities import (
     CommitmentStatus,
@@ -107,3 +110,25 @@ def test_wrong_document_event_does_not_satisfy_pen_test_wait() -> None:
 
     assert result.result == {"matched_commitment_ids": []}
     assert result.snapshot.mission.status is MissionStatus.WAITING
+
+
+def test_missing_evidence_wait_resumes_after_sqlite_restart(tmp_path: Path) -> None:
+    path = tmp_path / "scenario.db"
+    first_repository = SQLiteRuntimeRepository(path)
+    first = RuntimeCoordinator(first_repository)
+    created = first.create_demo("create-restart-scenario")
+    mission_id = created.snapshot.mission.mission_id
+    first.start(mission_id, "start-restart-scenario")
+    first.upgrade_policy(mission_id, "policy-restart-scenario")
+    first.revalidate_affected_branch(mission_id, "revalidate-restart-scenario")
+    first_repository.close()
+
+    second_repository = SQLiteRuntimeRepository(path)
+    second = RuntimeCoordinator(second_repository)
+    completed = second.upload_pen_test(mission_id, "pen-restart-scenario")
+
+    assert completed.snapshot.mission.status is MissionStatus.COMPLETED
+    assert completed.snapshot.world is not None
+    assert completed.snapshot.world.vendor.status is VendorStatus.ACTIVE
+    assert len(completed.snapshot.side_effects) == 1
+    second_repository.close()
