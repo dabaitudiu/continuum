@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { StrictMode } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from './App'
 import type { ContinuumApi, MissionControlReadModel, ScenarioPhase } from './types'
@@ -45,6 +46,12 @@ function control(phase: ScenarioPhase): MissionControlReadModel {
 }
 
 describe('App', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    history.replaceState({}, '', '/')
+  })
+  afterEach(cleanup)
+
   it('operates the canonical story through completion', async () => {
     const api: ContinuumApi = {
       createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
@@ -78,5 +85,98 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Run scenario again' })).toBeVisible()
     expect(screen.getByTestId('route-D57')).toHaveTextContent('VALID')
     expect(screen.getByTestId('route-activate-vendor')).toHaveTextContent('COMMITTED')
+  })
+
+  it('restores the mission encoded in the browser route without creating another', async () => {
+    history.replaceState({}, '', '/missions/demo-existing')
+    const api: ContinuumApi = {
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-new' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue({
+        ...control('MISSING_EVIDENCE'),
+        mission: {
+          ...control('MISSING_EVIDENCE').mission,
+          mission_id: 'demo-existing',
+        },
+      }),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+
+    expect(await screen.findByText('Pen test required')).toBeVisible()
+    expect(api.getControl).toHaveBeenCalledWith('demo-existing')
+    expect(api.createDemo).not.toHaveBeenCalled()
+  })
+
+  it('restores the last mission when opening the root URL', async () => {
+    localStorage.setItem('continuum.activeMissionId', 'demo-stored')
+    const stored = control('BASELINE_WAITING')
+    stored.mission.mission_id = 'demo-stored'
+    const api: ContinuumApi = {
+      createDemo: vi.fn(),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(stored),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+
+    expect(await screen.findByRole('button', { name: 'Inject Policy v13' })).toBeVisible()
+    expect(location.pathname).toBe('/missions/demo-stored')
+    expect(api.createDemo).not.toHaveBeenCalled()
+  })
+
+  it('creates only one mission under React StrictMode and records its route', async () => {
+    const api: ContinuumApi = {
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-strict' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue({
+        ...control('CREATED'),
+        mission: { ...control('CREATED').mission, mission_id: 'demo-strict' },
+      }),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<StrictMode><App api={api} /></StrictMode>)
+
+    expect(await screen.findByRole('button', { name: 'Start mission' })).toBeVisible()
+    expect(api.createDemo).toHaveBeenCalledTimes(1)
+    expect(location.pathname).toBe('/missions/demo-strict')
+    expect(localStorage.getItem('continuum.activeMissionId')).toBe('demo-strict')
+  })
+
+  it('replaces a stale mission pointer only when the API confirms it is missing', async () => {
+    history.replaceState({}, '', '/missions/demo-gone')
+    localStorage.setItem('continuum.activeMissionId', 'demo-gone')
+    const missing = Object.assign(new Error('mission does not exist'), {
+      code: 'MISSION_NOT_FOUND',
+    })
+    const api: ContinuumApi = {
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-recovered' }),
+      start: vi.fn(),
+      getControl: vi.fn()
+        .mockRejectedValueOnce(missing)
+        .mockResolvedValueOnce({
+          ...control('CREATED'),
+          mission: { ...control('CREATED').mission, mission_id: 'demo-recovered' },
+        }),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+
+    expect(await screen.findByRole('button', { name: 'Start mission' })).toBeVisible()
+    expect(api.createDemo).toHaveBeenCalledTimes(1)
+    expect(location.pathname).toBe('/missions/demo-recovered')
+    expect(localStorage.getItem('continuum.activeMissionId')).toBe('demo-recovered')
   })
 })

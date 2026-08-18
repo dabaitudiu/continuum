@@ -20,6 +20,13 @@ test('canonical mission resumes selectively and activates once', async ({ page }
   await page.getByRole('button', { name: 'Run affected branch' }).click()
   await expect(page.getByText('Pen test required')).toBeVisible()
   await expect(page.getByText('vendor.document.uploaded')).toBeVisible()
+  const waitingMissionUrl = page.url()
+
+  await page.reload()
+
+  await expect(page).toHaveURL(waitingMissionUrl)
+  await expect(page.getByText('Pen test required')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Upload pen test · +7 days' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Upload pen test · +7 days' }).click()
   await expect(page.getByRole('button', { name: 'Run scenario again' })).toBeVisible()

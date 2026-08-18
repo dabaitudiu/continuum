@@ -46,6 +46,7 @@ make dev
 The UI is available at `http://127.0.0.1:5173`; FastAPI runs at `http://127.0.0.1:8000`.
 
 Runtime state is stored in `backend/data/continuum.db` by default. Set `CONTINUUM_DB_PATH` to use another explicit SQLite file. Demo reset creates a new Mission namespace and does not delete audit history.
+Mission Control stores the active Mission pointer in the browser URL and local storage. Reloading `/missions/{mission_id}` restores the same durable Mission, including an open Commitment; only an explicit Reset creates a new namespace.
 
 The production image serves the built React application and FastAPI API from one Cloud Run container:
 

@@ -8,7 +8,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DecisionGraph } from './components/DecisionGraph'
 import type {
@@ -21,6 +21,52 @@ import type {
 function uniqueId(prefix: string): string {
   const suffix = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
   return `${prefix}-${suffix}`
+}
+
+const activeMissionKey = 'continuum.activeMissionId'
+
+function missionIdFromRoute(): string | null {
+  const match = window.location.pathname.match(/^\/missions\/([^/]+)\/?$/)
+  if (!match) return null
+  try {
+    return decodeURIComponent(match[1])
+  } catch {
+    return null
+  }
+}
+
+function storedMissionId(): string | null {
+  try {
+    return localStorage.getItem(activeMissionKey)
+  } catch {
+    return null
+  }
+}
+
+function rememberMission(missionId: string): void {
+  try {
+    localStorage.setItem(activeMissionKey, missionId)
+  } catch {
+    // The route remains the durable browser pointer when storage is unavailable.
+  }
+  const path = `/missions/${encodeURIComponent(missionId)}`
+  if (window.location.pathname !== path) window.history.replaceState({}, '', path)
+}
+
+function forgetMission(): void {
+  try {
+    localStorage.removeItem(activeMissionKey)
+  } catch {
+    // A failed storage cleanup must not block recovery from the canonical API.
+  }
+  window.history.replaceState({}, '', '/')
+}
+
+function isMissionNotFound(error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && error.code === 'MISSION_NOT_FOUND'
 }
 
 const actionCopy: Record<NextAction, { label: string; busy: string }> = {
@@ -45,13 +91,16 @@ export function App({ api }: { api: ContinuumApi }) {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'route' | 'graph'>('route')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const initialized = useRef(false)
 
   const createScenario = useCallback(async () => {
     setBusy(true)
     setError(null)
     try {
       const created = await api.createDemo(uniqueId('create'))
-      setControl(await api.getControl(created.mission_id))
+      const createdControl = await api.getControl(created.mission_id)
+      rememberMission(created.mission_id)
+      setControl(createdControl)
       setSelectedId(null)
       setView('route')
     } catch (caught) {
@@ -61,7 +110,35 @@ export function App({ api }: { api: ContinuumApi }) {
     }
   }, [api])
 
-  useEffect(() => { void createScenario() }, [createScenario])
+  const restoreOrCreateScenario = useCallback(async () => {
+    const missionId = missionIdFromRoute() ?? storedMissionId()
+    if (!missionId) {
+      await createScenario()
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const restored = await api.getControl(missionId)
+      rememberMission(missionId)
+      setControl(restored)
+    } catch (caught) {
+      if (isMissionNotFound(caught)) {
+        forgetMission()
+        await createScenario()
+        return
+      }
+      setError(caught instanceof Error ? caught.message : 'Unable to restore the mission')
+    } finally {
+      setBusy(false)
+    }
+  }, [api, createScenario])
+
+  useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+    void restoreOrCreateScenario()
+  }, [restoreOrCreateScenario])
 
   const runAction = async () => {
     if (!control || busy) return
