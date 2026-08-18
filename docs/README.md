@@ -10,7 +10,7 @@ Continuum adds **semantic continuity** to long-running agents: explicit decision
 
 ## Important implementation principle
 
-This package intentionally contains **no finished application code**. It is written so a Gemini-powered coding agent can implement the project without inventing product semantics.
+This design pack was authored before implementation and remains the product-semantics contract. The repository now contains the falsification gate, semantic runtime, Mission Control product, Google adapters, and deployment path; implementation convenience still may not override these documents.
 
 The hackathon rules require the submitted product to use Gemini 3.5+ (or newer), a Google agent framework, and Google Cloud infrastructure. They do not require every source line to be authored by Gemini. We are nevertheless using a Gemini-first implementation workflow so that the contest build has a clean, reproducible implementation history.
 
@@ -40,6 +40,9 @@ The hackathon rules require the submitted product to use Gemini 3.5+ (or newer),
 22. `21_RISK_REGISTER_AND_KILL_CRITERIA.md`
 23. `22_ACCEPTANCE_MATRIX.md`
 24. `23_OFFICIAL_GOOGLE_REFERENCES.md`
+25. `24_GOOGLE_CLOUD_DEPLOYMENT.md`
+
+Final delivery assets live under `submission/`: the current architecture diagram, four-minute recording script, submission copy, and evidence checklist.
 
 `GEMINI.md` is the root operating instruction for the coding agent.
 

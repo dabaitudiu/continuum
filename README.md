@@ -147,6 +147,7 @@ The simulator creates world input only. Decision and Action transitions remain o
 5. Follow the [local semantic runtime implementation plan](docs/superpowers/plans/2026-08-18-local-semantic-runtime.md).
 6. Read the [local runtime evidence report](docs/reports/local-semantic-runtime-report.md).
 7. Review the [Mission Control product design](docs/superpowers/specs/2026-08-18-mission-control-product-design.md) and [local product report](docs/reports/mission-control-local-product-report.md).
+8. Use the [submission architecture](docs/submission/ARCHITECTURE.md), [four-minute demo script](docs/submission/DEMO_SCRIPT.md), and [evidence checklist](docs/submission/EVIDENCE_CHECKLIST.md) for final delivery.
 
 ## Explicit non-goals
 

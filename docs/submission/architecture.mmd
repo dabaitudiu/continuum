@@ -1,0 +1,44 @@
+---
+title: Continuum — Semantic Runtime for Long-Lived Enterprise Agents
+---
+flowchart LR
+    Operator["Judge / operator"] --> UI["Mission Control<br/>React UI"]
+    UI -->|"REST read models + commands"| API
+    External["Enterprise events<br/>policy changes · documents"] -->|"versioned event envelope"| API
+
+    subgraph CloudRun["Google Cloud Run · Continuum P0"]
+        API["FastAPI control plane"]
+        Runtime["Deterministic semantic runtime<br/>Mission state machine · provenance graph<br/>invalidation · commitments · side-effect ledger"]
+        Agents["Google ADK agent fleet<br/>Vendor · Security · Procurement"]
+        Simulator["Enterprise simulator<br/>vendor · policy · documents"]
+
+        API -->|"validated command"| Runtime
+        API -->|"bounded work request"| Agents
+        Agents -. "typed proposal + dependency refs" .-> Runtime
+        Simulator -->|"normal domain events only"| API
+    end
+
+    Agents -->|"reasoning"| Gemini["Vertex AI<br/>Gemini 3.6 Flash"]
+    Runtime -->|"transactional aggregate"| Firestore["Firestore Native<br/>Mission source of truth"]
+    Runtime -->|"durable outbox"| PubSub["Pub/Sub<br/>domain event transport"]
+    API -->|"OpenTelemetry spans"| Trace["Cloud Trace"]
+
+    Optional["P1 optional<br/>Agent Runtime · Registry · Gateway · Model Armor"]
+    Agents -. "adopt only when stable" .-> Optional
+
+    Invariant["Critical invariant<br/>Gemini proposes; Continuum owns deterministic invalidation and state transitions"]
+    Invariant -.-> Runtime
+
+    classDef product fill:#fcfbf8,stroke:#167a5a,stroke-width:2px,color:#18201d;
+    classDef runtime fill:#eef7f2,stroke:#115f49,stroke-width:3px,color:#18201d;
+    classDef google fill:#edf4fa,stroke:#396a8c,stroke-width:2px,color:#18201d;
+    classDef event fill:#fff7e8,stroke:#b87917,stroke-width:2px,color:#18201d;
+    classDef optional fill:#f4f3ef,stroke:#8e9790,stroke-dasharray:6 4,color:#66706a;
+    classDef invariant fill:#fff1ee,stroke:#c74b36,stroke-width:2px,color:#18201d;
+
+    class UI,API,Simulator product;
+    class Runtime runtime;
+    class Agents,Gemini,Firestore,PubSub,Trace google;
+    class External event;
+    class Optional optional;
+    class Invariant invariant;
