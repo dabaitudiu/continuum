@@ -18,7 +18,7 @@ from app.domain.models import (
     RevalidationPlan,
 )
 from app.domain.revalidation import RevalidationService
-from app.repository.memory import InMemoryGraphRepository
+from app.repository.graph_adapter import RuntimeGraphRepositoryAdapter
 from app.repository.protocol import GraphRepository
 from app.repository.runtime_memory import InMemoryRuntimeRepository
 from app.repository.runtime_protocol import RuntimeRepository
@@ -41,10 +41,10 @@ def create_app(
     *,
     runtime_repository: RuntimeRepository | None = None,
 ) -> FastAPI:
-    repo = repository or InMemoryGraphRepository()
     runtime_repo = runtime_repository or _default_runtime_repository(
         isolated=repository is not None
     )
+    repo = repository or RuntimeGraphRepositoryAdapter(runtime_repo)
     coordinator = RuntimeCoordinator(runtime_repo)
     app = FastAPI(title="Continuum")
     app.add_middleware(

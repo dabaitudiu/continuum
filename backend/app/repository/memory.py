@@ -20,10 +20,20 @@ class InMemoryGraphRepository:
         except KeyError as error:
             raise KeyError(f"unknown mission: {mission_id}") from error
 
-    def save_snapshot(self, snapshot: GraphSnapshot) -> None:
+    def save_snapshot(
+        self,
+        snapshot: GraphSnapshot,
+        *,
+        processed_event_id: str | None = None,
+        processed_request_id: str | None = None,
+    ) -> None:
         if snapshot.mission_id not in self._snapshots:
             raise KeyError(f"unknown mission: {snapshot.mission_id}")
         self._snapshots[snapshot.mission_id] = snapshot.model_copy(deep=True)
+        if processed_event_id is not None:
+            self._processed_events[snapshot.mission_id].add(processed_event_id)
+        if processed_request_id is not None:
+            self._processed_requests[snapshot.mission_id].add(processed_request_id)
 
     def has_processed_event(self, mission_id: str, event_id: str) -> bool:
         self._require_mission(mission_id)
@@ -44,4 +54,3 @@ class InMemoryGraphRepository:
     def _require_mission(self, mission_id: str) -> None:
         if mission_id not in self._snapshots:
             raise KeyError(f"unknown mission: {mission_id}")
-

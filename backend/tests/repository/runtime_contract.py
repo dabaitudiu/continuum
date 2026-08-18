@@ -11,6 +11,7 @@ from app.runtime.entities import (
     OutboxMessage,
     RuntimeSnapshot,
     SideEffectRecord,
+    WorkItem,
 )
 from app.runtime.errors import RuntimeDomainError
 from app.runtime.mutations import RuntimeMutation
@@ -112,6 +113,80 @@ class RuntimeRepositoryContract:
             repo.load("missing")
 
         assert raised.value.code == "MISSION_NOT_FOUND"
+
+    def test_find_inbox_rejects_unknown_mission(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.find_inbox("missing", "request-1")
+
+        assert raised.value.code == "MISSION_NOT_FOUND"
+
+    def test_initial_entities_must_belong_to_mission(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        snapshot = runtime_snapshot()
+        snapshot.work_items.append(
+            WorkItem(
+                work_item_id="work-1",
+                mission_id="other",
+                work_type="SECURITY_REVIEW",
+            )
+        )
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.create(snapshot)
+
+        assert raised.value.code == "MISSION_ID_CONFLICT"
+
+    def test_initial_outbox_ids_must_be_unique(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        snapshot = runtime_snapshot()
+        message = OutboxMessage(
+            outbox_message_id="outbox-1",
+            mission_id="m-1",
+            event_type="mission.created",
+            correlation_id="create-1",
+            causation_id="create-1",
+        )
+        snapshot.outbox = [message, message.model_copy(deep=True)]
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.create(snapshot)
+
+        assert raised.value.code == "OUTBOX_MESSAGE_CONFLICT"
+
+    def test_initial_audit_sequence_must_start_at_one(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        snapshot = runtime_snapshot()
+        snapshot.mission.event_sequence = 1
+        snapshot.audit_events = [
+            AuditEvent(
+                audit_event_id="audit-2",
+                mission_id="m-1",
+                event_sequence=2,
+                event_type="mission.created",
+                correlation_id="create-1",
+                causation_id="create-1",
+            )
+        ]
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.create(snapshot)
+
+        assert raised.value.code == "AUDIT_SEQUENCE_CONFLICT"
+
+    def test_initial_mission_sequence_must_match_audit_history(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        snapshot = runtime_snapshot()
+        snapshot.mission.event_sequence = 1
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.create(snapshot)
+
+        assert raised.value.code == "AUDIT_SEQUENCE_CONFLICT"
 
     def test_commit_updates_state_revision_audit_inbox_and_outbox_atomically(
         self,
@@ -231,6 +306,46 @@ class RuntimeRepositoryContract:
 
         assert raised.value.code == "AUDIT_SEQUENCE_CONFLICT"
         assert repo.load("m-1") == before
+
+    def test_mutation_without_audit_is_rejected_without_mutation(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        before = repo.load("m-1")
+        mutation = transition_mutation(before, message_id="request-1")
+        mutation.audit_appends = []
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit("m-1", 0, mutation)
+
+        assert raised.value.code == "AUDIT_SEQUENCE_CONFLICT"
+        assert repo.load("m-1") == before
+
+    def test_duplicate_audit_identity_is_rejected_without_mutation(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        first = repo.commit(
+            "m-1",
+            0,
+            transition_mutation(repo.load("m-1"), message_id="request-1"),
+        )
+        mutation = transition_mutation(
+            first,
+            message_id="request-2",
+            status=MissionStatus.WAITING,
+        )
+        mutation.audit_appends[0].audit_event_id = "audit:request-1"
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit("m-1", first.mission.revision, mutation)
+
+        assert raised.value.code == "AUDIT_EVENT_CONFLICT"
+        assert repo.load("m-1") == first
 
     def test_duplicate_outbox_identity_rolls_back_every_change(
         self,

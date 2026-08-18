@@ -69,8 +69,10 @@ class InvalidationService:
 
         self._propagate(snapshot, newly_stale)
         snapshot.events.append(event.model_copy(deep=True))
-        self._repository.save_snapshot(snapshot)
-        self._repository.mark_event_processed(mission_id, event.event_id)
+        self._repository.save_snapshot(
+            snapshot,
+            processed_event_id=event.event_id,
+        )
         return self._repository.get_snapshot(mission_id)
 
     def _validate_event(

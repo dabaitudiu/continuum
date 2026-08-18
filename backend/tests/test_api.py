@@ -7,12 +7,12 @@ from app.repository.memory import InMemoryGraphRepository
 
 
 class RouteWriteGuardRepository(InMemoryGraphRepository):
-    def save_snapshot(self, snapshot):  # type: ignore[no-untyped-def]
+    def save_snapshot(self, snapshot, **kwargs):  # type: ignore[no-untyped-def]
         direct_caller_module = inspect.stack()[1].frame.f_globals.get("__name__")
         assert direct_caller_module != "app.main", (
             "API routes must delegate state transitions to domain services"
         )
-        super().save_snapshot(snapshot)
+        super().save_snapshot(snapshot, **kwargs)
 
 
 def test_reset_then_upgrade_returns_required_graph_without_direct_status_writes() -> None:

@@ -4,14 +4,19 @@ import pytest
 
 from app.repository.runtime_memory import InMemoryRuntimeRepository
 from app.repository.runtime_sqlite import SQLiteRuntimeRepository
+from app.demo.runtime_fixture import seed_runtime_demo
 from app.runtime.coordinator import RuntimeCoordinator
 from app.runtime.entities import (
+    AuditEvent,
     CommitmentStatus,
+    InboxRecord,
     MissionStatus,
+    OutboxMessage,
     RuntimeEvent,
     WorkStatus,
 )
 from app.runtime.errors import RuntimeDomainError
+from app.runtime.mutations import RuntimeMutation
 
 
 def document_event(
@@ -212,3 +217,126 @@ def test_unknown_mission_has_stable_error() -> None:
         coordinator.get("missing")
 
     assert raised.value.code == "MISSION_NOT_FOUND"
+
+
+def test_create_rejects_existing_deterministic_namespace_without_inbox() -> None:
+    repository = InMemoryRuntimeRepository()
+    snapshot = seed_runtime_demo("create-1")
+    snapshot.inbox = []
+    repository.create(snapshot)
+    coordinator = RuntimeCoordinator(repository)
+
+    with pytest.raises(RuntimeDomainError) as raised:
+        coordinator.create_demo("create-1")
+
+    assert raised.value.code == "MISSION_ALREADY_EXISTS"
+
+
+def test_create_returns_duplicate_when_another_writer_wins_create_race() -> None:
+    repository = CreateRaceRepository()
+    coordinator = RuntimeCoordinator(repository)
+
+    result = coordinator.create_demo("create-1")
+
+    assert result.duplicate is True
+    assert result.result["status"] == "CREATED"
+
+
+def test_create_race_without_matching_inbox_preserves_conflict() -> None:
+    repository = CreateRaceRepository(drop_inbox=True)
+    coordinator = RuntimeCoordinator(repository)
+
+    with pytest.raises(RuntimeDomainError) as raised:
+        coordinator.create_demo("create-1")
+
+    assert raised.value.code == "MISSION_ALREADY_EXISTS"
+
+
+def test_create_propagates_nonabsence_repository_error() -> None:
+    coordinator = RuntimeCoordinator(FailingLoadRepository())
+
+    with pytest.raises(RuntimeDomainError) as raised:
+        coordinator.create_demo("create-1")
+
+    assert raised.value.code == "DATABASE_UNAVAILABLE"
+
+
+def test_matching_commitment_does_not_clear_independent_mission_blocker() -> None:
+    repository = InMemoryRuntimeRepository()
+    coordinator = RuntimeCoordinator(repository)
+    created = coordinator.create_demo("create-1")
+    mission_id = created.snapshot.mission.mission_id
+    coordinator.start(mission_id, "start-1")
+    waiting = repository.load(mission_id)
+    blocked_mission = waiting.mission.model_copy(
+        update={"status": MissionStatus.BLOCKED}
+    )
+    repository.commit(
+        mission_id,
+        waiting.mission.revision,
+        RuntimeMutation(
+            mission=blocked_mission,
+            audit_appends=[
+                AuditEvent(
+                    audit_event_id="audit:block-1",
+                    mission_id=mission_id,
+                    event_sequence=waiting.mission.event_sequence + 1,
+                    event_type="mission.blocked",
+                    correlation_id="block-1",
+                    causation_id="block-1",
+                )
+            ],
+            inbox_completion=InboxRecord(
+                mission_id=mission_id,
+                message_id="block-1",
+                message_type="mission.block",
+                result={"status": "BLOCKED"},
+            ),
+            outbox_appends=[
+                OutboxMessage(
+                    outbox_message_id="outbox:block-1",
+                    mission_id=mission_id,
+                    event_type="mission.blocked",
+                    correlation_id="block-1",
+                    causation_id="block-1",
+                )
+            ],
+        ),
+    )
+
+    result = coordinator.process_event(
+        document_event(mission_id, "evt-pen-1", "PEN_TEST")
+    )
+
+    assert result.snapshot.mission.status is MissionStatus.BLOCKED
+    assert result.snapshot.commitments[0].status is CommitmentStatus.SATISFIED
+    assert result.snapshot.audit_events[-1].event_type == "commitment.satisfied"
+    assert not any(
+        event.causation_id == "evt-pen-1"
+        and event.event_type == "mission.resumed"
+        for event in result.snapshot.audit_events
+    )
+
+
+class CreateRaceRepository(InMemoryRuntimeRepository):
+    def __init__(self, *, drop_inbox: bool = False) -> None:
+        super().__init__()
+        self._drop_inbox = drop_inbox
+
+    def create(self, snapshot):  # type: ignore[no-untyped-def]
+        raced = snapshot.model_copy(deep=True)
+        if self._drop_inbox:
+            raced.inbox = []
+        super().create(raced)
+        raise RuntimeDomainError(
+            "MISSION_ALREADY_EXISTS",
+            "another writer created the mission",
+        )
+
+
+class FailingLoadRepository(InMemoryRuntimeRepository):
+    def load(self, mission_id):  # type: ignore[no-untyped-def]
+        raise RuntimeDomainError(
+            "DATABASE_UNAVAILABLE",
+            f"cannot load {mission_id}",
+        )

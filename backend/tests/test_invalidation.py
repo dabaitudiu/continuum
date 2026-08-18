@@ -188,3 +188,15 @@ def test_superseded_old_artifact_is_rejected_without_mutation() -> None:
         service.process_artifact_change(mission_id, policy_v13_event())
 
     assert repo.get_snapshot(mission_id) == before
+
+
+def test_already_blocked_action_remains_blocked_during_propagation() -> None:
+    repo, mission_id, service = canonical_runtime()
+    snapshot = repo.get_snapshot(mission_id)
+    snapshot.actions["activate-vendor"].status = ActionStatus.BLOCKED
+    repo.save_snapshot(snapshot)
+
+    result = service.process_artifact_change(mission_id, policy_v13_event())
+
+    assert result.actions["activate-vendor"].status is ActionStatus.BLOCKED
+    assert result.cause_by_node_id["activate-vendor"] == "D50"

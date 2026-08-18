@@ -86,6 +86,8 @@ class RevalidationService:
             snapshot.dispatches.append(record)
             records.append(record.model_copy(deep=True))
 
-        self._repository.save_snapshot(snapshot)
-        self._repository.mark_request_processed(mission_id, request_id)
+        self._repository.save_snapshot(
+            snapshot,
+            processed_request_id=request_id,
+        )
         return records

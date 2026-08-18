@@ -8,7 +8,13 @@ class GraphRepository(Protocol):
 
     def get_snapshot(self, mission_id: str) -> GraphSnapshot: ...
 
-    def save_snapshot(self, snapshot: GraphSnapshot) -> None: ...
+    def save_snapshot(
+        self,
+        snapshot: GraphSnapshot,
+        *,
+        processed_event_id: str | None = None,
+        processed_request_id: str | None = None,
+    ) -> None: ...
 
     def has_processed_event(self, mission_id: str, event_id: str) -> bool: ...
 
@@ -17,4 +23,3 @@ class GraphRepository(Protocol):
     def has_processed_request(self, mission_id: str, request_id: str) -> bool: ...
 
     def mark_request_processed(self, mission_id: str, request_id: str) -> None: ...
-

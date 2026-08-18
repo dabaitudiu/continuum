@@ -146,6 +146,17 @@ def test_invalid_event_schema_has_stable_422(client: TestClient) -> None:
     assert response.json()["detail"]["code"] == "EVENT_SCHEMA_INVALID"
 
 
+def test_missing_event_envelope_field_has_stable_422(client: TestClient) -> None:
+    mission_id = create_mission(client)
+    payload = pen_test_event(mission_id)
+    del payload["event_id"]
+
+    response = client.post("/api/events", json=payload)
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "EVENT_SCHEMA_INVALID"
+
+
 def test_event_for_unknown_mission_has_stable_404(client: TestClient) -> None:
     response = client.post("/api/events", json=pen_test_event("missing"))
 
