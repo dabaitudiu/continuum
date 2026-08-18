@@ -30,8 +30,11 @@ Optional resource names can be overridden before invocation:
 CONTINUUM_CLOUD_RUN_SERVICE=continuum \
 CONTINUUM_FIRESTORE_DATABASE=continuum \
 CONTINUUM_PUBSUB_TOPIC=continuum-events \
+CONTINUUM_VERTEX_LOCATION=global \
 ./scripts/deploy-google-cloud.sh YOUR_PROJECT_ID us-east1
 ```
+
+The positional region controls Cloud Run and Firestore placement. Gemini uses the separate `CONTINUUM_VERTEX_LOCATION`, which defaults to the Vertex AI `global` endpoint recommended by Google's current Gemini quickstart. Keeping these values separate prevents an invalid Cloud Run region when the model endpoint is `global`.
 
 The script is idempotent for existing APIs, service account, Firestore database, and Pub/Sub topic. It prints the deployed URL and then calls `/api/health`. A healthy cloud response must report:
 
@@ -58,4 +61,4 @@ Each run verifies v12 baseline, v13 drift, D42/D50 invalidation, D43 preservatio
 
 Local tests use contract fakes for Firestore and Pub/Sub and a real production container. They prove adapter semantics and packaging, but not IAM, regional availability, quota, live Gemini behavior, or Cloud Trace delivery. Those claims require running the deployment in an authenticated project and recording three stable end-to-end missions.
 
-The relevant current Google references are the official [Cloud Run deploy command](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy), [Firestore database management](https://cloud.google.com/firestore/docs/manage-databases), and [Pub/Sub CLI quickstart](https://docs.cloud.google.com/pubsub/docs/publish-receive-messages-gcloud).
+The relevant current Google references are the official [Cloud Run deploy command](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy), [Firestore database management](https://cloud.google.com/firestore/docs/manage-databases), [Pub/Sub CLI quickstart](https://docs.cloud.google.com/pubsub/docs/publish-receive-messages-gcloud), and [Vertex AI Gemini quickstart](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/quickstart).

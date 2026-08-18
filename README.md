@@ -27,7 +27,7 @@ export GEMINI_API_KEY='...'
 make dev
 ```
 
-For Vertex AI, set `GOOGLE_GENAI_USE_VERTEXAI=TRUE`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION` instead. Google mode fails fast when neither credential path is configured.
+For Vertex AI, set `GOOGLE_GENAI_USE_VERTEXAI=TRUE`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION` (recommended: `global`) instead. Google mode fails fast when neither credential path is configured.
 
 Gemini materially performs six bounded reviews in the canonical story: Vendor, Security, and Procurement at baseline; Security after v13; then Security and Procurement after the pen test arrives. Agents can only return typed proposals and stable dependency references. The runtime validates references, owns invalidation and Decision transitions, and commits activation through the Side Effect Ledger.
 
