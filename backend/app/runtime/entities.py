@@ -55,6 +55,11 @@ class VendorStatus(StrEnum):
     ACTIVE = "ACTIVE"
 
 
+class ExecutionMode(StrEnum):
+    LOCAL_DETERMINISTIC = "LOCAL_DETERMINISTIC"
+    GOOGLE_ADK_GEMINI = "GOOGLE_ADK_GEMINI"
+
+
 class EnterpriseArtifact(BaseModel):
     artifact_id: str
     artifact_type: str
@@ -76,6 +81,7 @@ class EnterpriseWorld(BaseModel):
     current_policy_id: str
     artifacts: dict[str, EnterpriseArtifact] = Field(default_factory=dict)
     documents: list[str] = Field(default_factory=list)
+    execution_mode: ExecutionMode = ExecutionMode.LOCAL_DETERMINISTIC
 
 
 class Mission(BaseModel):

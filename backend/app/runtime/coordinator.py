@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.agents.contracts import AgentOutcome
+from app.agents.service import MissionAgentReasoner
 from app.demo.runtime_fixture import seed_runtime_demo
 from app.domain.invalidation import InvalidationService
 from app.domain.models import (
@@ -21,6 +23,7 @@ from app.runtime.entities import (
     Commitment,
     CommitmentStatus,
     EnterpriseArtifact,
+    ExecutionMode,
     InboxRecord,
     Mission,
     MissionStatus,
@@ -45,8 +48,13 @@ class CommandResult(BaseModel):
 
 
 class RuntimeCoordinator:
-    def __init__(self, repository: RuntimeRepository) -> None:
+    def __init__(
+        self,
+        repository: RuntimeRepository,
+        agent_reasoner: MissionAgentReasoner | None = None,
+    ) -> None:
         self._repository = repository
+        self._agent_reasoner = agent_reasoner
 
     def create_demo(self, request_id: str) -> CommandResult:
         seeded = seed_runtime_demo(request_id)
@@ -98,6 +106,31 @@ class RuntimeCoordinator:
                 "INVALID_MISSION_TRANSITION",
                 f"cannot start mission from {snapshot.mission.status}",
             )
+        agent_events: list[tuple[str, dict[str, Any]]] = []
+        world = snapshot.world.model_copy(deep=True) if snapshot.world else None
+        if self._agent_reasoner is not None:
+            vendor_proposal = self._agent_reasoner.review_vendor(
+                snapshot,
+                f"{mission_id}:work:vendor-intake",
+            )
+            security_proposal = self._agent_reasoner.review_security(
+                snapshot,
+                f"{mission_id}:work:security_baseline",
+            )
+            procurement_proposal = self._agent_reasoner.review_procurement(
+                snapshot,
+                f"{mission_id}:work:procurement-baseline",
+            )
+            self._require_agent_outcome(vendor_proposal.outcome, AgentOutcome.COMPLETE)
+            self._require_agent_outcome(security_proposal.outcome, AgentOutcome.APPROVED)
+            self._require_agent_outcome(procurement_proposal.outcome, AgentOutcome.APPROVED)
+            if world is not None:
+                world.execution_mode = ExecutionMode.GOOGLE_ADK_GEMINI
+            agent_events = [
+                self._agent_audit("vendor-agent", vendor_proposal),
+                self._agent_audit("security-agent", security_proposal),
+                self._agent_audit("procurement-agent", procurement_proposal),
+            ]
         running = MissionStateMachine.transition(
             snapshot.mission,
             MissionStatus.RUNNING,
@@ -159,6 +192,7 @@ class RuntimeCoordinator:
             request_id,
             [
                 ("mission.started", {"status": MissionStatus.RUNNING.value}),
+                *agent_events,
                 (
                     "mission.waiting",
                     {
@@ -170,6 +204,7 @@ class RuntimeCoordinator:
         )
         mutation = RuntimeMutation(
             mission=waiting,
+            world=world,
             work_upserts=[intake, *completed_work, procurement],
             commitment_upserts=[commitment],
             audit_appends=audit,
@@ -425,6 +460,26 @@ class RuntimeCoordinator:
         )
         work = WorkStateMachine.transition(work, WorkStatus.DISPATCHED)
         work = WorkStateMachine.transition(work, WorkStatus.RUNNING)
+        execution_mode = (
+            snapshot.world.execution_mode.value
+            if snapshot.world is not None
+            else ExecutionMode.LOCAL_DETERMINISTIC.value
+        )
+        explanation = "Policy v13 requires PEN_TEST evidence."
+        dependency_refs = ["policy-v13", "vendor-profile-r7"]
+        if self._agent_reasoner is not None:
+            proposal = self._agent_reasoner.review_security(snapshot, work.work_item_id)
+            self._require_agent_outcome(
+                proposal.outcome,
+                AgentOutcome.MISSING_EVIDENCE,
+            )
+            if proposal.missing_document_type != "PEN_TEST":
+                raise RuntimeDomainError(
+                    "AGENT_RESULT_INVALID",
+                    "security agent must request PEN_TEST under policy v13",
+                )
+            explanation = proposal.explanation
+            dependency_refs = proposal.dependency_refs
         commitment_id = f"{mission_id}:commitment:pen-test"
         commitment = Commitment(
             commitment_id=commitment_id,
@@ -443,15 +498,17 @@ class RuntimeCoordinator:
         result = {
             "mission_id": mission_id,
             "status": mission.status.value,
-            "execution_mode": "LOCAL_DETERMINISTIC",
+            "execution_mode": execution_mode,
             "missing_evidence": "PEN_TEST",
+            "explanation": explanation,
+            "dependency_refs": dependency_refs,
         }
         audit, outbox = self._records(
             snapshot.mission,
             request_id,
             [
                 ("work.dispatched", {"work_item_id": work.work_item_id, "target_agent": "security-agent"}),
-                ("agent.result.accepted", {"outcome": "MISSING_EVIDENCE", "execution_mode": "LOCAL_DETERMINISTIC"}),
+                ("agent.result.accepted", {"agent_id": "security-agent", "outcome": "MISSING_EVIDENCE", "execution_mode": execution_mode, "dependency_refs": dependency_refs, "explanation": explanation}),
                 ("commitment.created", {"commitment_id": commitment_id, "event_type": commitment.event_type}),
                 ("mission.waiting", {"status": mission.status.value, "commitment_id": commitment_id}),
             ],
@@ -529,6 +586,21 @@ class RuntimeCoordinator:
             kind="PEN_TEST",
             revision="P9",
         )
+        reasoning_snapshot = snapshot.model_copy(
+            update={"world": world, "graph": graph},
+            deep=True,
+        )
+        security_explanation = "Policy v13 requirements are now satisfied."
+        if self._agent_reasoner is not None:
+            security_proposal = self._agent_reasoner.review_security(
+                reasoning_snapshot,
+                security_work.work_item_id,
+            )
+            self._require_agent_outcome(
+                security_proposal.outcome,
+                AgentOutcome.APPROVED,
+            )
+            security_explanation = security_proposal.explanation
         graph = DecisionService.supersede(graph, old_id="D42", new_id="D57", outcome="APPROVED")
         graph.edges = [
             edge for edge in graph.edges
@@ -552,6 +624,22 @@ class RuntimeCoordinator:
         )
         graph = DecisionService.supersede(graph, old_id="D50", new_id="D58", outcome="APPROVED")
         graph.actions["activate-vendor"].status = ActionStatus.READY
+
+        procurement_explanation = "Current Security and Financial decisions authorize activation."
+        if self._agent_reasoner is not None:
+            procurement_snapshot = snapshot.model_copy(
+                update={"world": world, "graph": graph},
+                deep=True,
+            )
+            procurement_proposal = self._agent_reasoner.review_procurement(
+                procurement_snapshot,
+                f"{mission_id}:work:procurement-resume",
+            )
+            self._require_agent_outcome(
+                procurement_proposal.outcome,
+                AgentOutcome.APPROVED,
+            )
+            procurement_explanation = procurement_proposal.explanation
 
         procurement = WorkItem(
             work_item_id=f"{mission_id}:work:procurement-resume",
@@ -589,7 +677,9 @@ class RuntimeCoordinator:
             [
                 ("vendor.document.uploaded", event.payload),
                 ("commitment.satisfied", {"commitment_id": commitment.commitment_id, "event_id": event_id}),
+                ("agent.result.accepted", {"agent_id": "security-agent", "outcome": "APPROVED", "execution_mode": world.execution_mode.value, "explanation": security_explanation}),
                 ("decision.superseded", {"old_decision_id": "D42", "new_decision_id": "D57"}),
+                ("agent.result.accepted", {"agent_id": "procurement-agent", "outcome": "APPROVED", "execution_mode": world.execution_mode.value, "explanation": procurement_explanation}),
                 ("decision.superseded", {"old_decision_id": "D50", "new_decision_id": "D58"}),
                 ("side_effect.committed", {"side_effect_id": effect.side_effect_id, "effect_type": effect.effect_type}),
                 ("mission.completed", {"status": mission.status.value, "vendor_status": "ACTIVE"}),
@@ -619,6 +709,27 @@ class RuntimeCoordinator:
 
     def get(self, mission_id: str) -> RuntimeSnapshot:
         return self._repository.load(mission_id)
+
+    @staticmethod
+    def _require_agent_outcome(actual: AgentOutcome, expected: AgentOutcome) -> None:
+        if actual is not expected:
+            raise RuntimeDomainError(
+                "AGENT_RESULT_INVALID",
+                f"expected agent outcome {expected}, found {actual}",
+            )
+
+    @staticmethod
+    def _agent_audit(agent_id: str, proposal: Any) -> tuple[str, dict[str, Any]]:
+        return (
+            "agent.result.accepted",
+            {
+                "agent_id": agent_id,
+                "outcome": proposal.outcome.value,
+                "execution_mode": ExecutionMode.GOOGLE_ADK_GEMINI.value,
+                "dependency_refs": proposal.dependency_refs,
+                "explanation": proposal.explanation,
+            },
+        )
 
     def timeline(self, mission_id: str) -> list[AuditEvent]:
         snapshot = self._repository.load(mission_id)

@@ -140,7 +140,7 @@ export interface MissionControlReadModel {
   subject: { id: string; name: string }
   scenario_phase: ScenarioPhase
   next_action: NextAction
-  execution_mode: 'LOCAL_DETERMINISTIC'
+  execution_mode: 'LOCAL_DETERMINISTIC' | 'GOOGLE_ADK_GEMINI'
   current_policy: string
   vendor_status: 'PENDING' | 'ACTIVE'
   agent_lanes: AgentLane[]

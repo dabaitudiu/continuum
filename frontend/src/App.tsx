@@ -117,7 +117,12 @@ export function App({ api }: { api: ContinuumApi }) {
           <button className={view === 'route' ? 'is-active' : ''} onClick={() => setView('route')}>Mission route</button>
           <button className={view === 'graph' ? 'is-active' : ''} onClick={() => setView('graph')}>Decision graph</button>
         </nav>
-        <div className="mode-disclosure"><i /> LOCAL DETERMINISTIC</div>
+        <div className="mode-disclosure">
+          <i />
+          {control.execution_mode === 'GOOGLE_ADK_GEMINI'
+            ? 'GOOGLE ADK · GEMINI'
+            : 'LOCAL DETERMINISTIC'}
+        </div>
         <button className="reset-button" onClick={() => void createScenario()} disabled={busy}><RotateCcw /> Reset</button>
       </header>
 

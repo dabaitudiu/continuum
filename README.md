@@ -12,7 +12,23 @@ Three product milestones are complete:
 2. **Local semantic runtime:** durable Mission/WorkItem state machines, Commitment matching, immutable Decision supersession, Side Effect Ledger safety, audit/outbox, optimistic concurrency, idempotent inbox, SQLite restart recovery, and a unified runtime/graph API.
 3. **Local Mission Control product:** a browser-operated Acme Analytics scenario with three semantic agent lanes, policy-drift impact, preserved work, durable missing-evidence wait, immutable D57/D58 supersession, and exactly-once vendor activation.
 
-Three Google ADK/Gemini agents, Firestore/Pub/Sub adapters, Google Cloud deployment, and OpenTelemetry export remain subsequent milestones. The UI explicitly labels the current execution mode `LOCAL DETERMINISTIC`; local adapters are not presented as completion of cloud requirements.
+The Vendor, Security, and Procurement agents are now implemented with Google ADK and typed Gemini output contracts. Firestore/Pub/Sub adapters, Google Cloud deployment, and hosted execution evidence remain subsequent milestones. The UI discloses the active execution mode and never presents local adapters as cloud execution.
+
+## Google ADK + Gemini mode
+
+The default remains deterministic and credential-free. To run the same browser story through all three real ADK agents, configure either an AI Studio key or Vertex AI credentials:
+
+```bash
+cp .env.example .env
+export CONTINUUM_AGENT_MODE=google_adk
+export CONTINUUM_GEMINI_MODEL=gemini-3.6-flash
+export GEMINI_API_KEY='...'
+make dev
+```
+
+For Vertex AI, set `GOOGLE_GENAI_USE_VERTEXAI=TRUE`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION` instead. Google mode fails fast when neither credential path is configured.
+
+Gemini materially performs six bounded reviews in the canonical story: Vendor, Security, and Procurement at baseline; Security after v13; then Security and Procurement after the pen test arrives. Agents can only return typed proposals and stable dependency references. The runtime validates references, owns invalidation and Decision transitions, and commits activation through the Side Effect Ledger.
 
 ## Run locally
 

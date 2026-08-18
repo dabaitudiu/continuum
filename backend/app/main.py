@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.runtime_routes import build_runtime_router
 from app.api.read_models import graph_read_model
+from app.agents.service import GoogleAdkMissionAgentService
 from app.demo.fixture import seed_canonical_mission
 from app.domain.invalidation import InvalidationService
 from app.domain.models import (
@@ -51,7 +52,12 @@ def create_app(
         isolated=repository is not None
     )
     repo = repository or RuntimeGraphRepositoryAdapter(runtime_repo)
-    coordinator = RuntimeCoordinator(runtime_repo)
+    agent_reasoner = (
+        GoogleAdkMissionAgentService.from_environment()
+        if os.environ.get("CONTINUUM_AGENT_MODE") == "google_adk"
+        else None
+    )
+    coordinator = RuntimeCoordinator(runtime_repo, agent_reasoner)
     app = FastAPI(title="Continuum")
     app.add_middleware(
         CORSMiddleware,

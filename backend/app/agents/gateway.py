@@ -4,6 +4,7 @@ from typing import Protocol, TypeVar
 
 from google.adk.agents import Agent
 from google.adk.runners import InMemoryRunner
+from pydantic import ValidationError
 from app.agents.contracts import AgentProposal
 from app.runtime.errors import RuntimeDomainError
 
@@ -74,7 +75,13 @@ class AgentGateway:
             user_id=mission_id,
             session_id=work_item_id,
         )
-        proposal = proposal_type.model_validate_json(raw)
+        try:
+            proposal = proposal_type.model_validate_json(raw)
+        except ValidationError as error:
+            raise RuntimeDomainError(
+                "AGENT_OUTPUT_INVALID",
+                f"agent returned invalid structured output: {error.errors(include_url=False)[0]['msg']}",
+            ) from error
         AgentProposalValidator.validate_refs(proposal, allowed_refs=allowed_refs)
         return proposal
 

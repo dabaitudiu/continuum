@@ -150,7 +150,7 @@ def control_read_model(snapshot: RuntimeSnapshot) -> dict[str, Any]:
         "subject": {"id": world.vendor.vendor_id, "name": world.vendor.name},
         "scenario_phase": phase,
         "next_action": next_action,
-        "execution_mode": "LOCAL_DETERMINISTIC",
+        "execution_mode": world.execution_mode.value,
         "current_policy": world.artifacts[world.current_policy_id].version,
         "vendor_status": world.vendor.status.value,
         "agent_lanes": lanes,
