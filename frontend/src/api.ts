@@ -1,4 +1,4 @@
-import type { ContinuumApi, GraphReadModel } from './types'
+import type { ContinuumApi, GraphReadModel, MissionControlReadModel } from './types'
 
 class ContinuumApiError extends Error {
   constructor(
@@ -26,8 +26,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const httpApi: ContinuumApi = {
-  reset: () => request('/api/demo/reset', { method: 'POST' }),
-  getGraph: (missionId) => request(`/api/missions/${missionId}/graph`),
+  createDemo: (requestId) => request('/api/missions/demo', {
+    method: 'POST',
+    body: JSON.stringify({ request_id: requestId }),
+  }),
+  start: (missionId, requestId) => request(`/api/missions/${missionId}/start`, {
+    method: 'POST',
+    body: JSON.stringify({ request_id: requestId }),
+  }),
+  getControl: (missionId) => request<MissionControlReadModel>(`/api/missions/${missionId}/control`),
   upgradePolicy: (missionId, eventId) =>
     request<GraphReadModel>('/api/demo/policy/upgrade', {
       method: 'POST',
@@ -38,4 +45,8 @@ export const httpApi: ContinuumApi = {
       method: 'POST',
       body: JSON.stringify({ request_id: requestId }),
     }),
+  uploadPenTest: (missionId, eventId) => request('/api/demo/documents/pen-test', {
+    method: 'POST',
+    body: JSON.stringify({ mission_id: missionId, event_id: eventId }),
+  }),
 }

@@ -1,117 +1,82 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { App } from './App'
-import type { ContinuumApi, GraphReadModel, GraphNodeDto } from './types'
+import type { ContinuumApi, MissionControlReadModel, ScenarioPhase } from './types'
 
-const initialNodes: GraphNodeDto[] = [
-  { id: 'policy-v12', kind: 'artifact', label: 'Security policy', status: 'CURRENT', version: 'v12' },
-  { id: 'soc2-A31', kind: 'evidence', label: 'SOC2 control', status: 'VALID', revision: 'A31' },
-  { id: 'financial-F7', kind: 'evidence', label: 'Financial report', status: 'VALID', revision: 'F7' },
-  { id: 'D42', kind: 'decision', label: 'Security review', status: 'VALID', execution_count: 1 },
-  { id: 'D43', kind: 'decision', label: 'Financial review', status: 'VALID', execution_count: 1 },
-  { id: 'D50', kind: 'decision', label: 'Procurement review', status: 'VALID', execution_count: 1 },
-  { id: 'activate-vendor', kind: 'action', label: 'Activate vendor', status: 'READY' },
-]
-
-const edges: GraphReadModel['edges'] = [
-  { edge_id: 'policy-D42', from_node_id: 'policy-v12', to_node_id: 'D42', relation_type: 'GOVERNED_BY', critical: true },
-  { edge_id: 'soc2-D42', from_node_id: 'soc2-A31', to_node_id: 'D42', relation_type: 'SUPPORTED_BY', critical: true },
-  { edge_id: 'financial-D43', from_node_id: 'financial-F7', to_node_id: 'D43', relation_type: 'SUPPORTED_BY', critical: true },
-  { edge_id: 'D42-D50', from_node_id: 'D42', to_node_id: 'D50', relation_type: 'REQUIRES', critical: true },
-  { edge_id: 'D43-D50', from_node_id: 'D43', to_node_id: 'D50', relation_type: 'REQUIRES', critical: true },
-  { edge_id: 'D50-activate', from_node_id: 'D50', to_node_id: 'activate-vendor', relation_type: 'AUTHORIZES', critical: true },
-]
-
-function readModel(phase: GraphReadModel['phase']): GraphReadModel {
-  const drifted = phase !== 'INITIAL'
-  const nodes = initialNodes.map((node) => {
-    if (!drifted) return { ...node }
-    if (node.id === 'policy-v12') return { ...node, status: 'SUPERSEDED' as const }
-    if (node.id === 'D42') {
-      return {
-        ...node,
-        status: phase === 'REVALIDATING' ? 'REVALIDATING' as const : 'STALE' as const,
-        execution_count: phase === 'REVALIDATING' ? 2 : 1,
-      }
-    }
-    if (node.id === 'D50') return { ...node, status: 'STALE' as const }
-    if (node.id === 'activate-vendor') return { ...node, status: 'BLOCKED' as const }
-    return { ...node }
-  })
-  if (drifted) {
-    nodes.splice(1, 0, {
-      id: 'policy-v13',
-      kind: 'artifact',
-      label: 'Security policy',
-      status: 'CURRENT',
-      version: 'v13',
-      supersedes_artifact_id: 'policy-v12',
-    })
-  }
+function control(phase: ScenarioPhase): MissionControlReadModel {
+  const drifted = ['POLICY_DRIFT', 'MISSING_EVIDENCE', 'COMPLETED'].includes(phase)
+  const completed = phase === 'COMPLETED'
+  const missing = phase === 'MISSING_EVIDENCE'
+  const next = {
+    CREATED: 'START',
+    BASELINE_WAITING: 'INJECT_POLICY',
+    POLICY_DRIFT: 'RUN_REVALIDATION',
+    MISSING_EVIDENCE: 'UPLOAD_PEN_TEST',
+    COMPLETED: 'RESET',
+  } as const
   return {
-    mission_id: 'demo-001',
-    phase,
-    summary: drifted
-      ? { stale: phase === 'REVALIDATING' ? 1 : 2, preserved: 1, blocked: 1 }
-      : { stale: 0, preserved: 3, blocked: 0 },
-    nodes,
-    edges,
-    plan: drifted
-      ? {
-          stale_decision_ids: phase === 'REVALIDATING' ? ['D50'] : ['D42', 'D50'],
-          runnable_decision_ids: phase === 'REVALIDATING' ? [] : ['D42'],
-          waiting_decision_ids: ['D50'],
-          blocked_action_ids: ['activate-vendor'],
-          retained_decision_ids: ['D43'],
-          cause_by_node_id: { D42: 'policy-v12', D50: 'D42', 'activate-vendor': 'D50' },
-        }
-      : {
-          stale_decision_ids: [],
-          runnable_decision_ids: [],
-          waiting_decision_ids: [],
-          blocked_action_ids: [],
-          retained_decision_ids: ['D42', 'D43', 'D50'],
-          cause_by_node_id: {},
-        },
-    causes: drifted ? { D42: 'policy-v12', D50: 'D42', 'activate-vendor': 'D50' } : {},
-    events: drifted
-      ? [{ event_id: 'evt-1', event_type: 'policy.version.changed', payload: {} }]
-      : [],
-    dispatches: phase === 'REVALIDATING'
-      ? [{ dispatch_id: 'dispatch-1', request_id: 'request-1', decision_id: 'D42', work_type: 'REVALIDATE_DECISION', status: 'DISPATCHED' }]
-      : [],
-  }
-}
-
-function createFakeApi(): ContinuumApi & {
-  upgradePolicy: ReturnType<typeof vi.fn>
-  revalidate: ReturnType<typeof vi.fn>
-} {
-  return {
-    reset: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
-    getGraph: vi.fn().mockResolvedValue(readModel('INITIAL')),
-    upgradePolicy: vi.fn().mockResolvedValue(readModel('DRIFTED')),
-    revalidate: vi.fn().mockResolvedValue(readModel('REVALIDATING')),
+    mission: { mission_id: 'demo-001', status: completed ? 'COMPLETED' : phase === 'POLICY_DRIFT' ? 'REVALIDATING' : phase === 'CREATED' ? 'CREATED' : 'WAITING', created_at: '2026-08-18T00:00:00Z', updated_at: '2026-08-18T00:00:00Z' },
+    subject: { id: 'ACME', name: 'Acme Analytics' },
+    scenario_phase: phase,
+    next_action: next[phase],
+    execution_mode: 'LOCAL_DETERMINISTIC',
+    current_policy: drifted ? 'v13' : 'v12',
+    vendor_status: completed ? 'ACTIVE' : 'PENDING',
+    agent_lanes: [
+      { agent_id: 'vendor-agent', label: 'VENDOR AGENT', status: 'SUCCEEDED', checkpoints: [{ id: 'vendor-intake', label: 'Vendor intake', status: 'VALID', kind: 'work' }] },
+      { agent_id: 'security-agent', label: 'SECURITY AGENT', status: missing ? 'WAITING' : 'SUCCEEDED', checkpoints: [
+        { id: 'D42', label: 'Security decision', status: drifted ? completed ? 'SUPERSEDED' : 'STALE' : 'VALID', kind: 'decision' },
+        ...(missing ? [{ id: 'pen-wait', label: 'Pen test required', status: 'WAITING', kind: 'commitment' as const }] : []),
+        ...(completed ? [{ id: 'D57', label: 'Security revalidated', status: 'VALID', kind: 'decision' as const }] : []),
+      ] },
+      { agent_id: 'procurement-agent', label: 'PROCUREMENT AGENT', status: completed ? 'SUCCEEDED' : 'WAITING', checkpoints: [
+        { id: 'D43', label: 'Financial review', status: 'VALID', kind: 'decision', preserved: drifted },
+        { id: 'D50', label: 'Procurement decision', status: drifted ? completed ? 'SUPERSEDED' : 'STALE' : 'VALID', kind: 'decision' },
+        { id: 'activate-vendor', label: 'Vendor active', status: completed ? 'COMMITTED' : drifted ? 'BLOCKED' : 'READY', kind: 'action' },
+      ] },
+    ],
+    commitments: missing ? [{ commitment_id: 'pen-wait', event_type: 'vendor.document.uploaded', predicate: { vendor_id: 'ACME', document_type: 'PEN_TEST' }, status: 'OPEN', created_at: '2026-08-18T00:00:00Z' }] : [],
+    side_effects: completed ? [{ side_effect_id: 'activate', effect_type: 'ACTIVATE_VENDOR', status: 'COMMITTED' }] : [],
+    timeline: [{ audit_event_id: `audit-${phase}`, event_sequence: 1, event_type: completed ? 'mission.completed' : 'mission.created', payload: {}, occurred_at: '2026-08-18T00:00:00Z' }],
+    graph: { mission_id: 'demo-001', phase: drifted ? 'DRIFTED' : 'INITIAL', summary: { stale: drifted && !completed ? 2 : 0, preserved: 1, blocked: drifted && !completed ? 1 : 0 }, nodes: [], edges: [], plan: { stale_decision_ids: [], runnable_decision_ids: [], waiting_decision_ids: [], blocked_action_ids: [], retained_decision_ids: ['D43'], cause_by_node_id: {} }, causes: {}, events: [], dispatches: [] },
   }
 }
 
 describe('App', () => {
-  it('shows drift impact, preserved work, and dispatches only D42', async () => {
-    const api = createFakeApi()
+  it('operates the canonical story through completion', async () => {
+    const api: ContinuumApi = {
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn().mockResolvedValue({}),
+      getControl: vi.fn()
+        .mockResolvedValueOnce(control('CREATED'))
+        .mockResolvedValueOnce(control('BASELINE_WAITING'))
+        .mockResolvedValueOnce(control('POLICY_DRIFT'))
+        .mockResolvedValueOnce(control('MISSING_EVIDENCE'))
+        .mockResolvedValueOnce(control('COMPLETED')),
+      upgradePolicy: vi.fn().mockResolvedValue({}),
+      revalidate: vi.fn().mockResolvedValue({}),
+      uploadPenTest: vi.fn().mockResolvedValue({}),
+    }
     render(<App api={api} />)
 
-    expect(await screen.findByText('All decisions are valid.')).toBeVisible()
-    await userEvent.click(screen.getByRole('button', { name: 'Inject policy v13' }))
-    expect(await screen.findByText('External policy changed.')).toBeVisible()
-    expect(screen.getByText('2 stale')).toBeVisible()
-    expect(screen.getByText('1 preserved')).toBeVisible()
-    expect(screen.getByTestId('node-D43')).toHaveTextContent('PRESERVED')
+    await userEvent.click(await screen.findByRole('button', { name: 'Start mission' }))
+    expect(await screen.findByRole('button', { name: 'Inject Policy v13' })).toBeVisible()
+    expect(screen.queryByText('Pen test required')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Inject Policy v13' }))
+    expect(await screen.findByTestId('route-D42')).toHaveTextContent('STALE')
+    expect(screen.getByTestId('route-D50')).toHaveTextContent('STALE')
+    expect(screen.getByTestId('route-D43')).toHaveTextContent('PRESERVED')
 
     await userEvent.click(screen.getByRole('button', { name: 'Run affected branch' }))
-    expect(api.revalidate).toHaveBeenCalledWith('demo-001', expect.any(String))
-    await waitFor(() => expect(screen.getByText('REVALIDATING')).toBeVisible())
-    expect(screen.getByText('Waiting: D50')).toBeVisible()
+    expect(await screen.findByText('Pen test required')).toBeVisible()
+    expect(screen.getByText('vendor.document.uploaded')).toBeVisible()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Upload pen test · +7 days' }))
+    expect(await screen.findByRole('button', { name: 'Run scenario again' })).toBeVisible()
+    expect(screen.getByTestId('route-D57')).toHaveTextContent('VALID')
+    expect(screen.getByTestId('route-activate-vendor')).toHaveTextContent('COMMITTED')
   })
 })

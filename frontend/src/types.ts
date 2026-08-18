@@ -85,9 +85,76 @@ export interface GraphReadModel {
   dispatches: DispatchRecordDto[]
 }
 
+export type ScenarioPhase =
+  | 'CREATED'
+  | 'BASELINE_WAITING'
+  | 'POLICY_DRIFT'
+  | 'MISSING_EVIDENCE'
+  | 'COMPLETED'
+
+export type NextAction =
+  | 'START'
+  | 'INJECT_POLICY'
+  | 'RUN_REVALIDATION'
+  | 'UPLOAD_PEN_TEST'
+  | 'RESET'
+
+export interface RouteCheckpoint {
+  id: string
+  label: string
+  status: string
+  kind: 'work' | 'artifact' | 'evidence' | 'decision' | 'commitment' | 'action'
+  preserved?: boolean
+}
+
+export interface AgentLane {
+  agent_id: string
+  label: string
+  status: string
+  checkpoints: RouteCheckpoint[]
+}
+
+export interface CommitmentDto {
+  commitment_id: string
+  event_type: string
+  predicate: Record<string, string>
+  status: string
+  created_at: string
+}
+
+export interface TimelineEventDto {
+  audit_event_id: string
+  event_sequence: number
+  event_type: string
+  payload: Record<string, unknown>
+  occurred_at: string
+}
+
+export interface MissionControlReadModel {
+  mission: {
+    mission_id: string
+    status: string
+    created_at: string
+    updated_at: string
+  }
+  subject: { id: string; name: string }
+  scenario_phase: ScenarioPhase
+  next_action: NextAction
+  execution_mode: 'LOCAL_DETERMINISTIC'
+  current_policy: string
+  vendor_status: 'PENDING' | 'ACTIVE'
+  agent_lanes: AgentLane[]
+  commitments: CommitmentDto[]
+  side_effects: Array<{ side_effect_id: string; effect_type: string; status: string }>
+  timeline: TimelineEventDto[]
+  graph: GraphReadModel
+}
+
 export interface ContinuumApi {
-  reset(): Promise<{ mission_id: string }>
-  getGraph(missionId: string): Promise<GraphReadModel>
+  createDemo(requestId: string): Promise<{ mission_id: string }>
+  start(missionId: string, requestId: string): Promise<unknown>
+  getControl(missionId: string): Promise<MissionControlReadModel>
   upgradePolicy(missionId: string, eventId: string): Promise<GraphReadModel>
   revalidate(missionId: string, requestId: string): Promise<GraphReadModel>
+  uploadPenTest(missionId: string, eventId: string): Promise<unknown>
 }
