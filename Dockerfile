@@ -19,4 +19,4 @@ RUN uv sync --project backend --frozen --no-dev
 COPY backend/app ./backend/app
 COPY --from=frontend-build /src/frontend/dist ./static
 EXPOSE 8080
-CMD ["sh", "-c", "exec uv run --project backend uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "exec /app/backend/.venv/bin/uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8080}"]

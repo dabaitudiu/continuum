@@ -57,6 +57,8 @@ curl http://127.0.0.1:8080/api/health
 
 For a Google Cloud deployment, use `scripts/deploy-google-cloud.sh PROJECT_ID REGION`. It provisions the required APIs, a Native-mode Firestore database, Pub/Sub topic, least-purpose runtime service account roles, and deploys the source container with Vertex AI, Firestore, Pub/Sub, and Cloud Trace enabled. See [Google Cloud deployment](docs/24_GOOGLE_CLOUD_DEPLOYMENT.md).
 
+After deployment, `CONTINUUM_EXPECT_CLOUD=1 scripts/verify-deployment.sh CLOUD_RUN_URL 3` executes the canonical mission three times and fails unless every semantic and cloud-mode assertion passes.
+
 ## Durable runtime API
 
 ```text

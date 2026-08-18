@@ -46,6 +46,14 @@ The script is idempotent for existing APIs, service account, Firestore database,
 }
 ```
 
+Run the complete release gate three times against the deployed URL:
+
+```bash
+CONTINUUM_EXPECT_CLOUD=1 ./scripts/verify-deployment.sh CLOUD_RUN_URL 3
+```
+
+Each run verifies v12 baseline, v13 drift, D42/D50 invalidation, D43 preservation, the durable pen-test wait, selective revalidation, D57/D58 supersession, exactly one committed activation side effect, and final `Vendor ACTIVE / Mission COMPLETED` state.
+
 ## Verification boundary
 
 Local tests use contract fakes for Firestore and Pub/Sub and a real production container. They prove adapter semantics and packaging, but not IAM, regional availability, quota, live Gemini behavior, or Cloud Trace delivery. Those claims require running the deployment in an authenticated project and recording three stable end-to-end missions.
