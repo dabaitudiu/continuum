@@ -59,3 +59,33 @@ test('canonical mission resumes selectively and activates once', async ({ page }
   await expect(page.getByRole('button', { name: 'Run scenario again' })).toBeVisible()
   expect(consoleProblems).toEqual([])
 })
+
+test('mobile navigation stays visible and the mission completes from the keyboard', async ({ page }) => {
+  const viewportWidth = 320
+  await page.setViewportSize({ width: viewportWidth, height: 844 })
+  await page.goto('/')
+
+  for (const name of ['Mission route', 'Decision graph', 'Mission history']) {
+    const button = page.getByRole('button', { name })
+    const bounds = await button.boundingBox()
+    expect(bounds, `${name} must have rendered bounds`).not.toBeNull()
+    expect(bounds!.x, `${name} must not be clipped on the left`).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width, `${name} must not be clipped on the right`).toBeLessThanOrEqual(viewportWidth)
+    expect(await button.evaluate((element) => element.scrollWidth <= element.clientWidth), `${name} text must fit its control`).toBe(true)
+  }
+
+  const actions = [
+    'Start mission',
+    'Inject Policy v13',
+    'Run affected branch',
+    'Upload pen test · +7 days',
+  ]
+  for (const action of actions) {
+    const button = page.getByRole('button', { name: action })
+    await button.focus()
+    await page.keyboard.press('Enter')
+  }
+
+  await expect(page.getByRole('button', { name: 'Run scenario again' })).toBeVisible()
+  await expect(page.getByTestId('route-activate-vendor')).toContainText('COMMITTED')
+})

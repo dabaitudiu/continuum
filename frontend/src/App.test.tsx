@@ -116,6 +116,34 @@ describe('App', () => {
     expect(screen.getByTestId('route-activate-vendor')).toHaveTextContent('COMMITTED')
   })
 
+  it('shows deterministic progress and blocks a duplicate command while it is pending', async () => {
+    let resolveStart!: () => void
+    const pendingStart = new Promise<Record<string, never>>((resolve) => {
+      resolveStart = () => resolve({})
+    })
+    const api: ContinuumApi = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn().mockReturnValue(pendingStart),
+      getControl: vi.fn()
+        .mockResolvedValueOnce(control('CREATED'))
+        .mockResolvedValueOnce(control('BASELINE_WAITING')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Start mission' }))
+
+    expect(screen.getByRole('button', { name: 'Starting agents…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Mission history' })).toBeEnabled()
+
+    resolveStart()
+    expect(await screen.findByRole('button', { name: 'Inject Policy v13' })).toBeVisible()
+    expect(api.start).toHaveBeenCalledTimes(1)
+  })
+
   it('restores the mission encoded in the browser route without creating another', async () => {
     history.replaceState({}, '', '/missions/demo-existing')
     const api: ContinuumApi = {
@@ -211,6 +239,123 @@ describe('App', () => {
     expect(api.createDemo).toHaveBeenCalledTimes(1)
     expect(location.pathname).toBe('/missions/demo-recovered')
     expect(localStorage.getItem('continuum.activeMissionId')).toBe('demo-recovered')
+  })
+
+  it('retries restoration of the same durable mission after a transient failure', async () => {
+    history.replaceState({}, '', '/missions/demo-existing')
+    const restored = control('MISSING_EVIDENCE')
+    restored.mission.mission_id = 'demo-existing'
+    const api: ContinuumApi = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-new' }),
+      start: vi.fn(),
+      getControl: vi.fn()
+        .mockRejectedValueOnce(new Error('runtime temporarily unavailable'))
+        .mockResolvedValueOnce(restored),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+
+    expect(await screen.findByText('runtime temporarily unavailable')).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('Pen test required')).toBeVisible()
+    expect(api.getControl).toHaveBeenNthCalledWith(2, 'demo-existing')
+    expect(api.createDemo).not.toHaveBeenCalled()
+    expect(location.pathname).toBe('/missions/demo-existing')
+  })
+
+  it('reuses the scenario idempotency key when creation is retried', async () => {
+    const api: ContinuumApi = {
+      listMissions: noMissions,
+      createDemo: vi.fn()
+        .mockRejectedValueOnce(new Error('creation response was lost'))
+        .mockResolvedValueOnce({ mission_id: 'demo-created-once' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue({
+        ...control('CREATED'),
+        mission: { ...control('CREATED').mission, mission_id: 'demo-created-once' },
+      }),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+
+    expect(await screen.findByText('creation response was lost')).toBeVisible()
+    const firstRequestId = vi.mocked(api.createDemo).mock.calls[0][0]
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByRole('button', { name: 'Start mission' })).toBeVisible()
+    expect(api.createDemo).toHaveBeenNthCalledWith(2, firstRequestId)
+    expect(location.pathname).toBe('/missions/demo-created-once')
+  })
+
+  it('retries a failed mission command without losing the current phase', async () => {
+    const api: ContinuumApi = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn()
+        .mockRejectedValueOnce(new Error('command temporarily unavailable'))
+        .mockResolvedValueOnce({}),
+      getControl: vi.fn()
+        .mockResolvedValueOnce(control('CREATED'))
+        .mockResolvedValueOnce(control('BASELINE_WAITING')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Start mission' }))
+
+    expect(await screen.findByText('command temporarily unavailable')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start mission' })).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Retry command' }))
+
+    expect(await screen.findByRole('button', { name: 'Inject Policy v13' })).toBeVisible()
+    expect(api.start).toHaveBeenCalledTimes(2)
+    const firstRequestId = vi.mocked(api.start).mock.calls[0][1]
+    expect(api.start).toHaveBeenNthCalledWith(2, 'demo-001', firstRequestId)
+  })
+
+  it('retries mission history loading in place', async () => {
+    const active = control('CREATED')
+    const summary: MissionSummary = {
+      mission_id: 'demo-001',
+      mission_type: 'VENDOR_ONBOARDING',
+      subject_id: 'ACME',
+      status: 'CREATED',
+      revision: 0,
+      event_sequence: 1,
+      created_at: '2026-08-18T01:00:00Z',
+      updated_at: '2026-08-18T01:00:00Z',
+      counts: { work_items: 1, open_commitments: 0, side_effects: 0 },
+    }
+    const api: ContinuumApi = {
+      listMissions: vi.fn()
+        .mockRejectedValueOnce(new Error('history temporarily unavailable'))
+        .mockResolvedValueOnce([summary]),
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(active),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Mission history' }))
+
+    expect(await screen.findByText('history temporarily unavailable')).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Retry history' }))
+
+    expect(await screen.findByRole('button', { name: 'Open mission demo-001' })).toBeVisible()
+    expect(api.listMissions).toHaveBeenCalledTimes(2)
   })
 
   it('opens a recent mission from mission history', async () => {

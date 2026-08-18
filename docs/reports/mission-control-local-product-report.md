@@ -16,6 +16,8 @@
 - The Side Effect Ledger commits vendor activation once; Vendor becomes `ACTIVE`; Mission becomes `COMPLETED`.
 - All simulator and runtime state survives SQLite persistence.
 - Mission Control shows the semantic route, provenance explanation, open Commitment predicate, event history, and a secondary Decision Graph.
+- Transient restore, command, and history failures can be retried without abandoning the current Mission; mutating retries reuse the original idempotency key.
+- At the supported 320px minimum width, all view controls remain visible and the complete scenario is operable from the keyboard.
 
 ## Honest execution boundary
 
@@ -31,16 +33,11 @@ The real browser captures were compared to `mission-control-visual-benchmark.png
 
 ## Automated evidence
 
-- Backend domain/API/repository suite, including canonical scenario and control read-model tests.
-- Branch-aware coverage run.
-- Frontend unit tests and TypeScript/Vite production build.
-- Playwright Chromium end-to-end run from create through exactly-once activation.
+- 215 backend domain/API/repository tests, including canonical scenario and control read-model tests, at 94% branch-aware coverage.
+- 13 frontend behavior/model tests plus a successful TypeScript/Vite production build.
+- Two Playwright Chromium end-to-end tests: the durable desktop story and the complete 320px keyboard story.
 - `git diff --check`.
 
-## Remaining product work
+## Optional post-gate integrations
 
-1. Replace deterministic local Vendor/Security/Procurement adapters with structured Google ADK/Gemini agents while keeping deterministic state ownership.
-2. Add Firestore, Pub/Sub, and Cloud Run/Agent Runtime adapters.
-3. Export OpenTelemetry traces and capture verifiable Google Cloud evidence.
-4. Harden and run the hosted demo three times, then produce submission video/write-up.
-
+Google ADK/Gemini, Firestore, Pub/Sub, Cloud Trace, and Cloud Run adapters now exist and are locally contract-tested. They remain optional extensions to the credential-free local product until authenticated cloud evidence is captured. No live-cloud result is implied by this report.

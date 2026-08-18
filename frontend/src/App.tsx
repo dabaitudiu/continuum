@@ -86,6 +86,13 @@ const phaseCopy = {
   COMPLETED: ['COMPLETED', 'The resumed route produced fresh authorization and activated the vendor exactly once.'],
 } as const
 
+type RetryIntent =
+  | { kind: 'create'; requestId: string }
+  | { kind: 'restore' }
+  | { kind: 'command'; requestId: string }
+  | { kind: 'history' }
+  | { kind: 'openMission'; missionId: string }
+
 export function App({ api }: { api: ContinuumApi }) {
   const [control, setControl] = useState<MissionControlReadModel | null>(null)
   const [busy, setBusy] = useState(false)
@@ -94,13 +101,15 @@ export function App({ api }: { api: ContinuumApi }) {
   const [view, setView] = useState<'route' | 'graph' | 'missions'>('route')
   const [missions, setMissions] = useState<MissionSummary[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [retryIntent, setRetryIntent] = useState<RetryIntent | null>(null)
   const initialized = useRef(false)
 
-  const createScenario = useCallback(async () => {
+  const createScenario = useCallback(async (requestId = uniqueId('create')) => {
     setBusy(true)
     setError(null)
+    setRetryIntent(null)
     try {
-      const created = await api.createDemo(uniqueId('create'))
+      const created = await api.createDemo(requestId)
       const createdControl = await api.getControl(created.mission_id)
       rememberMission(created.mission_id)
       setControl(createdControl)
@@ -108,6 +117,7 @@ export function App({ api }: { api: ContinuumApi }) {
       setView('route')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to create the demo mission')
+      setRetryIntent({ kind: 'create', requestId })
     } finally {
       setBusy(false)
     }
@@ -121,6 +131,7 @@ export function App({ api }: { api: ContinuumApi }) {
     }
     setBusy(true)
     setError(null)
+    setRetryIntent(null)
     try {
       const restored = await api.getControl(missionId)
       rememberMission(missionId)
@@ -132,6 +143,7 @@ export function App({ api }: { api: ContinuumApi }) {
         return
       }
       setError(caught instanceof Error ? caught.message : 'Unable to restore the mission')
+      setRetryIntent({ kind: 'restore' })
     } finally {
       setBusy(false)
     }
@@ -143,32 +155,35 @@ export function App({ api }: { api: ContinuumApi }) {
     void restoreOrCreateScenario()
   }, [restoreOrCreateScenario])
 
-  const runAction = async () => {
+  const runAction = async (retryRequestId?: string) => {
     if (!control || busy) return
     setBusy(true)
     setError(null)
+    setRetryIntent(null)
     const missionId = control.mission.mission_id
+    const requestId = retryRequestId ?? uniqueId(control.next_action.toLowerCase())
     try {
       switch (control.next_action) {
         case 'START':
-          await api.start(missionId, uniqueId('start'))
+          await api.start(missionId, requestId)
           break
         case 'INJECT_POLICY':
-          await api.upgradePolicy(missionId, uniqueId('policy'))
+          await api.upgradePolicy(missionId, requestId)
           break
         case 'RUN_REVALIDATION':
-          await api.revalidate(missionId, uniqueId('revalidate'))
+          await api.revalidate(missionId, requestId)
           break
         case 'UPLOAD_PEN_TEST':
-          await api.uploadPenTest(missionId, uniqueId('pen-test'))
+          await api.uploadPenTest(missionId, requestId)
           break
         case 'RESET':
-          await createScenario()
+          await createScenario(requestId)
           return
       }
       setControl(await api.getControl(missionId))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Mission command failed')
+      setRetryIntent({ kind: 'command', requestId })
     } finally {
       setBusy(false)
     }
@@ -178,10 +193,12 @@ export function App({ api }: { api: ContinuumApi }) {
     setView('missions')
     setHistoryBusy(true)
     setError(null)
+    setRetryIntent(null)
     try {
       setMissions(await api.listMissions(20))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to load mission history')
+      setRetryIntent({ kind: 'history' })
     } finally {
       setHistoryBusy(false)
     }
@@ -194,6 +211,7 @@ export function App({ api }: { api: ContinuumApi }) {
     }
     setBusy(true)
     setError(null)
+    setRetryIntent(null)
     try {
       const restored = await api.getControl(missionId)
       rememberMission(missionId)
@@ -202,17 +220,45 @@ export function App({ api }: { api: ContinuumApi }) {
       setView('route')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to open the mission')
+      setRetryIntent({ kind: 'openMission', missionId })
     } finally {
       setBusy(false)
     }
   }
+
+  const retryFailedOperation = () => {
+    if (!retryIntent) return
+    switch (retryIntent.kind) {
+      case 'create':
+        void createScenario(retryIntent.requestId)
+        break
+      case 'restore':
+        void restoreOrCreateScenario()
+        break
+      case 'command':
+        void runAction(retryIntent.requestId)
+        break
+      case 'history':
+        void openHistory()
+        break
+      case 'openMission':
+        void openMission(retryIntent.missionId)
+        break
+    }
+  }
+
+  const retryLabel = retryIntent?.kind === 'command'
+    ? 'Retry command'
+    : retryIntent?.kind === 'history'
+      ? 'Retry history'
+      : 'Retry'
 
   if (!control) {
     return (
       <main className="loading-state" aria-busy={busy}>
         <span className="brand-mark">C</span>
         <p>{error ?? 'Preparing deterministic mission…'}</p>
-        {error ? <button onClick={() => void createScenario()}>Retry</button> : null}
+        {error ? <button onClick={retryFailedOperation}>Retry</button> : null}
       </main>
     )
   }
@@ -257,7 +303,15 @@ export function App({ api }: { api: ContinuumApi }) {
         </button>
       </section>
 
-      {error ? <div className="error-banner" role="alert"><AlertTriangle />{error}<button onClick={() => setError(null)}>Dismiss</button></div> : null}
+      {error ? (
+        <div className="error-banner" role="alert">
+          <AlertTriangle />{error}
+          <div className="error-actions">
+            {retryIntent ? <button onClick={retryFailedOperation}>{retryLabel}</button> : null}
+            <button onClick={() => { setError(null); setRetryIntent(null) }}>Dismiss</button>
+          </div>
+        </div>
+      ) : null}
       <div className="announcement" aria-live="polite">{phaseLabel}: {phaseDescription}</div>
 
       {view === 'missions' ? (

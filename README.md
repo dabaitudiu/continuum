@@ -6,18 +6,18 @@ Continuum is a mission-control runtime for long-lived enterprise agents. It prev
 
 This repository is the canonical product and architecture handoff for a Google All Things Agentic hackathon prototype in the Fortified Enterprise Fleet track.
 
-## Current status
+## Current product boundary
 
-Four product milestones are complete:
+The current product is the credential-free local Continuum prototype. Its purpose is to prove the semantic-resume thesis end to end; live Gemini/ADK and Google Cloud are optional post-gate integrations, not prerequisites for this product boundary.
+
+Three current-scope product milestones are complete:
 
 1. **Phase G falsification gate:** Policy v12 → v13 deterministically makes D42 and D50 stale, preserves D43, blocks ActivateVendor, and dispatches only D42.
 2. **Local semantic runtime:** durable Mission/WorkItem state machines, Commitment matching, immutable Decision supersession, Side Effect Ledger safety, audit/outbox, optimistic concurrency, idempotent inbox, SQLite restart recovery, and a unified runtime/graph API.
 3. **Local Mission Control product:** a browser-operated Acme Analytics scenario with three semantic agent lanes, policy-drift impact, preserved work, durable missing-evidence wait, immutable D57/D58 supersession, and exactly-once vendor activation.
-4. **Google integration foundation:** bounded Google ADK/Gemini agents, a transactional Firestore repository, durable Pub/Sub outbox relay, Cloud Trace instrumentation, and a production Cloud Run container/deployment path.
+An optional Google integration foundation also exists: bounded Google ADK/Gemini agents, a transactional Firestore repository, durable Pub/Sub outbox relay, Cloud Trace instrumentation, and a Cloud Run deployment path. These adapters are locally contract-tested but have no live-cloud evidence, and they are not counted as a completed product milestone. The UI and `/api/health` always disclose the active execution, persistence, event, and telemetry modes.
 
-The Vendor, Security, and Procurement agents are implemented with Google ADK and typed Gemini output contracts. Firestore, Pub/Sub, Cloud Trace, and Cloud Run adapters are implemented and locally contract-tested. A live deployment and hosted execution evidence still require a Google Cloud project and Application Default Credentials; the repository does not claim those unverified results. The UI and `/api/health` disclose the active execution, persistence, event, and telemetry modes.
-
-## Google ADK + Gemini mode
+## Optional Google ADK + Gemini mode
 
 The default remains deterministic and credential-free. To run the same browser story through all three real ADK agents, configure either an AI Studio key or Vertex AI credentials:
 
