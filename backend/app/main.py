@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.api.runtime_routes import build_runtime_router
+from app.api.read_models import graph_read_model
 from app.demo.fixture import seed_canonical_mission
 from app.domain.invalidation import InvalidationService
 from app.domain.models import (
@@ -34,6 +35,11 @@ class PolicyUpgradeRequest(BaseModel):
 
 class RevalidationRequest(BaseModel):
     request_id: str
+
+
+class PenTestUploadRequest(BaseModel):
+    mission_id: str
+    event_id: str
 
 
 def create_app(
@@ -87,6 +93,15 @@ def create_app(
 
     @app.post("/api/demo/policy/upgrade")
     def upgrade_policy(request: PolicyUpgradeRequest) -> dict[str, Any]:
+        try:
+            runtime_snapshot = coordinator.get(request.mission_id)
+        except RuntimeDomainError as error:
+            if error.code != "MISSION_NOT_FOUND":
+                raise
+            runtime_snapshot = None
+        if runtime_snapshot is not None and runtime_snapshot.world is not None:
+            result = coordinator.upgrade_policy(request.mission_id, request.event_id)
+            return graph_read_model(result.snapshot.graph, revalidation.plan(request.mission_id))
         event = DomainEvent(
             event_id=request.event_id,
             event_type="policy.version.changed",
@@ -111,7 +126,15 @@ def create_app(
                 "POLICY_VERSION_CONFLICT",
                 str(error),
             ) from error
-        return _graph_read_model(snapshot, revalidation.plan(request.mission_id))
+        return graph_read_model(snapshot, revalidation.plan(request.mission_id))
+
+    @app.post("/api/demo/documents/pen-test")
+    def upload_pen_test(request: PenTestUploadRequest) -> dict[str, Any]:
+        result = coordinator.upload_pen_test(request.mission_id, request.event_id)
+        return {
+            **result.result,
+            "duplicate": result.duplicate,
+        }
 
     @app.get("/api/missions/{mission_id}/graph")
     def get_graph(mission_id: str) -> dict[str, Any]:
@@ -120,13 +143,25 @@ def create_app(
             plan = revalidation.plan(mission_id)
         except KeyError as error:
             raise _http_error(404, "MISSION_NOT_FOUND", str(error)) from error
-        return _graph_read_model(snapshot, plan)
+        return graph_read_model(snapshot, plan)
 
     @app.post("/api/missions/{mission_id}/revalidate")
     def dispatch_revalidation(
         mission_id: str,
         request: RevalidationRequest,
     ) -> dict[str, Any]:
+        try:
+            runtime_snapshot = coordinator.get(mission_id)
+        except RuntimeDomainError as error:
+            if error.code != "MISSION_NOT_FOUND":
+                raise
+            runtime_snapshot = None
+        if runtime_snapshot is not None and runtime_snapshot.world is not None:
+            result = coordinator.revalidate_affected_branch(
+                mission_id,
+                request.request_id,
+            )
+            return graph_read_model(result.snapshot.graph, revalidation.plan(mission_id))
         try:
             plan = revalidation.plan(mission_id)
             already_processed = repo.has_processed_request(
@@ -141,7 +176,7 @@ def create_app(
                 )
             revalidation.dispatch(mission_id, request.request_id)
             snapshot = repo.get_snapshot(mission_id)
-            return _graph_read_model(snapshot, revalidation.plan(mission_id))
+            return graph_read_model(snapshot, revalidation.plan(mission_id))
         except HTTPException:
             raise
         except KeyError as error:
@@ -167,87 +202,6 @@ def _http_error(status_code: int, code: str, message: str) -> HTTPException:
         status_code=status_code,
         detail={"code": code, "message": message},
     )
-
-
-def _graph_read_model(
-    snapshot: GraphSnapshot,
-    plan: RevalidationPlan,
-) -> dict[str, Any]:
-    nodes: list[dict[str, Any]] = []
-    nodes.extend(
-        {
-            "id": node.artifact_id,
-            "kind": "artifact",
-            "label": node.logical_key,
-            **node.model_dump(mode="json"),
-        }
-        for node in snapshot.artifacts.values()
-    )
-    nodes.extend(
-        {
-            **node.model_dump(mode="json"),
-            "id": node.evidence_id,
-            "kind": "evidence",
-            "label": node.kind,
-            "evidence_kind": node.kind,
-        }
-        for node in snapshot.evidences.values()
-    )
-    nodes.extend(
-        {
-            "id": node.decision_id,
-            "kind": "decision",
-            "label": node.decision_type,
-            **node.model_dump(mode="json"),
-        }
-        for node in snapshot.decisions.values()
-    )
-    nodes.extend(
-        {
-            "id": node.action_id,
-            "kind": "action",
-            "label": node.action_type,
-            **node.model_dump(mode="json"),
-        }
-        for node in snapshot.actions.values()
-    )
-
-    if any(
-        decision.status is DecisionStatus.REVALIDATING
-        for decision in snapshot.decisions.values()
-    ):
-        phase = "REVALIDATING"
-    elif snapshot.events:
-        phase = "DRIFTED"
-    else:
-        phase = "INITIAL"
-
-    return {
-        "mission_id": snapshot.mission_id,
-        "phase": phase,
-        "summary": {
-            "stale": sum(
-                decision.status is DecisionStatus.STALE
-                for decision in snapshot.decisions.values()
-            ),
-            "preserved": sum(
-                decision.status is DecisionStatus.VALID
-                for decision in snapshot.decisions.values()
-            ),
-            "blocked": sum(
-                action.status is ActionStatus.BLOCKED
-                for action in snapshot.actions.values()
-            ),
-        },
-        "nodes": sorted(nodes, key=lambda node: node["id"]),
-        "edges": [edge.model_dump(mode="json") for edge in snapshot.edges],
-        "plan": plan.model_dump(mode="json"),
-        "causes": dict(sorted(snapshot.cause_by_node_id.items())),
-        "events": [event.model_dump(mode="json") for event in snapshot.events],
-        "dispatches": [
-            dispatch.model_dump(mode="json") for dispatch in snapshot.dispatches
-        ],
-    }
 
 
 app = create_app()

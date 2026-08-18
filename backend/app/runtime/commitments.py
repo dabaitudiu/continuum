@@ -35,3 +35,15 @@ class CommitmentService:
             },
             deep=True,
         )
+
+    @staticmethod
+    def cancel(commitment: Commitment) -> Commitment:
+        if commitment.status is not CommitmentStatus.OPEN:
+            raise RuntimeDomainError(
+                "INVALID_COMMITMENT_TRANSITION",
+                f"cannot cancel commitment from {commitment.status}",
+            )
+        return commitment.model_copy(
+            update={"status": CommitmentStatus.CANCELLED},
+            deep=True,
+        )

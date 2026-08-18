@@ -46,13 +46,24 @@ def pen_test_event(mission_id: str, event_id: str = "evt-pen-1") -> dict:
     }
 
 
+def activation_event(mission_id: str, event_id: str = "evt-window-1") -> dict:
+    return {
+        "event_id": event_id,
+        "event_type": "procurement.activation.window.opened",
+        "mission_id": mission_id,
+        "producer": "enterprise-simulator",
+        "correlation_id": event_id,
+        "payload": {"vendor_id": "ACME"},
+    }
+
+
 def test_create_start_read_and_wake_runtime_mission(client: TestClient) -> None:
     mission_id = create_mission(client)
 
     waiting = start_mission(client, mission_id)
     summary = client.get(f"/api/missions/{mission_id}")
     commitments = client.get(f"/api/missions/{mission_id}/commitments")
-    woke = client.post("/api/events", json=pen_test_event(mission_id))
+    woke = client.post("/api/events", json=activation_event(mission_id))
     timeline = client.get(f"/api/missions/{mission_id}/timeline")
 
     assert waiting.status_code == 200
@@ -60,7 +71,7 @@ def test_create_start_read_and_wake_runtime_mission(client: TestClient) -> None:
     assert summary.status_code == 200
     assert summary.json()["status"] == "WAITING"
     assert summary.json()["counts"] == {
-        "work_items": 2,
+        "work_items": 4,
         "open_commitments": 1,
         "side_effects": 0,
     }
@@ -69,7 +80,7 @@ def test_create_start_read_and_wake_runtime_mission(client: TestClient) -> None:
     assert woke.status_code == 200
     assert woke.json()["status"] == "RUNNING"
     assert woke.json()["result"] == {
-        "matched_commitment_ids": [f"{mission_id}:commitment:pen-test"]
+        "matched_commitment_ids": [f"{mission_id}:commitment:activation-window"]
     }
     sequences = [event["event_sequence"] for event in timeline.json()]
     assert sequences == list(range(1, len(sequences) + 1))

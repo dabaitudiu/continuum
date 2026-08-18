@@ -50,6 +50,34 @@ class SideEffectStatus(StrEnum):
     RECONCILIATION_REQUIRED = "RECONCILIATION_REQUIRED"
 
 
+class VendorStatus(StrEnum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+
+
+class EnterpriseArtifact(BaseModel):
+    artifact_id: str
+    artifact_type: str
+    version: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class VendorRecord(BaseModel):
+    vendor_id: str
+    name: str
+    profile_revision: str
+    handles_customer_pii: bool
+    status: VendorStatus = VendorStatus.PENDING
+
+
+class EnterpriseWorld(BaseModel):
+    mission_id: str
+    vendor: VendorRecord
+    current_policy_id: str
+    artifacts: dict[str, EnterpriseArtifact] = Field(default_factory=dict)
+    documents: list[str] = Field(default_factory=list)
+
+
 class Mission(BaseModel):
     mission_id: str
     mission_type: str = "VENDOR_ONBOARDING"
@@ -145,6 +173,7 @@ class RuntimeEvent(BaseModel):
 class RuntimeSnapshot(BaseModel):
     mission: Mission
     graph: GraphSnapshot
+    world: EnterpriseWorld | None = None
     work_items: list[WorkItem] = Field(default_factory=list)
     commitments: list[Commitment] = Field(default_factory=list)
     side_effects: list[SideEffectRecord] = Field(default_factory=list)

@@ -5,24 +5,36 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.demo.runtime_fixture import seed_runtime_demo
-from app.domain.models import DomainEvent
+from app.domain.invalidation import InvalidationService
+from app.domain.models import (
+    ActionStatus,
+    DependencyEdge,
+    DomainEvent,
+    EvidenceNode,
+    RelationType,
+)
+from app.repository.memory import InMemoryGraphRepository
 from app.repository.runtime_protocol import RuntimeRepository
 from app.runtime.commitments import CommitmentService
 from app.runtime.entities import (
     AuditEvent,
     Commitment,
     CommitmentStatus,
+    EnterpriseArtifact,
     InboxRecord,
     Mission,
     MissionStatus,
     OutboxMessage,
     RuntimeEvent,
     RuntimeSnapshot,
+    VendorStatus,
     WorkItem,
     WorkStatus,
 )
+from app.runtime.decisions import DecisionService
 from app.runtime.errors import RuntimeDomainError
 from app.runtime.mutations import RuntimeMutation
+from app.runtime.side_effects import SideEffectLedger
 from app.runtime.state_machine import MissionStateMachine, WorkStateMachine
 
 
@@ -98,30 +110,44 @@ class RuntimeCoordinator:
         intake = WorkStateMachine.transition(intake, WorkStatus.RUNNING)
         intake = WorkStateMachine.transition(intake, WorkStatus.SUCCEEDED)
 
-        commitment_id = f"{mission_id}:commitment:pen-test"
-        review = WorkItem(
-            work_item_id=f"{mission_id}:work:review-pen-test",
+        completed_work: list[WorkItem] = []
+        for work_type, agent in (
+            ("SECURITY_BASELINE", "security-agent"),
+            ("FINANCIAL_REVIEW", "procurement-agent"),
+        ):
+            item = WorkItem(
+                work_item_id=f"{mission_id}:work:{work_type.lower()}",
+                mission_id=mission_id,
+                work_type=work_type,
+                target_agent=agent,
+            )
+            item = WorkStateMachine.transition(item, WorkStatus.DISPATCHED)
+            item = WorkStateMachine.transition(item, WorkStatus.RUNNING)
+            completed_work.append(
+                WorkStateMachine.transition(item, WorkStatus.SUCCEEDED)
+            )
+
+        commitment_id = f"{mission_id}:commitment:activation-window"
+        procurement = WorkItem(
+            work_item_id=f"{mission_id}:work:procurement-baseline",
             mission_id=mission_id,
-            work_type="REVIEW_PEN_TEST",
-            target_agent="security-agent",
+            work_type="PROCUREMENT_BASELINE",
+            target_agent="procurement-agent",
             commitment_ids=[commitment_id],
         )
-        review = WorkStateMachine.transition(review, WorkStatus.DISPATCHED)
-        review = WorkStateMachine.transition(review, WorkStatus.RUNNING)
-        review = WorkStateMachine.transition(
-            review,
+        procurement = WorkStateMachine.transition(procurement, WorkStatus.DISPATCHED)
+        procurement = WorkStateMachine.transition(procurement, WorkStatus.RUNNING)
+        procurement = WorkStateMachine.transition(
+            procurement,
             WorkStatus.WAITING,
             has_open_commitment=True,
         )
         commitment = Commitment(
             commitment_id=commitment_id,
             mission_id=mission_id,
-            work_item_id=review.work_item_id,
-            event_type="vendor.document.uploaded",
-            predicate={
-                "vendor_id": snapshot.mission.subject_id,
-                "document_type": "PEN_TEST",
-            },
+            work_item_id=procurement.work_item_id,
+            event_type="procurement.activation.window.opened",
+            predicate={"vendor_id": snapshot.mission.subject_id},
         )
         waiting = MissionStateMachine.transition(running, MissionStatus.WAITING)
         result = {
@@ -144,7 +170,7 @@ class RuntimeCoordinator:
         )
         mutation = RuntimeMutation(
             mission=waiting,
-            work_upserts=[intake, review],
+            work_upserts=[intake, *completed_work, procurement],
             commitment_upserts=[commitment],
             audit_appends=audit,
             inbox_completion=InboxRecord(
@@ -273,6 +299,321 @@ class RuntimeCoordinator:
             event.mission_id,
             snapshot.mission.revision,
             mutation,
+        )
+        return CommandResult(snapshot=committed, result=result)
+
+    def upgrade_policy(self, mission_id: str, event_id: str) -> CommandResult:
+        duplicate = self._duplicate(mission_id, event_id)
+        if duplicate is not None:
+            return duplicate
+        snapshot = self._repository.load(mission_id)
+        if snapshot.world is None:
+            raise RuntimeDomainError("SIMULATOR_NOT_AVAILABLE", "mission has no enterprise world")
+        if snapshot.mission.status is not MissionStatus.WAITING:
+            raise RuntimeDomainError(
+                "POLICY_UPGRADE_NOT_AVAILABLE",
+                f"cannot inject policy from {snapshot.mission.status}",
+            )
+
+        event = DomainEvent(
+            event_id=event_id,
+            event_type="policy.version.changed",
+            payload={
+                "logical_key": "security-policy",
+                "old_artifact_id": "policy-v12",
+                "new_artifact_id": "policy-v13",
+                "old_version": "v12",
+                "new_version": "v13",
+            },
+        )
+        graph_repo = InMemoryGraphRepository()
+        graph_repo.create_snapshot(snapshot.graph)
+        graph = InvalidationService(graph_repo).process_artifact_change(
+            mission_id,
+            event,
+        )
+
+        world = snapshot.world.model_copy(deep=True)
+        world.current_policy_id = "policy-v13"
+        world.artifacts["policy-v13"] = EnterpriseArtifact(
+            artifact_id="policy-v13",
+            artifact_type="SECURITY_POLICY",
+            version="v13",
+            metadata={"pen_test_required": True},
+        )
+        activation = next(
+            item
+            for item in snapshot.commitments
+            if item.event_type == "procurement.activation.window.opened"
+            and item.status is CommitmentStatus.OPEN
+        )
+        cancelled_commitment = CommitmentService.cancel(activation)
+        activation_work = next(
+            item for item in snapshot.work_items
+            if item.work_item_id == activation.work_item_id
+        )
+        cancelled_work = WorkStateMachine.transition(
+            activation_work,
+            WorkStatus.CANCELLED,
+        )
+        security_work = WorkItem(
+            work_item_id=f"{mission_id}:work:security-revalidation",
+            mission_id=mission_id,
+            work_type="SECURITY_REVALIDATION",
+            target_agent="security-agent",
+            input_refs=["policy-v13", "soc2-A31", "vendor-profile-r7"],
+        )
+        mission = MissionStateMachine.transition(
+            snapshot.mission,
+            MissionStatus.REVALIDATING,
+        )
+        result = {
+            "mission_id": mission_id,
+            "status": mission.status.value,
+            "stale_decision_ids": ["D42", "D50"],
+            "preserved_decision_ids": ["D43"],
+        }
+        audit, outbox = self._records(
+            snapshot.mission,
+            event_id,
+            [
+                ("policy.version.changed", event.payload),
+                ("decision.stale", {"decision_id": "D42", "cause_artifact_id": "policy-v12"}),
+                ("decision.stale", {"decision_id": "D50", "cause_artifact_id": "D42"}),
+                ("commitment.cancelled", {"commitment_id": activation.commitment_id}),
+                ("mission.revalidating", {"status": mission.status.value}),
+            ],
+        )
+        committed = self._repository.commit(
+            mission_id,
+            snapshot.mission.revision,
+            RuntimeMutation(
+                mission=mission,
+                world=world,
+                graph=graph,
+                work_upserts=[cancelled_work, security_work],
+                commitment_upserts=[cancelled_commitment],
+                audit_appends=audit,
+                inbox_completion=InboxRecord(
+                    mission_id=mission_id,
+                    message_id=event_id,
+                    message_type="policy.version.changed",
+                    result=result,
+                ),
+                outbox_appends=outbox,
+            ),
+        )
+        return CommandResult(snapshot=committed, result=result)
+
+    def revalidate_affected_branch(
+        self,
+        mission_id: str,
+        request_id: str,
+    ) -> CommandResult:
+        duplicate = self._duplicate(mission_id, request_id)
+        if duplicate is not None:
+            return duplicate
+        snapshot = self._repository.load(mission_id)
+        if snapshot.mission.status is not MissionStatus.REVALIDATING:
+            raise RuntimeDomainError(
+                "REVALIDATION_NOT_AVAILABLE",
+                f"cannot revalidate from {snapshot.mission.status}",
+            )
+        work = next(
+            item for item in snapshot.work_items
+            if item.work_type == "SECURITY_REVALIDATION"
+        )
+        work = WorkStateMachine.transition(work, WorkStatus.DISPATCHED)
+        work = WorkStateMachine.transition(work, WorkStatus.RUNNING)
+        commitment_id = f"{mission_id}:commitment:pen-test"
+        commitment = Commitment(
+            commitment_id=commitment_id,
+            mission_id=mission_id,
+            work_item_id=work.work_item_id,
+            event_type="vendor.document.uploaded",
+            predicate={"vendor_id": "ACME", "document_type": "PEN_TEST"},
+        )
+        work = work.model_copy(update={"commitment_ids": [commitment_id]}, deep=True)
+        work = WorkStateMachine.transition(
+            work,
+            WorkStatus.WAITING,
+            has_open_commitment=True,
+        )
+        mission = MissionStateMachine.transition(snapshot.mission, MissionStatus.WAITING)
+        result = {
+            "mission_id": mission_id,
+            "status": mission.status.value,
+            "execution_mode": "LOCAL_DETERMINISTIC",
+            "missing_evidence": "PEN_TEST",
+        }
+        audit, outbox = self._records(
+            snapshot.mission,
+            request_id,
+            [
+                ("work.dispatched", {"work_item_id": work.work_item_id, "target_agent": "security-agent"}),
+                ("agent.result.accepted", {"outcome": "MISSING_EVIDENCE", "execution_mode": "LOCAL_DETERMINISTIC"}),
+                ("commitment.created", {"commitment_id": commitment_id, "event_type": commitment.event_type}),
+                ("mission.waiting", {"status": mission.status.value, "commitment_id": commitment_id}),
+            ],
+        )
+        committed = self._repository.commit(
+            mission_id,
+            snapshot.mission.revision,
+            RuntimeMutation(
+                mission=mission,
+                work_upserts=[work],
+                commitment_upserts=[commitment],
+                audit_appends=audit,
+                inbox_completion=InboxRecord(
+                    mission_id=mission_id,
+                    message_id=request_id,
+                    message_type="mission.revalidate",
+                    result=result,
+                ),
+                outbox_appends=outbox,
+            ),
+        )
+        return CommandResult(snapshot=committed, result=result)
+
+    def upload_pen_test(self, mission_id: str, event_id: str) -> CommandResult:
+        duplicate = self._duplicate(mission_id, event_id)
+        if duplicate is not None:
+            return duplicate
+        snapshot = self._repository.load(mission_id)
+        if snapshot.world is None:
+            raise RuntimeDomainError("SIMULATOR_NOT_AVAILABLE", "mission has no enterprise world")
+        event = DomainEvent(
+            event_id=event_id,
+            event_type="vendor.document.uploaded",
+            payload={
+                "vendor_id": "ACME",
+                "document_id": "pen-test-P9",
+                "document_type": "PEN_TEST",
+            },
+        )
+        commitment = next(
+            (
+                item for item in snapshot.commitments
+                if CommitmentService.match(item, event)
+            ),
+            None,
+        )
+        if commitment is None:
+            raise RuntimeDomainError(
+                "PEN_TEST_NOT_AWAITED",
+                "no open penetration-test commitment matches this event",
+            )
+        satisfied = CommitmentService.satisfy(commitment, event)
+        security_work = next(
+            item for item in snapshot.work_items
+            if item.work_item_id == commitment.work_item_id
+        )
+        security_work = WorkStateMachine.transition(security_work, WorkStatus.PENDING)
+        security_work = WorkStateMachine.transition(security_work, WorkStatus.DISPATCHED)
+        security_work = WorkStateMachine.transition(security_work, WorkStatus.RUNNING)
+        security_work = WorkStateMachine.transition(security_work, WorkStatus.SUCCEEDED)
+
+        world = snapshot.world.model_copy(deep=True)
+        world.artifacts["pen-test-P9"] = EnterpriseArtifact(
+            artifact_id="pen-test-P9",
+            artifact_type="DOCUMENT",
+            version="P9",
+            metadata={"document_type": "PEN_TEST"},
+        )
+        world.documents.append("pen-test-P9")
+
+        graph = snapshot.graph.model_copy(deep=True)
+        graph.events.append(event)
+        graph.evidences["pen-test-P9"] = EvidenceNode(
+            evidence_id="pen-test-P9",
+            kind="PEN_TEST",
+            revision="P9",
+        )
+        graph = DecisionService.supersede(graph, old_id="D42", new_id="D57", outcome="APPROVED")
+        graph.edges = [
+            edge for edge in graph.edges
+            if not (edge.from_node_id == "policy-v12" and edge.to_node_id == "D57")
+        ]
+        graph.edges.extend(
+            [
+                DependencyEdge(
+                    edge_id="policy-v13-D57",
+                    from_node_id="policy-v13",
+                    to_node_id="D57",
+                    relation_type=RelationType.GOVERNED_BY,
+                ),
+                DependencyEdge(
+                    edge_id="pen-test-D57",
+                    from_node_id="pen-test-P9",
+                    to_node_id="D57",
+                    relation_type=RelationType.SUPPORTED_BY,
+                ),
+            ]
+        )
+        graph = DecisionService.supersede(graph, old_id="D50", new_id="D58", outcome="APPROVED")
+        graph.actions["activate-vendor"].status = ActionStatus.READY
+
+        procurement = WorkItem(
+            work_item_id=f"{mission_id}:work:procurement-resume",
+            mission_id=mission_id,
+            work_type="PROCUREMENT_RESUME",
+            target_agent="procurement-agent",
+            input_refs=["D57", "D43"],
+        )
+        procurement = WorkStateMachine.transition(procurement, WorkStatus.DISPATCHED)
+        procurement = WorkStateMachine.transition(procurement, WorkStatus.RUNNING)
+        procurement = WorkStateMachine.transition(procurement, WorkStatus.SUCCEEDED)
+
+        effect = SideEffectLedger.intent(
+            side_effect_id=f"{mission_id}:effect:activate-vendor",
+            mission_id=mission_id,
+            effect_type="ACTIVATE_VENDOR",
+            idempotency_key=f"activate:{mission_id}:ACME",
+            authorization_decision_id="D58",
+            request={"vendor_id": "ACME"},
+        )
+        effect = SideEffectLedger.begin(effect, graph.decisions["D58"].status)
+        effect = SideEffectLedger.commit(effect, result={"vendor_status": "ACTIVE"})
+        world.vendor.status = VendorStatus.ACTIVE
+        running = MissionStateMachine.transition(snapshot.mission, MissionStatus.RUNNING)
+        mission = MissionStateMachine.transition(running, MissionStatus.COMPLETED)
+        result = {
+            "mission_id": mission_id,
+            "status": mission.status.value,
+            "vendor_status": world.vendor.status.value,
+            "matched_commitment_ids": [commitment.commitment_id],
+        }
+        audit, outbox = self._records(
+            snapshot.mission,
+            event_id,
+            [
+                ("vendor.document.uploaded", event.payload),
+                ("commitment.satisfied", {"commitment_id": commitment.commitment_id, "event_id": event_id}),
+                ("decision.superseded", {"old_decision_id": "D42", "new_decision_id": "D57"}),
+                ("decision.superseded", {"old_decision_id": "D50", "new_decision_id": "D58"}),
+                ("side_effect.committed", {"side_effect_id": effect.side_effect_id, "effect_type": effect.effect_type}),
+                ("mission.completed", {"status": mission.status.value, "vendor_status": "ACTIVE"}),
+            ],
+        )
+        committed = self._repository.commit(
+            mission_id,
+            snapshot.mission.revision,
+            RuntimeMutation(
+                mission=mission,
+                world=world,
+                graph=graph,
+                work_upserts=[security_work, procurement],
+                commitment_upserts=[satisfied],
+                side_effect_upserts=[effect],
+                audit_appends=audit,
+                inbox_completion=InboxRecord(
+                    mission_id=mission_id,
+                    message_id=event_id,
+                    message_type="vendor.document.uploaded",
+                    result=result,
+                ),
+                outbox_appends=outbox,
+            ),
         )
         return CommandResult(snapshot=committed, result=result)
 

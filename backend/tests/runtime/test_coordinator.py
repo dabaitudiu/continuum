@@ -38,6 +38,17 @@ def document_event(
     )
 
 
+def activation_event(mission_id: str, event_id: str) -> RuntimeEvent:
+    return RuntimeEvent(
+        event_id=event_id,
+        event_type="procurement.activation.window.opened",
+        mission_id=mission_id,
+        producer="enterprise-simulator",
+        correlation_id=event_id,
+        payload={"vendor_id": "ACME"},
+    )
+
+
 def waiting_demo() -> tuple[RuntimeCoordinator, str]:
     coordinator = RuntimeCoordinator(InMemoryRuntimeRepository())
     created = coordinator.create_demo("create-1")
@@ -72,7 +83,7 @@ def test_distinct_create_request_gets_distinct_mission_namespace() -> None:
     assert first.snapshot.mission.mission_id != second.snapshot.mission.mission_id
 
 
-def test_start_is_idempotent_and_waits_on_pen_test_commitment() -> None:
+def test_start_is_idempotent_and_waits_on_activation_window() -> None:
     coordinator = RuntimeCoordinator(InMemoryRuntimeRepository())
     created = coordinator.create_demo("create-1")
     mission_id = created.snapshot.mission.mission_id
@@ -88,16 +99,22 @@ def test_start_is_idempotent_and_waits_on_pen_test_commitment() -> None:
     assert len(first.snapshot.commitments) == 1
     commitment = first.snapshot.commitments[0]
     assert commitment.status is CommitmentStatus.OPEN
+    assert commitment.event_type == "procurement.activation.window.opened"
     assert commitment.predicate == {
         "vendor_id": "ACME",
-        "document_type": "PEN_TEST",
     }
     work_by_type = {item.work_type: item for item in first.snapshot.work_items}
     assert work_by_type["VENDOR_INTAKE"].status is WorkStatus.SUCCEEDED
-    assert work_by_type["REVIEW_PEN_TEST"].status is WorkStatus.WAITING
-    assert work_by_type["REVIEW_PEN_TEST"].commitment_ids == [
+    assert work_by_type["SECURITY_BASELINE"].status is WorkStatus.SUCCEEDED
+    assert work_by_type["FINANCIAL_REVIEW"].status is WorkStatus.SUCCEEDED
+    assert work_by_type["PROCUREMENT_BASELINE"].status is WorkStatus.WAITING
+    assert work_by_type["PROCUREMENT_BASELINE"].commitment_ids == [
         commitment.commitment_id
     ]
+    assert not any(
+        item.event_type == "vendor.document.uploaded"
+        for item in first.snapshot.commitments
+    )
 
 
 def test_start_from_noncreated_state_is_rejected_without_mutation() -> None:
@@ -125,7 +142,7 @@ def test_wrong_event_is_recorded_but_does_not_wake_mission() -> None:
     assert next(
         item
         for item in result.snapshot.work_items
-        if item.work_type == "REVIEW_PEN_TEST"
+        if item.work_type == "PROCUREMENT_BASELINE"
     ).status is WorkStatus.WAITING
     assert result.snapshot.audit_events[-1].event_type == "event.ignored"
 
@@ -134,19 +151,19 @@ def test_matching_event_satisfies_and_wakes_exactly_once() -> None:
     coordinator, mission_id = waiting_demo()
 
     first = coordinator.process_event(
-        document_event(mission_id, "evt-pen-1", "PEN_TEST")
+        activation_event(mission_id, "evt-window-1")
     )
     second = coordinator.process_event(
-        document_event(mission_id, "evt-pen-1", "PEN_TEST")
+        activation_event(mission_id, "evt-window-1")
     )
 
     assert first.snapshot.mission.status is MissionStatus.RUNNING
     assert first.snapshot.commitments[0].status is CommitmentStatus.SATISFIED
-    assert first.snapshot.commitments[0].satisfied_by_event_id == "evt-pen-1"
+    assert first.snapshot.commitments[0].satisfied_by_event_id == "evt-window-1"
     review_work = next(
         item
         for item in first.snapshot.work_items
-        if item.work_type == "REVIEW_PEN_TEST"
+        if item.work_type == "PROCUREMENT_BASELINE"
     )
     assert review_work.status is WorkStatus.PENDING
     assert second.duplicate is True
@@ -163,9 +180,7 @@ def test_matching_event_satisfies_and_wakes_exactly_once() -> None:
 def test_audit_sequence_is_contiguous_across_create_start_ignore_and_wake() -> None:
     coordinator, mission_id = waiting_demo()
     coordinator.process_event(document_event(mission_id, "evt-wrong", "SOC2"))
-    final = coordinator.process_event(
-        document_event(mission_id, "evt-pen-1", "PEN_TEST")
-    )
+    final = coordinator.process_event(activation_event(mission_id, "evt-window-1"))
 
     sequences = [event.event_sequence for event in final.snapshot.audit_events]
 
@@ -186,7 +201,7 @@ def test_read_methods_return_isolated_ordered_views() -> None:
 
     assert coordinator.get(mission_id).mission.status is MissionStatus.WAITING
     assert "corrupted" not in coordinator.timeline(mission_id)[0].payload
-    assert coordinator.commitments(mission_id)[0].predicate["document_type"] == "PEN_TEST"
+    assert coordinator.commitments(mission_id)[0].predicate["vendor_id"] == "ACME"
 
 
 def test_sqlite_restart_preserves_waiting_then_wake_flow(tmp_path: Path) -> None:
@@ -201,9 +216,7 @@ def test_sqlite_restart_preserves_waiting_then_wake_flow(tmp_path: Path) -> None
 
     second_repo = SQLiteRuntimeRepository(path)
     second = RuntimeCoordinator(second_repo)
-    woke = second.process_event(
-        document_event(mission_id, "evt-pen-1", "PEN_TEST")
-    )
+    woke = second.process_event(activation_event(mission_id, "evt-window-1"))
 
     assert woke.snapshot.mission.status is MissionStatus.RUNNING
     assert woke.snapshot.commitments[0].status is CommitmentStatus.SATISFIED
@@ -305,14 +318,14 @@ def test_matching_commitment_does_not_clear_independent_mission_blocker() -> Non
     )
 
     result = coordinator.process_event(
-        document_event(mission_id, "evt-pen-1", "PEN_TEST")
+        activation_event(mission_id, "evt-window-1")
     )
 
     assert result.snapshot.mission.status is MissionStatus.BLOCKED
     assert result.snapshot.commitments[0].status is CommitmentStatus.SATISFIED
     assert result.snapshot.audit_events[-1].event_type == "commitment.satisfied"
     assert not any(
-        event.causation_id == "evt-pen-1"
+        event.causation_id == "evt-window-1"
         and event.event_type == "mission.resumed"
         for event in result.snapshot.audit_events
     )

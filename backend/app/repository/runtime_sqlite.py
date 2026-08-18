@@ -22,6 +22,7 @@ from app.repository.runtime_validation import (
 from app.runtime.entities import (
     AuditEvent,
     Commitment,
+    EnterpriseWorld,
     InboxRecord,
     Mission,
     OutboxMessage,
@@ -106,6 +107,13 @@ CREATE TABLE IF NOT EXISTS graph_state (
     metadata TEXT NOT NULL,
     FOREIGN KEY (mission_id) REFERENCES missions(mission_id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS simulator_world (
+    mission_id TEXT PRIMARY KEY,
+    current_policy_id TEXT NOT NULL,
+    vendor_status TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    FOREIGN KEY (mission_id) REFERENCES missions(mission_id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS world_artifacts (
     mission_id TEXT NOT NULL,
     artifact_id TEXT NOT NULL,
@@ -177,6 +185,7 @@ CHILD_TABLES = (
     "outbox_messages",
     "audit_events",
     "graph_state",
+    "simulator_world",
     "world_artifacts",
     "evidence_nodes",
     "decisions",
@@ -352,6 +361,7 @@ class SQLiteRuntimeRepository:
         return RuntimeSnapshot(
             mission=Mission.model_validate_json(mission_row[0]),
             graph=graph,
+            world=self._load_world(mission_id),
             work_items=self._load_list("work_items", mission_id, WorkItem),
             commitments=self._load_list(
                 "commitments",
@@ -402,6 +412,16 @@ class SQLiteRuntimeRepository:
 
     def _write_children(self, snapshot: RuntimeSnapshot) -> None:
         mission_id = snapshot.mission.mission_id
+        if snapshot.world is not None:
+            self._connection.execute(
+                "INSERT INTO simulator_world VALUES (?, ?, ?, ?)",
+                (
+                    mission_id,
+                    snapshot.world.current_policy_id,
+                    snapshot.world.vendor.status.value,
+                    snapshot.world.model_dump_json(),
+                ),
+            )
         self._insert_positioned(
             "work_items",
             mission_id,
@@ -517,6 +537,13 @@ class SQLiteRuntimeRepository:
             snapshot.graph.dispatches,
             lambda item: (item.dispatch_id,),
         )
+
+    def _load_world(self, mission_id: str) -> EnterpriseWorld | None:
+        row = self._connection.execute(
+            "SELECT payload FROM simulator_world WHERE mission_id = ?",
+            (mission_id,),
+        ).fetchone()
+        return None if row is None else EnterpriseWorld.model_validate_json(row[0])
 
     def _insert_positioned(
         self,

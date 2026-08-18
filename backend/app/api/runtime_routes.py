@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, ValidationError
 from app.runtime.coordinator import CommandResult, RuntimeCoordinator
 from app.runtime.entities import RuntimeEvent, RuntimeSnapshot
 from app.runtime.errors import RuntimeDomainError
+from app.api.read_models import control_read_model
 
 
 class CreateMissionRequest(BaseModel):
@@ -79,6 +80,10 @@ def build_runtime_router(coordinator: RuntimeCoordinator) -> APIRouter:
             commitment.model_dump(mode="json")
             for commitment in coordinator.commitments(mission_id)
         ]
+
+    @router.get("/api/missions/{mission_id}/control")
+    def get_control(mission_id: str) -> dict[str, Any]:
+        return control_read_model(coordinator.get(mission_id))
 
     @router.post("/api/events")
     def process_event(

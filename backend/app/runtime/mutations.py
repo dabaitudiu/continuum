@@ -4,6 +4,7 @@ from app.domain.models import GraphSnapshot
 from app.runtime.entities import (
     AuditEvent,
     Commitment,
+    EnterpriseWorld,
     InboxRecord,
     Mission,
     OutboxMessage,
@@ -14,6 +15,7 @@ from app.runtime.entities import (
 
 class RuntimeMutation(BaseModel):
     mission: Mission
+    world: EnterpriseWorld | None = None
     work_upserts: list[WorkItem] = Field(default_factory=list)
     commitment_upserts: list[Commitment] = Field(default_factory=list)
     side_effect_upserts: list[SideEffectRecord] = Field(default_factory=list)

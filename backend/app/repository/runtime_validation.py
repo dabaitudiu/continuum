@@ -61,6 +61,9 @@ def build_committed_snapshot(
         lambda item: item.side_effect_id,
     )
     _validate_side_effect_idempotency(result.side_effects)
+    if mutation.world is not None:
+        _require_mission(mutation.world.mission_id, mission_id)
+        result.world = mutation.world.model_copy(deep=True)
     if mutation.graph is not None:
         _require_mission(mutation.graph.mission_id, mission_id)
         result.graph = mutation.graph.model_copy(deep=True)
@@ -77,6 +80,8 @@ def build_committed_snapshot(
 def validate_initial_snapshot(snapshot: RuntimeSnapshot) -> None:
     mission_id = snapshot.mission.mission_id
     _require_mission(snapshot.graph.mission_id, mission_id)
+    if snapshot.world is not None:
+        _require_mission(snapshot.world.mission_id, mission_id)
     for entity in (
         *snapshot.work_items,
         *snapshot.commitments,
@@ -137,6 +142,8 @@ def _validate_entity_missions(
     mission_id: str,
     mutation: RuntimeMutation,
 ) -> None:
+    if mutation.world is not None:
+        _require_mission(mutation.world.mission_id, mission_id)
     for entity in (
         *mutation.work_upserts,
         *mutation.commitment_upserts,
