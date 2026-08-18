@@ -1,0 +1,250 @@
+from pathlib import Path
+
+import pytest
+
+from app.domain.models import GraphSnapshot
+from app.runtime.entities import (
+    AuditEvent,
+    InboxRecord,
+    Mission,
+    MissionStatus,
+    OutboxMessage,
+    RuntimeSnapshot,
+    SideEffectRecord,
+)
+from app.runtime.errors import RuntimeDomainError
+from app.runtime.mutations import RuntimeMutation
+
+
+def runtime_snapshot(mission_id: str = "m-1") -> RuntimeSnapshot:
+    return RuntimeSnapshot(
+        mission=Mission(mission_id=mission_id),
+        graph=GraphSnapshot(mission_id=mission_id),
+    )
+
+
+def transition_mutation(
+    snapshot: RuntimeSnapshot,
+    *,
+    message_id: str,
+    status: MissionStatus = MissionStatus.RUNNING,
+    side_effects: list[SideEffectRecord] | None = None,
+    event_sequence: int | None = None,
+) -> RuntimeMutation:
+    sequence = event_sequence or snapshot.mission.event_sequence + 1
+    mission = snapshot.mission.model_copy(update={"status": status}, deep=True)
+    return RuntimeMutation(
+        mission=mission,
+        side_effect_upserts=side_effects or [],
+        audit_appends=[
+            AuditEvent(
+                audit_event_id=f"audit:{message_id}",
+                mission_id=mission.mission_id,
+                event_sequence=sequence,
+                event_type="mission.status.changed",
+                payload={"status": status.value},
+                correlation_id=message_id,
+                causation_id=message_id,
+            )
+        ],
+        inbox_completion=InboxRecord(
+            mission_id=mission.mission_id,
+            message_id=message_id,
+            message_type="command",
+            result={"status": status.value},
+        ),
+        outbox_appends=[
+            OutboxMessage(
+                outbox_message_id=f"outbox:{message_id}",
+                mission_id=mission.mission_id,
+                event_type="mission.status.changed",
+                payload={"status": status.value},
+                correlation_id=message_id,
+                causation_id=message_id,
+            )
+        ],
+    )
+
+
+def activation_effect(
+    *,
+    side_effect_id: str,
+    idempotency_key: str = "activate:ACME",
+) -> SideEffectRecord:
+    return SideEffectRecord(
+        side_effect_id=side_effect_id,
+        mission_id="m-1",
+        effect_type="ACTIVATE_VENDOR",
+        idempotency_key=idempotency_key,
+        authorization_decision_id="D50",
+    )
+
+
+class RuntimeRepositoryContract:
+    def make_repo(self, tmp_path: Path):  # type: ignore[no-untyped-def]
+        raise NotImplementedError
+
+    def test_create_and_load_are_deep_copy_isolated(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        original = runtime_snapshot()
+
+        repo.create(original)
+        original.mission.status = MissionStatus.CANCELLED
+        first = repo.load("m-1")
+        first.mission.status = MissionStatus.FAILED
+        second = repo.load("m-1")
+
+        assert second.mission.status is MissionStatus.CREATED
+
+    def test_duplicate_create_is_rejected(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.create(runtime_snapshot())
+
+        assert raised.value.code == "MISSION_ALREADY_EXISTS"
+
+    def test_unknown_mission_is_rejected(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.load("missing")
+
+        assert raised.value.code == "MISSION_NOT_FOUND"
+
+    def test_commit_updates_state_revision_audit_inbox_and_outbox_atomically(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        initial = repo.load("m-1")
+
+        committed = repo.commit(
+            "m-1",
+            initial.mission.revision,
+            transition_mutation(initial, message_id="request-1"),
+        )
+
+        assert committed.mission.status is MissionStatus.RUNNING
+        assert committed.mission.revision == 1
+        assert committed.mission.event_sequence == 1
+        assert [event.event_sequence for event in committed.audit_events] == [1]
+        assert [message.event_type for message in committed.outbox] == [
+            "mission.status.changed"
+        ]
+        inbox = repo.find_inbox("m-1", "request-1")
+        assert inbox is not None
+        assert inbox.result == {"status": "RUNNING"}
+
+    def test_stale_revision_cannot_overwrite_committed_state(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        base = repo.load("m-1")
+        repo.commit(
+            "m-1",
+            base.mission.revision,
+            transition_mutation(base, message_id="request-1"),
+        )
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit(
+                "m-1",
+                base.mission.revision,
+                transition_mutation(base, message_id="request-2"),
+            )
+
+        assert raised.value.code == "REVISION_CONFLICT"
+        assert repo.load("m-1").mission.status is MissionStatus.RUNNING
+
+    def test_duplicate_inbox_message_rolls_back_every_change(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        first = repo.commit(
+            "m-1",
+            0,
+            transition_mutation(repo.load("m-1"), message_id="request-1"),
+        )
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit(
+                "m-1",
+                first.mission.revision,
+                transition_mutation(
+                    first,
+                    message_id="request-1",
+                    status=MissionStatus.WAITING,
+                ),
+            )
+
+        assert raised.value.code == "MESSAGE_ALREADY_PROCESSED"
+        assert repo.load("m-1") == first
+
+    def test_duplicate_side_effect_idempotency_rolls_back_every_change(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        before = repo.load("m-1")
+        mutation = transition_mutation(
+            before,
+            message_id="request-1",
+            side_effects=[
+                activation_effect(side_effect_id="effect-1"),
+                activation_effect(side_effect_id="effect-2"),
+            ],
+        )
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit("m-1", 0, mutation)
+
+        assert raised.value.code == "SIDE_EFFECT_IDEMPOTENCY_CONFLICT"
+        assert repo.load("m-1") == before
+        assert repo.find_inbox("m-1", "request-1") is None
+
+    def test_noncontiguous_audit_sequence_is_rejected_without_mutation(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        before = repo.load("m-1")
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit(
+                "m-1",
+                0,
+                transition_mutation(
+                    before,
+                    message_id="request-1",
+                    event_sequence=2,
+                ),
+            )
+
+        assert raised.value.code == "AUDIT_SEQUENCE_CONFLICT"
+        assert repo.load("m-1") == before
+
+    def test_find_inbox_returns_isolated_copy(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        repo.commit(
+            "m-1",
+            0,
+            transition_mutation(repo.load("m-1"), message_id="request-1"),
+        )
+
+        first = repo.find_inbox("m-1", "request-1")
+        assert first is not None
+        first.result["status"] = "CORRUPTED"
+
+        second = repo.find_inbox("m-1", "request-1")
+        assert second is not None
+        assert second.result == {"status": "RUNNING"}
