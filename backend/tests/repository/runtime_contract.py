@@ -115,6 +115,34 @@ class RuntimeRepositoryContract:
 
         assert raised.value.code == "MISSION_NOT_FOUND"
 
+    def test_list_recent_is_ordered_limited_and_copy_isolated(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        timestamps = [
+            datetime(2026, 8, 18, 8, 0, tzinfo=UTC),
+            datetime(2026, 8, 18, 10, 0, tzinfo=UTC),
+            datetime(2026, 8, 18, 9, 0, tzinfo=UTC),
+        ]
+        for mission_id, updated_at in zip(
+            ("m-oldest", "m-newest", "m-middle"),
+            timestamps,
+            strict=True,
+        ):
+            snapshot = runtime_snapshot(mission_id)
+            snapshot.mission.updated_at = updated_at
+            repo.create(snapshot)
+
+        recent = repo.list_recent(2)
+        recent[0].mission.status = MissionStatus.FAILED
+
+        assert [item.mission.mission_id for item in recent] == [
+            "m-newest",
+            "m-middle",
+        ]
+        assert repo.load("m-newest").mission.status is MissionStatus.CREATED
+
     def test_find_inbox_rejects_unknown_mission(self, tmp_path: Path) -> None:
         repo = self.make_repo(tmp_path)
 

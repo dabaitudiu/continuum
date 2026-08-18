@@ -14,6 +14,7 @@ import { DecisionGraph } from './components/DecisionGraph'
 import type {
   ContinuumApi,
   MissionControlReadModel,
+  MissionSummary,
   NextAction,
   RouteCheckpoint,
 } from './types'
@@ -88,8 +89,10 @@ const phaseCopy = {
 export function App({ api }: { api: ContinuumApi }) {
   const [control, setControl] = useState<MissionControlReadModel | null>(null)
   const [busy, setBusy] = useState(false)
+  const [historyBusy, setHistoryBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'route' | 'graph'>('route')
+  const [view, setView] = useState<'route' | 'graph' | 'missions'>('route')
+  const [missions, setMissions] = useState<MissionSummary[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const initialized = useRef(false)
 
@@ -171,6 +174,39 @@ export function App({ api }: { api: ContinuumApi }) {
     }
   }
 
+  const openHistory = async () => {
+    setView('missions')
+    setHistoryBusy(true)
+    setError(null)
+    try {
+      setMissions(await api.listMissions(20))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to load mission history')
+    } finally {
+      setHistoryBusy(false)
+    }
+  }
+
+  const openMission = async (missionId: string) => {
+    if (busy || missionId === control?.mission.mission_id) {
+      setView('route')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const restored = await api.getControl(missionId)
+      rememberMission(missionId)
+      setControl(restored)
+      setSelectedId(null)
+      setView('route')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to open the mission')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (!control) {
     return (
       <main className="loading-state" aria-busy={busy}>
@@ -193,6 +229,7 @@ export function App({ api }: { api: ContinuumApi }) {
         <nav aria-label="Mission views">
           <button className={view === 'route' ? 'is-active' : ''} onClick={() => setView('route')}>Mission route</button>
           <button className={view === 'graph' ? 'is-active' : ''} onClick={() => setView('graph')}>Decision graph</button>
+          <button className={view === 'missions' ? 'is-active' : ''} onClick={() => void openHistory()}>Mission history</button>
         </nav>
         <div className="mode-disclosure">
           <i />
@@ -223,7 +260,14 @@ export function App({ api }: { api: ContinuumApi }) {
       {error ? <div className="error-banner" role="alert"><AlertTriangle />{error}<button onClick={() => setError(null)}>Dismiss</button></div> : null}
       <div className="announcement" aria-live="polite">{phaseLabel}: {phaseDescription}</div>
 
-      {view === 'route' ? (
+      {view === 'missions' ? (
+        <MissionHistory
+          activeMissionId={control.mission.mission_id}
+          busy={historyBusy}
+          missions={missions}
+          onOpen={openMission}
+        />
+      ) : view === 'route' ? (
         <div className="route-workspace">
           <section className="route-panel" aria-label="Semantic mission route">
             <div className="route-caption"><span>SEMANTIC ROUTE</span><small>Current authorization path · click any checkpoint for provenance</small></div>
@@ -254,8 +298,53 @@ export function App({ api }: { api: ContinuumApi }) {
         </section>
       )}
 
-      <MissionTimeline control={control} />
+      {view !== 'missions' ? <MissionTimeline control={control} /> : null}
     </main>
+  )
+}
+
+function MissionHistory({
+  activeMissionId,
+  busy,
+  missions,
+  onOpen,
+}: {
+  activeMissionId: string
+  busy: boolean
+  missions: MissionSummary[]
+  onOpen(missionId: string): void
+}) {
+  return (
+    <section className="mission-history" aria-label="Recent missions" aria-busy={busy}>
+      <header>
+        <div>
+          <p className="eyebrow">DURABLE RUNTIME / RECOVERY INDEX</p>
+          <h2>Recent missions</h2>
+        </div>
+        <p>Open any preserved Mission namespace and continue from its exact semantic state.</p>
+      </header>
+      <div className="mission-history-table" role="table" aria-label="Mission history">
+        <div className="mission-history-row mission-history-columns" role="row">
+          <span>MISSION</span><span>STATUS</span><span>UPDATED</span><span>COMMITMENTS</span><span />
+        </div>
+        {missions.map((mission) => {
+          const isActive = mission.mission_id === activeMissionId
+          return (
+            <div className={`mission-history-row ${isActive ? 'is-current' : ''}`} role="row" key={mission.mission_id}>
+              <div><code>{mission.mission_id}</code><small>{mission.mission_type} · {mission.subject_id}</small></div>
+              <span className={`mission-status status-${mission.status.toLowerCase()}`}>{mission.status}</span>
+              <time dateTime={mission.updated_at}>{new Date(mission.updated_at).toLocaleString('en-GB')}</time>
+              <span>{mission.counts.open_commitments} open</span>
+              <button type="button" onClick={() => onOpen(mission.mission_id)} aria-label={`Open mission ${mission.mission_id}`}>
+                {isActive ? 'Current' : 'Open mission'} <ArrowRight aria-hidden="true" />
+              </button>
+            </div>
+          )
+        })}
+        {busy ? <p className="history-empty">Loading durable missions…</p> : null}
+        {!busy && missions.length === 0 ? <p className="history-empty">No durable missions found.</p> : null}
+      </div>
+    </section>
   )
 }
 

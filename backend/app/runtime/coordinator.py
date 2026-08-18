@@ -96,6 +96,9 @@ class RuntimeCoordinator:
             result=seeded.inbox[0].result,
         )
 
+    def list_recent(self, limit: int) -> list[RuntimeSnapshot]:
+        return self._repository.list_recent(limit)
+
     def start(self, mission_id: str, request_id: str) -> CommandResult:
         duplicate = self._duplicate(mission_id, request_id)
         if duplicate is not None:

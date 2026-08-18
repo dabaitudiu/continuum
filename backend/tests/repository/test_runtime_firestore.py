@@ -15,8 +15,13 @@ from tests.repository.runtime_contract import (
 
 
 class FakeDocumentSnapshot:
-    def __init__(self, data: dict[str, Any] | None) -> None:
+    def __init__(
+        self,
+        data: dict[str, Any] | None,
+        document_id: str = "",
+    ) -> None:
         self.exists = data is not None
+        self.id = document_id
         self._data = deepcopy(data)
 
     def to_dict(self) -> dict[str, Any] | None:
@@ -39,6 +44,37 @@ class FakeCollectionReference:
 
     def document(self, document_id: str) -> FakeDocumentReference:
         return FakeDocumentReference(self._client, f"{self.path}/{document_id}")
+
+    def order_by(self, field: str, *, direction: Any) -> "FakeQuery":
+        return FakeQuery(self._client, self.path, field)
+
+
+class FakeQuery:
+    def __init__(self, client: "FakeFirestoreClient", path: str, field: str) -> None:
+        self._client = client
+        self._path = path
+        self._field = field
+        self._limit = 20
+
+    def limit(self, value: int) -> "FakeQuery":
+        self._limit = value
+        return self
+
+    def stream(self) -> list[FakeDocumentSnapshot]:
+        prefix = f"{self._path}/"
+        documents = [
+            (path.removeprefix(prefix), data)
+            for path, data in self._client._documents.items()
+            if path.startswith(prefix) and "/" not in path.removeprefix(prefix)
+        ]
+        documents.sort(
+            key=lambda item: (item[1][self._field], item[0]),
+            reverse=True,
+        )
+        return [
+            FakeDocumentSnapshot(data, document_id)
+            for document_id, data in documents[:self._limit]
+        ]
 
 
 class FakeTransaction:

@@ -10,6 +10,8 @@ class RuntimeRepository(Protocol):
 
     def load(self, mission_id: str) -> RuntimeSnapshot: ...
 
+    def list_recent(self, limit: int) -> list[RuntimeSnapshot]: ...
+
     def find_inbox(
         self,
         mission_id: str,

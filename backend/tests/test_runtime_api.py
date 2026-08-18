@@ -86,6 +86,42 @@ def test_create_start_read_and_wake_runtime_mission(client: TestClient) -> None:
     assert sequences == list(range(1, len(sequences) + 1))
 
 
+def test_list_recent_missions_returns_resumable_summaries(
+    client: TestClient,
+) -> None:
+    first = create_mission(client, "create-first")
+    second = create_mission(client, "create-second")
+    assert start_mission(client, first, "start-first").status_code == 200
+
+    response = client.get("/api/missions", params={"limit": 1})
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "mission_id": first,
+            "mission_type": "VENDOR_ONBOARDING",
+            "subject_id": "ACME",
+            "status": "WAITING",
+            "revision": 1,
+            "event_sequence": 3,
+            "created_at": response.json()[0]["created_at"],
+            "updated_at": response.json()[0]["updated_at"],
+            "counts": {
+                "work_items": 4,
+                "open_commitments": 1,
+                "side_effects": 0,
+            },
+        }
+    ]
+    assert second != first
+
+
+def test_list_recent_missions_validates_limit(client: TestClient) -> None:
+    response = client.get("/api/missions", params={"limit": 0})
+
+    assert response.status_code == 422
+
+
 def test_duplicate_create_and_start_return_success_with_duplicate_flag(
     client: TestClient,
 ) -> None:

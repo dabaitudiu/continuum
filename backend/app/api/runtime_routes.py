@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Query
 from pydantic import BaseModel, Field, ValidationError
 
 from app.runtime.coordinator import CommandResult, RuntimeCoordinator
@@ -62,6 +62,15 @@ def build_runtime_router(coordinator: RuntimeCoordinator) -> APIRouter:
         return _command_response(
             coordinator.start(mission_id, request.request_id)
         )
+
+    @router.get("/api/missions")
+    def list_missions(
+        limit: Annotated[int, Query(ge=1, le=50)] = 20,
+    ) -> list[dict[str, Any]]:
+        return [
+            _mission_summary(snapshot)
+            for snapshot in coordinator.list_recent(limit)
+        ]
 
     @router.get("/api/missions/{mission_id}")
     def get_mission(mission_id: str) -> dict[str, Any]:

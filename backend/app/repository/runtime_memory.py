@@ -32,6 +32,18 @@ class InMemoryRuntimeRepository:
         with self._lock:
             return self._require(mission_id).model_copy(deep=True)
 
+    def list_recent(self, limit: int) -> list[RuntimeSnapshot]:
+        with self._lock:
+            recent = sorted(
+                self._snapshots.values(),
+                key=lambda snapshot: (
+                    snapshot.mission.updated_at,
+                    snapshot.mission.mission_id,
+                ),
+                reverse=True,
+            )[:limit]
+            return [snapshot.model_copy(deep=True) for snapshot in recent]
+
     def find_inbox(
         self,
         mission_id: str,

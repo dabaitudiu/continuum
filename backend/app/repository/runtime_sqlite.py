@@ -238,6 +238,26 @@ class SQLiteRuntimeRepository:
         with self._lock:
             return self._load_locked(mission_id)
 
+    def list_recent(self, limit: int) -> list[RuntimeSnapshot]:
+        with self._lock:
+            mission_rows = self._connection.execute(
+                "SELECT mission_id, payload FROM missions"
+            ).fetchall()
+            recent_ids = [
+                mission_id
+                for _, mission_id in sorted(
+                    (
+                        (
+                            Mission.model_validate_json(row["payload"]).updated_at,
+                            str(row["mission_id"]),
+                        )
+                        for row in mission_rows
+                    ),
+                    reverse=True,
+                )[:limit]
+            ]
+            return [self._load_locked(mission_id) for mission_id in recent_ids]
+
     def find_inbox(
         self,
         mission_id: str,

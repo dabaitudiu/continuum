@@ -4,7 +4,9 @@ import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from './App'
-import type { ContinuumApi, MissionControlReadModel, ScenarioPhase } from './types'
+import type { ContinuumApi, MissionControlReadModel, MissionSummary, ScenarioPhase } from './types'
+
+const noMissions = vi.fn().mockResolvedValue([])
 
 function control(phase: ScenarioPhase): MissionControlReadModel {
   const drifted = ['POLICY_DRIFT', 'MISSING_EVIDENCE', 'COMPLETED'].includes(phase)
@@ -54,6 +56,7 @@ describe('App', () => {
 
   it('operates the canonical story through completion', async () => {
     const api: ContinuumApi = {
+      listMissions: noMissions,
       createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
       start: vi.fn().mockResolvedValue({}),
       getControl: vi.fn()
@@ -90,6 +93,7 @@ describe('App', () => {
   it('restores the mission encoded in the browser route without creating another', async () => {
     history.replaceState({}, '', '/missions/demo-existing')
     const api: ContinuumApi = {
+      listMissions: noMissions,
       createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-new' }),
       start: vi.fn(),
       getControl: vi.fn().mockResolvedValue({
@@ -116,6 +120,7 @@ describe('App', () => {
     const stored = control('BASELINE_WAITING')
     stored.mission.mission_id = 'demo-stored'
     const api: ContinuumApi = {
+      listMissions: noMissions,
       createDemo: vi.fn(),
       start: vi.fn(),
       getControl: vi.fn().mockResolvedValue(stored),
@@ -133,6 +138,7 @@ describe('App', () => {
 
   it('creates only one mission under React StrictMode and records its route', async () => {
     const api: ContinuumApi = {
+      listMissions: noMissions,
       createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-strict' }),
       start: vi.fn(),
       getControl: vi.fn().mockResolvedValue({
@@ -159,6 +165,7 @@ describe('App', () => {
       code: 'MISSION_NOT_FOUND',
     })
     const api: ContinuumApi = {
+      listMissions: noMissions,
       createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-recovered' }),
       start: vi.fn(),
       getControl: vi.fn()
@@ -178,5 +185,58 @@ describe('App', () => {
     expect(api.createDemo).toHaveBeenCalledTimes(1)
     expect(location.pathname).toBe('/missions/demo-recovered')
     expect(localStorage.getItem('continuum.activeMissionId')).toBe('demo-recovered')
+  })
+
+  it('opens a recent mission from mission history', async () => {
+    history.replaceState({}, '', '/missions/demo-current')
+    const current = control('CREATED')
+    current.mission.mission_id = 'demo-current'
+    const completed = control('COMPLETED')
+    completed.mission.mission_id = 'demo-completed'
+    const summaries: MissionSummary[] = [
+      {
+        mission_id: 'demo-current',
+        mission_type: 'VENDOR_ONBOARDING',
+        subject_id: 'ACME',
+        status: 'CREATED',
+        revision: 0,
+        event_sequence: 1,
+        created_at: '2026-08-18T01:00:00Z',
+        updated_at: '2026-08-18T01:00:00Z',
+        counts: { work_items: 1, open_commitments: 0, side_effects: 0 },
+      },
+      {
+        mission_id: 'demo-completed',
+        mission_type: 'VENDOR_ONBOARDING',
+        subject_id: 'ACME',
+        status: 'COMPLETED',
+        revision: 4,
+        event_sequence: 18,
+        created_at: '2026-08-18T00:00:00Z',
+        updated_at: '2026-08-18T00:30:00Z',
+        counts: { work_items: 6, open_commitments: 0, side_effects: 1 },
+      },
+    ]
+    const api: ContinuumApi = {
+      listMissions: vi.fn().mockResolvedValue(summaries),
+      createDemo: vi.fn(),
+      start: vi.fn(),
+      getControl: vi.fn()
+        .mockResolvedValueOnce(current)
+        .mockResolvedValueOnce(completed),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Mission history' }))
+
+    expect(await screen.findByText('demo-completed')).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Open mission demo-completed' }))
+
+    expect(await screen.findByRole('button', { name: 'Run scenario again' })).toBeVisible()
+    expect(location.pathname).toBe('/missions/demo-completed')
+    expect(localStorage.getItem('continuum.activeMissionId')).toBe('demo-completed')
   })
 })

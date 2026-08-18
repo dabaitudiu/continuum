@@ -38,6 +38,9 @@ class PublishingRuntimeRepository:
     def load(self, mission_id: str) -> RuntimeSnapshot:
         return self._repository.load(mission_id)
 
+    def list_recent(self, limit: int) -> list[RuntimeSnapshot]:
+        return self._repository.list_recent(limit)
+
     def find_inbox(
         self,
         mission_id: str,

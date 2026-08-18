@@ -150,7 +150,24 @@ export interface MissionControlReadModel {
   graph: GraphReadModel
 }
 
+export interface MissionSummary {
+  mission_id: string
+  mission_type: string
+  subject_id: string
+  status: string
+  revision: number
+  event_sequence: number
+  created_at: string
+  updated_at: string
+  counts: {
+    work_items: number
+    open_commitments: number
+    side_effects: number
+  }
+}
+
 export interface ContinuumApi {
+  listMissions(limit?: number): Promise<MissionSummary[]>
   createDemo(requestId: string): Promise<{ mission_id: string }>
   start(missionId: string, requestId: string): Promise<unknown>
   getControl(missionId: string): Promise<MissionControlReadModel>

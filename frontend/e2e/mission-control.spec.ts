@@ -34,5 +34,17 @@ test('canonical mission resumes selectively and activates once', async ({ page }
   await expect(page.getByTestId('route-D43')).toContainText('PRESERVED')
   await expect(page.getByTestId('route-activate-vendor')).toContainText('COMMITTED')
   await expect(page.getByText('Vendor activation committed exactly once')).toBeVisible()
+  const completedMissionUrl = page.url()
+  const completedMissionId = new URL(completedMissionUrl).pathname.split('/').at(-1)!
+
+  await page.getByRole('button', { name: 'Reset' }).click()
+  await expect(page.getByRole('button', { name: 'Start mission' })).toBeVisible()
+  await expect(page).not.toHaveURL(completedMissionUrl)
+  await page.getByRole('button', { name: 'Mission history' }).click()
+  await expect(page.getByText(completedMissionId)).toBeVisible()
+  await page.getByRole('button', { name: `Open mission ${completedMissionId}` }).click()
+
+  await expect(page).toHaveURL(completedMissionUrl)
+  await expect(page.getByRole('button', { name: 'Run scenario again' })).toBeVisible()
   expect(consoleProblems).toEqual([])
 })

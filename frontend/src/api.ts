@@ -1,4 +1,4 @@
-import type { ContinuumApi, GraphReadModel, MissionControlReadModel } from './types'
+import type { ContinuumApi, GraphReadModel, MissionControlReadModel, MissionSummary } from './types'
 
 class ContinuumApiError extends Error {
   constructor(
@@ -26,6 +26,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const httpApi: ContinuumApi = {
+  listMissions: (limit = 20) => request<MissionSummary[]>(`/api/missions?limit=${limit}`),
   createDemo: (requestId) => request('/api/missions/demo', {
     method: 'POST',
     body: JSON.stringify({ request_id: requestId }),

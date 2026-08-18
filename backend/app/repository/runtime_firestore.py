@@ -87,6 +87,18 @@ class FirestoreRuntimeRepository:
 
         return self._transaction_runner(load_in_transaction).model_copy(deep=True)
 
+    def list_recent(self, limit: int) -> list[RuntimeSnapshot]:
+        documents = (
+            self._missions
+            .order_by("updated_at", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream()
+        )
+        return [
+            _snapshot_from_document(document.id, document).model_copy(deep=True)
+            for document in documents
+        ]
+
     def find_inbox(
         self,
         mission_id: str,

@@ -79,3 +79,19 @@ def test_initial_outbox_is_published_after_create() -> None:
     repository.create(snapshot)
 
     assert publisher.published == ["outbox:create-1"]
+
+
+def test_list_recent_delegates_without_publishing() -> None:
+    underlying = InMemoryRuntimeRepository()
+    publisher = RecordingPublisher()
+    repository = PublishingRuntimeRepository(
+        underlying,
+        OutboxRelay(underlying, publisher),
+    )
+    repository.create(runtime_snapshot("m-1"))
+    repository.create(runtime_snapshot("m-2"))
+
+    recent = repository.list_recent(1)
+
+    assert [item.mission.mission_id for item in recent] == ["m-2"]
+    assert publisher.published == []
