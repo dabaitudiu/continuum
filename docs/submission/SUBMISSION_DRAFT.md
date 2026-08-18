@@ -14,6 +14,10 @@ Continuum records why each consequential Decision was valid: the exact policy, e
 
 The demo onboards Acme Analytics. Policy v12 initially authorizes the route. When v13 adds a penetration-test requirement, Security decision D42 becomes stale, downstream Procurement decision D50 becomes stale, independent financial decision D43 remains valid, and activation is blocked. A durable Commitment waits for the missing document. When the document event arrives, fresh Decisions D57 and D58 supersede the stale Decisions and activation commits exactly once.
 
+![Mission Control showing D42 provenance after policy drift](assets/continuum-policy-drift-provenance.png)
+
+The screenshot uses the credential-free deterministic adapter for reproducible local evidence. The final hosted recording must show the same state with the utility rail reporting `GOOGLE ADK · GEMINI`.
+
 ## How it is built
 
 - React Mission Control for route, Decision Graph, causal explanation, Commitment, event history, and Mission recovery views.

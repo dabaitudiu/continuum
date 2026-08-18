@@ -371,19 +371,50 @@ function RouteLegend() {
 
 function Inspector({ control, selected }: { control: MissionControlReadModel; selected?: RouteCheckpoint }) {
   const penWait = control.commitments.find((item) => item.status === 'OPEN' && item.event_type === 'vendor.document.uploaded')
+  const dependencies = useMemo(() => {
+    if (!selected) return []
+    const nodes = new Map(control.graph.nodes.map((node) => [node.id, node]))
+    return control.graph.edges
+      .filter((edge) => edge.to_node_id === selected.id)
+      .map((edge) => ({ edge, node: nodes.get(edge.from_node_id) }))
+      .filter((item) => item.node !== undefined)
+  }, [control.graph.edges, control.graph.nodes, selected])
   const content = useMemo(() => {
-    if (selected) return { title: selected.label, body: `Checkpoint ${selected.id} is ${selected.preserved ? 'VALID and preserved' : selected.status}.`, reason: selected.preserved ? 'No dependency path reaches this decision from Policy v12.' : 'State is derived from the canonical dependency graph.' }
+    if (selected) {
+      const cause = control.graph.causes[selected.id]
+      return {
+        title: selected.label,
+        body: `Checkpoint ${selected.id} is ${selected.preserved ? 'VALID and preserved' : selected.status}.`,
+        reason: selected.preserved
+          ? 'Its recorded inputs have no dependency path from changed Policy v12, so the completed work is reused.'
+          : cause
+            ? `Invalidation propagated from ${cause}; the direct authorization inputs are recorded below.`
+            : 'Its direct authorization inputs are recorded in the canonical dependency graph below.',
+      }
+    }
     if (control.scenario_phase === 'POLICY_DRIFT') return { title: 'Why this stopped', body: 'Policy v13 requires penetration-test evidence for AI vendors handling customer PII.', reason: 'D42 became STALE. D50 inherited that invalidation. D43 has no policy dependency and remains VALID.' }
     if (control.scenario_phase === 'MISSING_EVIDENCE') return { title: 'Current commitment', body: 'Security is waiting for PEN_TEST evidence.', reason: 'The exact external event below will wake only the linked Security work.' }
     if (control.scenario_phase === 'COMPLETED') return { title: 'Fresh authorization', body: 'D57 superseded D42 and D58 superseded D50.', reason: 'ActivateVendor was committed once under D58; Acme Analytics is ACTIVE.' }
     return { title: 'Semantic resume', body: 'Continuum remembers why each decision was valid.', reason: 'If a governing artifact changes, only causally affected work is invalidated and resumed.' }
-  }, [control.scenario_phase, selected])
+  }, [control.graph.causes, control.scenario_phase, selected])
   return (
     <aside className="route-inspector">
       <p className="eyebrow">INSPECTOR / CAUSAL EXPLANATION</p>
       <h2>{content.title}</h2>
       <p>{content.body}</p>
       <div className="inspector-reason"><CircleStop /><span>{content.reason}</span></div>
+      {dependencies.length > 0 ? (
+        <section className="direct-provenance" aria-label={`Direct provenance for ${selected?.id}`}>
+          <p>DIRECT PROVENANCE</p>
+          {dependencies.map(({ edge, node }) => (
+            <div className="provenance-row" key={edge.edge_id}>
+              <div><code>{node?.id}</code><small>{node?.label}</small></div>
+              <span>{edge.relation_type}</span>
+              <em className={`status-${node?.status.toLowerCase()}`}>{node?.status}</em>
+            </div>
+          ))}
+        </section>
+      ) : null}
       {penWait ? <div className="commitment-readout"><Clock3 /><div><small>AWAITED EVENT</small><code>{penWait.event_type}</code><small>PREDICATE</small><code>vendor_id=ACME · document_type=PEN_TEST</code></div></div> : null}
       <dl>
         <div><dt>Policy</dt><dd>{control.current_policy}</dd></div>

@@ -4,7 +4,7 @@ import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from './App'
-import type { ContinuumApi, MissionControlReadModel, MissionSummary, ScenarioPhase } from './types'
+import type { ContinuumApi, GraphReadModel, MissionControlReadModel, MissionSummary, ScenarioPhase } from './types'
 
 const noMissions = vi.fn().mockResolvedValue([])
 
@@ -19,6 +19,32 @@ function control(phase: ScenarioPhase): MissionControlReadModel {
     MISSING_EVIDENCE: 'UPLOAD_PEN_TEST',
     COMPLETED: 'RESET',
   } as const
+  const graph: GraphReadModel = {
+    mission_id: 'demo-001',
+    phase: drifted ? 'DRIFTED' : 'INITIAL',
+    summary: { stale: drifted && !completed ? 2 : 0, preserved: 1, blocked: drifted && !completed ? 1 : 0 },
+    nodes: [
+      { id: 'policy-v12', kind: 'artifact', label: 'security-policy', status: drifted ? 'SUPERSEDED' : 'CURRENT', version: 'v12' },
+      { id: 'soc2-A31', kind: 'evidence', label: 'SOC2_CONTROL', status: 'VALID', revision: 'A31' },
+      { id: 'financial-F7', kind: 'evidence', label: 'FINANCIAL_REPORT', status: 'VALID', revision: 'F7' },
+      { id: 'D42', kind: 'decision', label: 'SECURITY_REVIEW', status: drifted ? completed ? 'SUPERSEDED' : 'STALE' : 'VALID', outcome: 'APPROVE' },
+      { id: 'D43', kind: 'decision', label: 'FINANCIAL_REVIEW', status: 'VALID', outcome: 'PASS' },
+      { id: 'D50', kind: 'decision', label: 'PROCUREMENT_REVIEW', status: drifted ? completed ? 'SUPERSEDED' : 'STALE' : 'VALID', outcome: 'APPROVE' },
+      { id: 'activate-vendor', kind: 'action', label: 'ACTIVATE_VENDOR', status: drifted && !completed ? 'BLOCKED' : 'READY' },
+    ],
+    edges: [
+      { edge_id: 'policy-D42', from_node_id: 'policy-v12', to_node_id: 'D42', relation_type: 'GOVERNED_BY', critical: true },
+      { edge_id: 'soc2-D42', from_node_id: 'soc2-A31', to_node_id: 'D42', relation_type: 'SUPPORTED_BY', critical: true },
+      { edge_id: 'financial-D43', from_node_id: 'financial-F7', to_node_id: 'D43', relation_type: 'SUPPORTED_BY', critical: true },
+      { edge_id: 'D42-D50', from_node_id: 'D42', to_node_id: 'D50', relation_type: 'REQUIRES', critical: true },
+      { edge_id: 'D43-D50', from_node_id: 'D43', to_node_id: 'D50', relation_type: 'REQUIRES', critical: true },
+      { edge_id: 'D50-activate', from_node_id: 'D50', to_node_id: 'activate-vendor', relation_type: 'AUTHORIZES', critical: true },
+    ],
+    plan: { stale_decision_ids: [], runnable_decision_ids: [], waiting_decision_ids: [], blocked_action_ids: [], retained_decision_ids: ['D43'], cause_by_node_id: drifted ? { D42: 'policy-v12', D50: 'D42', 'activate-vendor': 'D50' } : {} },
+    causes: drifted ? { D42: 'policy-v12', D50: 'D42', 'activate-vendor': 'D50' } : {},
+    events: [],
+    dispatches: [],
+  }
   return {
     mission: { mission_id: 'demo-001', status: completed ? 'COMPLETED' : phase === 'POLICY_DRIFT' ? 'REVALIDATING' : phase === 'CREATED' ? 'CREATED' : 'WAITING', created_at: '2026-08-18T00:00:00Z', updated_at: '2026-08-18T00:00:00Z' },
     subject: { id: 'ACME', name: 'Acme Analytics' },
@@ -43,7 +69,7 @@ function control(phase: ScenarioPhase): MissionControlReadModel {
     commitments: missing ? [{ commitment_id: 'pen-wait', event_type: 'vendor.document.uploaded', predicate: { vendor_id: 'ACME', document_type: 'PEN_TEST' }, status: 'OPEN', created_at: '2026-08-18T00:00:00Z' }] : [],
     side_effects: completed ? [{ side_effect_id: 'activate', effect_type: 'ACTIVATE_VENDOR', status: 'COMMITTED' }] : [],
     timeline: [{ audit_event_id: `audit-${phase}`, event_sequence: 1, event_type: completed ? 'mission.completed' : 'mission.created', payload: {}, occurred_at: '2026-08-18T00:00:00Z' }],
-    graph: { mission_id: 'demo-001', phase: drifted ? 'DRIFTED' : 'INITIAL', summary: { stale: drifted && !completed ? 2 : 0, preserved: 1, blocked: drifted && !completed ? 1 : 0 }, nodes: [], edges: [], plan: { stale_decision_ids: [], runnable_decision_ids: [], waiting_decision_ids: [], blocked_action_ids: [], retained_decision_ids: ['D43'], cause_by_node_id: {} }, causes: {}, events: [], dispatches: [] },
+    graph,
   }
 }
 
@@ -238,5 +264,34 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Run scenario again' })).toBeVisible()
     expect(location.pathname).toBe('/missions/demo-completed')
     expect(localStorage.getItem('continuum.activeMissionId')).toBe('demo-completed')
+  })
+
+  it('shows the direct policy and evidence provenance for a selected decision', async () => {
+    history.replaceState({}, '', '/missions/demo-drifted')
+    const drifted = control('POLICY_DRIFT')
+    drifted.mission.mission_id = 'demo-drifted'
+    const api: ContinuumApi = {
+      listMissions: noMissions,
+      createDemo: vi.fn(),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(drifted),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+    }
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByTestId('route-D42'))
+
+    expect(screen.getByText('DIRECT PROVENANCE')).toBeVisible()
+    expect(screen.getByText('policy-v12')).toBeVisible()
+    expect(screen.getByText('GOVERNED_BY')).toBeVisible()
+    expect(screen.getByText('soc2-A31')).toBeVisible()
+    expect(screen.getByText('SUPPORTED_BY')).toBeVisible()
+
+    await userEvent.click(screen.getByTestId('route-D43'))
+
+    expect(screen.getByText('financial-F7')).toBeVisible()
+    expect(screen.queryByText('policy-v12')).not.toBeInTheDocument()
   })
 })

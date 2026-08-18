@@ -11,6 +11,7 @@
 | Mission history can reopen a completed Mission | PASS | `frontend/e2e/mission-control.spec.ts` |
 | Full hosted-runner CI | PASS | [Successful GitHub Actions run 32123929626](https://github.com/dabaitudiu/continuum/actions/runs/32123929626) |
 | Architecture diagram | PASS | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Policy-drift provenance product shot | PASS | [`assets/continuum-policy-drift-provenance.png`](assets/continuum-policy-drift-provenance.png) |
 | Four-minute recording script | PASS | [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md) |
 | Devpost-style text draft | PASS | [`SUBMISSION_DRAFT.md`](SUBMISSION_DRAFT.md) |
 | Live Gemini/ADK reasoning | BLOCKED | Requires Google credentials and captured `GOOGLE_ADK_GEMINI` run |

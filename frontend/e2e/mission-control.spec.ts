@@ -17,6 +17,17 @@ test('canonical mission resumes selectively and activates once', async ({ page }
   await expect(page.getByTestId('route-D43')).toContainText('PRESERVED')
   await expect(page.getByTestId('route-activate-vendor')).toContainText('BLOCKED')
 
+  await page.getByTestId('route-D42').click()
+  const securityProvenance = page.getByRole('region', { name: 'Direct provenance for D42' })
+  await expect(securityProvenance.getByText('policy-v12')).toBeVisible()
+  await expect(securityProvenance.getByText('GOVERNED_BY')).toBeVisible()
+  await expect(securityProvenance.getByText('soc2-A31')).toBeVisible()
+
+  await page.getByTestId('route-D43').click()
+  const financialProvenance = page.getByRole('region', { name: 'Direct provenance for D43' })
+  await expect(financialProvenance.getByText('financial-F7')).toBeVisible()
+  await expect(financialProvenance.getByText('SUPPORTED_BY')).toBeVisible()
+
   await page.getByRole('button', { name: 'Run affected branch' }).click()
   await expect(page.getByText('Pen test required')).toBeVisible()
   await expect(page.getByText('vendor.document.uploaded')).toBeVisible()
