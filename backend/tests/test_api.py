@@ -25,6 +25,9 @@ def test_health_reports_runtime_and_agent_mode() -> None:
         "status": "ok",
         "runtime": "continuum",
         "agent_mode": "local",
+        "runtime_store": "memory",
+        "event_transport": "local_outbox",
+        "telemetry_exporter": "disabled",
     }
 
 

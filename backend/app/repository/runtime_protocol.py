@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Protocol
 
-from app.runtime.entities import InboxRecord, RuntimeSnapshot
+from app.runtime.entities import InboxRecord, OutboxMessage, RuntimeSnapshot
 from app.runtime.mutations import RuntimeMutation
 
 
@@ -21,3 +22,10 @@ class RuntimeRepository(Protocol):
         expected_revision: int,
         mutation: RuntimeMutation,
     ) -> RuntimeSnapshot: ...
+
+    def mark_outbox_published(
+        self,
+        mission_id: str,
+        outbox_message_id: str,
+        published_at: datetime,
+    ) -> OutboxMessage: ...

@@ -6,13 +6,14 @@ This repository is the canonical product and architecture handoff for a Google A
 
 ## Current status
 
-Three product milestones are complete:
+Four product milestones are complete:
 
 1. **Phase G falsification gate:** Policy v12 → v13 deterministically makes D42 and D50 stale, preserves D43, blocks ActivateVendor, and dispatches only D42.
 2. **Local semantic runtime:** durable Mission/WorkItem state machines, Commitment matching, immutable Decision supersession, Side Effect Ledger safety, audit/outbox, optimistic concurrency, idempotent inbox, SQLite restart recovery, and a unified runtime/graph API.
 3. **Local Mission Control product:** a browser-operated Acme Analytics scenario with three semantic agent lanes, policy-drift impact, preserved work, durable missing-evidence wait, immutable D57/D58 supersession, and exactly-once vendor activation.
+4. **Google integration foundation:** bounded Google ADK/Gemini agents, a transactional Firestore repository, durable Pub/Sub outbox relay, Cloud Trace instrumentation, and a production Cloud Run container/deployment path.
 
-The Vendor, Security, and Procurement agents are now implemented with Google ADK and typed Gemini output contracts. Firestore/Pub/Sub adapters, Google Cloud deployment, and hosted execution evidence remain subsequent milestones. The UI discloses the active execution mode and never presents local adapters as cloud execution.
+The Vendor, Security, and Procurement agents are implemented with Google ADK and typed Gemini output contracts. Firestore, Pub/Sub, Cloud Trace, and Cloud Run adapters are implemented and locally contract-tested. A live deployment and hosted execution evidence still require a Google Cloud project and Application Default Credentials; the repository does not claim those unverified results. The UI and `/api/health` disclose the active execution, persistence, event, and telemetry modes.
 
 ## Google ADK + Gemini mode
 
@@ -45,6 +46,16 @@ make dev
 The UI is available at `http://127.0.0.1:5173`; FastAPI runs at `http://127.0.0.1:8000`.
 
 Runtime state is stored in `backend/data/continuum.db` by default. Set `CONTINUUM_DB_PATH` to use another explicit SQLite file. Demo reset creates a new Mission namespace and does not delete audit history.
+
+The production image serves the built React application and FastAPI API from one Cloud Run container:
+
+```bash
+docker build -t continuum:local .
+docker run --rm -p 8080:8080 continuum:local
+curl http://127.0.0.1:8080/api/health
+```
+
+For a Google Cloud deployment, use `scripts/deploy-google-cloud.sh PROJECT_ID REGION`. It provisions the required APIs, a Native-mode Firestore database, Pub/Sub topic, least-purpose runtime service account roles, and deploys the source container with Vertex AI, Firestore, Pub/Sub, and Cloud Trace enabled. See [Google Cloud deployment](docs/24_GOOGLE_CLOUD_DEPLOYMENT.md).
 
 ## Durable runtime API
 

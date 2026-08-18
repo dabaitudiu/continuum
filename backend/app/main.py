@@ -13,6 +13,8 @@ from app.api.runtime_routes import build_runtime_router
 from app.api.read_models import graph_read_model
 from app.agents.service import GoogleAdkMissionAgentService
 from app.demo.fixture import seed_canonical_mission
+from app.events.outbox import GooglePubSubOutboxPublisher, OutboxRelay
+from app.observability.telemetry import configure_telemetry
 from app.domain.invalidation import InvalidationService
 from app.domain.models import (
     ActionStatus,
@@ -24,7 +26,9 @@ from app.domain.models import (
 from app.domain.revalidation import RevalidationService
 from app.repository.graph_adapter import RuntimeGraphRepositoryAdapter
 from app.repository.protocol import GraphRepository
+from app.repository.runtime_firestore import FirestoreRuntimeRepository
 from app.repository.runtime_memory import InMemoryRuntimeRepository
+from app.repository.runtime_publishing import PublishingRuntimeRepository
 from app.repository.runtime_protocol import RuntimeRepository
 from app.repository.runtime_sqlite import SQLiteRuntimeRepository
 from app.runtime.coordinator import RuntimeCoordinator
@@ -69,6 +73,7 @@ def create_app(
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
+    telemetry_exporter = configure_telemetry(app)
 
     invalidation = InvalidationService(repo)
     revalidation = RevalidationService(repo)
@@ -104,6 +109,15 @@ def create_app(
             "agent_mode": (
                 "google_adk" if agent_reasoner is not None else "local"
             ),
+            "runtime_store": str(
+                getattr(runtime_repo, "store_kind", "unknown")
+            ),
+            "event_transport": (
+                "pubsub"
+                if isinstance(runtime_repo, PublishingRuntimeRepository)
+                else "local_outbox"
+            ),
+            "telemetry_exporter": telemetry_exporter,
         }
 
     @app.post("/api/demo/reset")
@@ -232,13 +246,60 @@ def _configured_static_dir() -> Path | None:
 def _default_runtime_repository(*, isolated: bool) -> RuntimeRepository:
     if isolated:
         return InMemoryRuntimeRepository()
-    configured_path = os.environ.get("CONTINUUM_DB_PATH")
-    path = (
-        Path(configured_path)
-        if configured_path
-        else Path(__file__).resolve().parents[1] / "data" / "continuum.db"
-    )
-    return SQLiteRuntimeRepository(path)
+    store = os.environ.get("CONTINUUM_RUNTIME_STORE", "sqlite").lower()
+    if store == "firestore":
+        project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get(
+            "GCLOUD_PROJECT"
+        )
+        if not project:
+            raise RuntimeError(
+                "GOOGLE_CLOUD_PROJECT is required when "
+                "CONTINUUM_RUNTIME_STORE=firestore"
+            )
+        repository: RuntimeRepository = (
+            FirestoreRuntimeRepository.from_environment(
+                project=project,
+                database=os.environ.get("CONTINUUM_FIRESTORE_DATABASE"),
+                collection=os.environ.get(
+                    "CONTINUUM_FIRESTORE_COLLECTION",
+                    "missions",
+                ),
+            )
+        )
+    elif store == "sqlite":
+        configured_path = os.environ.get("CONTINUUM_DB_PATH")
+        path = (
+            Path(configured_path)
+            if configured_path
+            else Path(__file__).resolve().parents[1]
+            / "data"
+            / "continuum.db"
+        )
+        repository = SQLiteRuntimeRepository(path)
+    else:
+        raise RuntimeError(
+            "CONTINUUM_RUNTIME_STORE must be either sqlite or firestore"
+        )
+
+    topic = os.environ.get("CONTINUUM_PUBSUB_TOPIC")
+    if topic:
+        project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get(
+            "GCLOUD_PROJECT"
+        )
+        if not project:
+            raise RuntimeError(
+                "GOOGLE_CLOUD_PROJECT is required when "
+                "CONTINUUM_PUBSUB_TOPIC is configured"
+            )
+        publisher = GooglePubSubOutboxPublisher.from_environment(
+            project=project,
+            topic=topic,
+        )
+        return PublishingRuntimeRepository(
+            repository,
+            OutboxRelay(repository, publisher),
+        )
+    return repository
 
 
 def _http_error(status_code: int, code: str, message: str) -> HTTPException:

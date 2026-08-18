@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -387,3 +388,46 @@ class RuntimeRepositoryContract:
         second = repo.find_inbox("m-1", "request-1")
         assert second is not None
         assert second.result == {"status": "RUNNING"}
+
+    def test_mark_outbox_published_is_idempotent_and_preserves_revision(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        committed = repo.commit(
+            "m-1",
+            0,
+            transition_mutation(repo.load("m-1"), message_id="request-1"),
+        )
+        published_at = datetime(2026, 8, 18, 9, 30, tzinfo=UTC)
+
+        first = repo.mark_outbox_published(
+            "m-1",
+            "outbox:request-1",
+            published_at,
+        )
+        second = repo.mark_outbox_published(
+            "m-1",
+            "outbox:request-1",
+            datetime(2026, 8, 18, 10, 0, tzinfo=UTC),
+        )
+
+        assert first.published_at == published_at
+        assert second.published_at == published_at
+        recovered = repo.load("m-1")
+        assert recovered.mission.revision == committed.mission.revision
+        assert recovered.outbox[0].published_at == published_at
+
+    def test_mark_unknown_outbox_message_is_rejected(self, tmp_path: Path) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.mark_outbox_published(
+                "m-1",
+                "missing",
+                datetime.now(UTC),
+            )
+
+        assert raised.value.code == "OUTBOX_MESSAGE_NOT_FOUND"

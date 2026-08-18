@@ -1,15 +1,18 @@
+from datetime import datetime
 from threading import RLock
 
 from app.repository.runtime_validation import (
     build_committed_snapshot,
     validate_initial_snapshot,
 )
-from app.runtime.entities import InboxRecord, RuntimeSnapshot
+from app.runtime.entities import InboxRecord, OutboxMessage, RuntimeSnapshot
 from app.runtime.errors import RuntimeDomainError
 from app.runtime.mutations import RuntimeMutation
 
 
 class InMemoryRuntimeRepository:
+    store_kind = "memory"
+
     def __init__(self) -> None:
         self._snapshots: dict[str, RuntimeSnapshot] = {}
         self._lock = RLock()
@@ -56,6 +59,29 @@ class InMemoryRuntimeRepository:
             )
             self._snapshots[mission_id] = committed
             return committed.model_copy(deep=True)
+
+    def mark_outbox_published(
+        self,
+        mission_id: str,
+        outbox_message_id: str,
+        published_at: datetime,
+    ) -> OutboxMessage:
+        with self._lock:
+            snapshot = self._require(mission_id)
+            for index, message in enumerate(snapshot.outbox):
+                if message.outbox_message_id != outbox_message_id:
+                    continue
+                if message.published_at is None:
+                    message = message.model_copy(
+                        update={"published_at": published_at},
+                        deep=True,
+                    )
+                    snapshot.outbox[index] = message
+                return message.model_copy(deep=True)
+            raise RuntimeDomainError(
+                "OUTBOX_MESSAGE_NOT_FOUND",
+                f"outbox message does not exist: {outbox_message_id}",
+            )
 
     def _require(self, mission_id: str) -> RuntimeSnapshot:
         try:

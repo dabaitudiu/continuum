@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from threading import RLock
 
@@ -197,6 +198,8 @@ CHILD_TABLES = (
 
 
 class SQLiteRuntimeRepository:
+    store_kind = "sqlite"
+
     def __init__(self, path: Path) -> None:
         self._path = Path(path)
         self._path.parent.mkdir(parents=True, exist_ok=True)
@@ -300,6 +303,46 @@ class SQLiteRuntimeRepository:
             except Exception:
                 self._connection.execute("ROLLBACK")
                 raise
+
+    def mark_outbox_published(
+        self,
+        mission_id: str,
+        outbox_message_id: str,
+        published_at: datetime,
+    ) -> OutboxMessage:
+        with self._lock:
+            if not self._mission_exists(mission_id):
+                raise RuntimeDomainError(
+                    "MISSION_NOT_FOUND",
+                    f"mission does not exist: {mission_id}",
+                )
+            row = self._connection.execute(
+                """
+                SELECT payload FROM outbox_messages
+                WHERE mission_id = ? AND outbox_message_id = ?
+                """,
+                (mission_id, outbox_message_id),
+            ).fetchone()
+            if row is None:
+                raise RuntimeDomainError(
+                    "OUTBOX_MESSAGE_NOT_FOUND",
+                    f"outbox message does not exist: {outbox_message_id}",
+                )
+            message = OutboxMessage.model_validate_json(row[0])
+            if message.published_at is not None:
+                return message
+            published = message.model_copy(
+                update={"published_at": published_at},
+                deep=True,
+            )
+            self._connection.execute(
+                """
+                UPDATE outbox_messages SET payload = ?
+                WHERE mission_id = ? AND outbox_message_id = ?
+                """,
+                (published.model_dump_json(), mission_id, outbox_message_id),
+            )
+            return published
 
     def _load_locked(self, mission_id: str) -> RuntimeSnapshot:
         mission_row = self._connection.execute(
