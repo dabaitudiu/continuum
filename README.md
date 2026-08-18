@@ -6,12 +6,13 @@ This repository is the canonical product and architecture handoff for a Google A
 
 ## Current status
 
-Two product milestones are complete:
+Three product milestones are complete:
 
 1. **Phase G falsification gate:** Policy v12 → v13 deterministically makes D42 and D50 stale, preserves D43, blocks ActivateVendor, and dispatches only D42.
 2. **Local semantic runtime:** durable Mission/WorkItem state machines, Commitment matching, immutable Decision supersession, Side Effect Ledger safety, audit/outbox, optimistic concurrency, idempotent inbox, SQLite restart recovery, and a unified runtime/graph API.
+3. **Local Mission Control product:** a browser-operated Acme Analytics scenario with three semantic agent lanes, policy-drift impact, preserved work, durable missing-evidence wait, immutable D57/D58 supersession, and exactly-once vendor activation.
 
-The full browser Mission Control, three Google ADK/Gemini agents, Firestore/Pub/Sub adapters, Google Cloud deployment, and OpenTelemetry export remain subsequent milestones. Local adapters are not presented as completion of those cloud requirements.
+Three Google ADK/Gemini agents, Firestore/Pub/Sub adapters, Google Cloud deployment, and OpenTelemetry export remain subsequent milestones. The UI explicitly labels the current execution mode `LOCAL DETERMINISTIC`; local adapters are not presented as completion of cloud requirements.
 
 ## Run locally
 
@@ -37,10 +38,24 @@ POST /api/missions/{mission_id}/start
 GET  /api/missions/{mission_id}
 GET  /api/missions/{mission_id}/timeline
 GET  /api/missions/{mission_id}/commitments
+GET  /api/missions/{mission_id}/control
 POST /api/events
+POST /api/demo/policy/upgrade
+POST /api/missions/{mission_id}/revalidate
+POST /api/demo/documents/pen-test
 ```
 
-Minimal local flow:
+The recommended flow is the browser UI. Its single contextual action walks through:
+
+```text
+Start mission
+→ Inject Policy v13
+→ Run affected branch
+→ Upload pen test · +7 days
+→ Vendor ACTIVE / Mission COMPLETED
+```
+
+The same flow can be driven through the API:
 
 ```bash
 curl -s http://127.0.0.1:8000/api/missions/demo \
@@ -51,23 +66,20 @@ curl -s http://127.0.0.1:8000/api/missions/MISSION_ID/start \
   -H 'content-type: application/json' \
   -d '{"request_id":"start-1"}'
 
-curl -s http://127.0.0.1:8000/api/events \
+curl -s http://127.0.0.1:8000/api/demo/policy/upgrade \
   -H 'content-type: application/json' \
-  -d '{
-    "event_id":"evt-pen-1",
-    "event_type":"vendor.document.uploaded",
-    "mission_id":"MISSION_ID",
-    "producer":"enterprise-simulator",
-    "correlation_id":"evt-pen-1",
-    "payload":{
-      "vendor_id":"ACME",
-      "document_id":"document:pen-test-2026",
-      "document_type":"PEN_TEST"
-    }
-  }'
+  -d '{"mission_id":"MISSION_ID","event_id":"policy-1"}'
+
+curl -s http://127.0.0.1:8000/api/missions/MISSION_ID/revalidate \
+  -H 'content-type: application/json' \
+  -d '{"request_id":"revalidate-1"}'
+
+curl -s http://127.0.0.1:8000/api/demo/documents/pen-test \
+  -H 'content-type: application/json' \
+  -d '{"mission_id":"MISSION_ID","event_id":"pen-test-1"}'
 ```
 
-The start command leaves the Mission in `WAITING` with an open pen-test Commitment. A mismatched document event is recorded but ignored. The matching event atomically satisfies the Commitment, resumes the waiting WorkItem, advances the Mission to `RUNNING`, and appends audit/outbox records. Replaying any request or event ID returns the original result without another transition.
+The start command first establishes valid Policy v12 decisions, then leaves the Mission waiting on a Procurement activation-window Commitment. Only after Policy v13 invalidates the affected branch does Security revalidation create a pen-test Commitment. The matching document event atomically satisfies it, creates D57/D58 as immutable successors, commits activation once, and completes the Mission. Replaying any request or event ID returns the original result without another transition.
 
 ## Decision Graph API
 
@@ -101,6 +113,7 @@ The simulator creates world input only. Decision and Action transitions remain o
 4. Review the [local semantic runtime design](docs/superpowers/specs/2026-08-18-local-semantic-runtime-design.md).
 5. Follow the [local semantic runtime implementation plan](docs/superpowers/plans/2026-08-18-local-semantic-runtime.md).
 6. Read the [local runtime evidence report](docs/reports/local-semantic-runtime-report.md).
+7. Review the [Mission Control product design](docs/superpowers/specs/2026-08-18-mission-control-product-design.md) and [local product report](docs/reports/mission-control-local-product-report.md).
 
 ## Explicit non-goals
 

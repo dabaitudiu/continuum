@@ -20,7 +20,7 @@ Show three agents and initial security approval based on:
 
 ### 1:05–1:25 — Wait
 
-Mission reaches waiting/approval state. Show open state/commitment if appropriate.
+Mission reaches the external Procurement activation-window wait. Explicitly point out that no pen-test is required under v12.
 
 ### 1:25–2:05 — Inject policy drift
 
@@ -38,6 +38,8 @@ Say one sentence: "Continuum doesn't restart the mission; it invalidates only wo
 ### 2:05–2:45 — Revalidation + commitment
 
 Security Agent wakes and reads v13. It determines penetration-test evidence is missing. A durable commitment appears.
+
+For the local milestone, disclose the `LOCAL DETERMINISTIC` adapter in the utility rail. Replace this shot with real ADK/Gemini execution evidence only after Milestone C is complete.
 
 ### 2:45–3:15 — Time compression
 
