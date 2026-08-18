@@ -232,6 +232,30 @@ class RuntimeRepositoryContract:
         assert raised.value.code == "AUDIT_SEQUENCE_CONFLICT"
         assert repo.load("m-1") == before
 
+    def test_duplicate_outbox_identity_rolls_back_every_change(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        repo.create(runtime_snapshot())
+        first = repo.commit(
+            "m-1",
+            0,
+            transition_mutation(repo.load("m-1"), message_id="request-1"),
+        )
+        mutation = transition_mutation(
+            first,
+            message_id="request-2",
+            status=MissionStatus.WAITING,
+        )
+        mutation.outbox_appends[0].outbox_message_id = "outbox:request-1"
+
+        with pytest.raises(RuntimeDomainError) as raised:
+            repo.commit("m-1", first.mission.revision, mutation)
+
+        assert raised.value.code == "OUTBOX_MESSAGE_CONFLICT"
+        assert repo.load("m-1") == first
+
     def test_find_inbox_returns_isolated_copy(self, tmp_path: Path) -> None:
         repo = self.make_repo(tmp_path)
         repo.create(runtime_snapshot())

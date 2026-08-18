@@ -34,6 +34,7 @@ def build_committed_snapshot(
         )
     _validate_audit(current, mutation)
     _validate_entity_missions(mission_id, mutation)
+    _validate_outbox(current, mutation)
 
     result = current.model_copy(deep=True)
     result.mission = mutation.mission.model_copy(
@@ -86,6 +87,12 @@ def validate_initial_snapshot(snapshot: RuntimeSnapshot) -> None:
     ):
         _require_mission(entity.mission_id, mission_id)
     _validate_side_effect_idempotency(snapshot.side_effects)
+    outbox_ids = [message.outbox_message_id for message in snapshot.outbox]
+    if len(outbox_ids) != len(set(outbox_ids)):
+        raise RuntimeDomainError(
+            "OUTBOX_MESSAGE_CONFLICT",
+            "outbox message ids must be unique",
+        )
     expected_sequences = list(range(1, len(snapshot.audit_events) + 1))
     actual_sequences = [event.event_sequence for event in snapshot.audit_events]
     if actual_sequences != expected_sequences:
@@ -138,6 +145,19 @@ def _validate_entity_missions(
         *mutation.outbox_appends,
     ):
         _require_mission(entity.mission_id, mission_id)
+
+
+def _validate_outbox(
+    current: RuntimeSnapshot,
+    mutation: RuntimeMutation,
+) -> None:
+    existing_ids = {message.outbox_message_id for message in current.outbox}
+    new_ids = [message.outbox_message_id for message in mutation.outbox_appends]
+    if len(new_ids) != len(set(new_ids)) or existing_ids.intersection(new_ids):
+        raise RuntimeDomainError(
+            "OUTBOX_MESSAGE_CONFLICT",
+            "outbox message ids must be unique",
+        )
 
 
 def _require_mission(actual: str, expected: str) -> None:
