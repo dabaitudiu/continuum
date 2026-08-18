@@ -15,3 +15,4 @@ coverage.xml
 playwright-report/
 test-results/
 .worktrees/
+backend/data/*.db*

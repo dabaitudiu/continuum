@@ -1,9 +1,13 @@
+import os
+from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from app.api.runtime_routes import build_runtime_router
 from app.demo.fixture import seed_canonical_mission
 from app.domain.invalidation import InvalidationService
 from app.domain.models import (
@@ -16,6 +20,11 @@ from app.domain.models import (
 from app.domain.revalidation import RevalidationService
 from app.repository.memory import InMemoryGraphRepository
 from app.repository.protocol import GraphRepository
+from app.repository.runtime_memory import InMemoryRuntimeRepository
+from app.repository.runtime_protocol import RuntimeRepository
+from app.repository.runtime_sqlite import SQLiteRuntimeRepository
+from app.runtime.coordinator import RuntimeCoordinator
+from app.runtime.errors import RuntimeDomainError
 
 
 class PolicyUpgradeRequest(BaseModel):
@@ -27,9 +36,17 @@ class RevalidationRequest(BaseModel):
     request_id: str
 
 
-def create_app(repository: GraphRepository | None = None) -> FastAPI:
+def create_app(
+    repository: GraphRepository | None = None,
+    *,
+    runtime_repository: RuntimeRepository | None = None,
+) -> FastAPI:
     repo = repository or InMemoryGraphRepository()
-    app = FastAPI(title="Continuum Falsification Gate")
+    runtime_repo = runtime_repository or _default_runtime_repository(
+        isolated=repository is not None
+    )
+    coordinator = RuntimeCoordinator(runtime_repo)
+    app = FastAPI(title="Continuum")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -40,6 +57,29 @@ def create_app(repository: GraphRepository | None = None) -> FastAPI:
 
     invalidation = InvalidationService(repo)
     revalidation = RevalidationService(repo)
+
+    @app.exception_handler(RuntimeDomainError)
+    async def runtime_error_handler(
+        _request: Request,
+        error: RuntimeDomainError,
+    ) -> JSONResponse:
+        if error.code == "MISSION_NOT_FOUND":
+            status_code = 404
+        elif error.code == "EVENT_SCHEMA_INVALID":
+            status_code = 422
+        else:
+            status_code = 409
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "detail": {
+                    "code": error.code,
+                    "message": error.message,
+                }
+            },
+        )
+
+    app.include_router(build_runtime_router(coordinator))
 
     @app.post("/api/demo/reset")
     def reset_demo() -> dict[str, str]:
@@ -108,6 +148,18 @@ def create_app(repository: GraphRepository | None = None) -> FastAPI:
             raise _http_error(404, "MISSION_NOT_FOUND", str(error)) from error
 
     return app
+
+
+def _default_runtime_repository(*, isolated: bool) -> RuntimeRepository:
+    if isolated:
+        return InMemoryRuntimeRepository()
+    configured_path = os.environ.get("CONTINUUM_DB_PATH")
+    path = (
+        Path(configured_path)
+        if configured_path
+        else Path(__file__).resolve().parents[1] / "data" / "continuum.db"
+    )
+    return SQLiteRuntimeRepository(path)
 
 
 def _http_error(status_code: int, code: str, message: str) -> HTTPException:
