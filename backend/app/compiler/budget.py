@@ -50,15 +50,12 @@ class ModelPricing(_Value):
 
     def cost(self, usage: ModelUsage) -> Decimal:
         ordinary_input = (
-            usage.input_tokens
-            - usage.cached_input_tokens
-            - usage.cache_write_tokens
+            usage.input_tokens - usage.cached_input_tokens - usage.cache_write_tokens
         )
         cost = (
             Decimal(ordinary_input) * self.input_usd_per_million
             + Decimal(usage.cached_input_tokens) * self.cached_input_usd_per_million
-            + Decimal(usage.cache_write_tokens)
-            * self.cache_write_usd_per_million
+            + Decimal(usage.cache_write_tokens) * self.cache_write_usd_per_million
             + Decimal(usage.output_tokens) * self.output_usd_per_million
         ) / _MILLION
         return cost.quantize(_NINE_PLACES, rounding=ROUND_CEILING)
@@ -309,9 +306,7 @@ class SQLiteBudgetLedger:
         if not call_id_prefix:
             raise ValueError("call id prefix must be non-empty")
         escaped_prefix = (
-            call_id_prefix.replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_")
+            call_id_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         )
         with self._lock:
             rows = self._connection.execute(
@@ -328,9 +323,7 @@ class SQLiteBudgetLedger:
         return SettledUsageSummary(
             usage=ModelUsage(
                 input_tokens=sum(usage.input_tokens for usage in usages),
-                cached_input_tokens=sum(
-                    usage.cached_input_tokens for usage in usages
-                ),
+                cached_input_tokens=sum(usage.cached_input_tokens for usage in usages),
                 cache_write_tokens=sum(usage.cache_write_tokens for usage in usages),
                 output_tokens=sum(usage.output_tokens for usage in usages),
             ),
@@ -338,6 +331,84 @@ class SQLiteBudgetLedger:
                 sum(int(row["actual_nano"] or 0) for row in rows)
             ),
             settled_calls=len(rows),
+        )
+
+    def settled_usage_by_stage(
+        self,
+        call_id_prefix: str,
+        stage: str,
+    ) -> SettledUsageSummary:
+        if not call_id_prefix:
+            raise ValueError("call id prefix must be non-empty")
+        if not stage or not stage.replace("-", "").isalnum():
+            raise ValueError("stage must be a non-empty alphanumeric label")
+        escaped_prefix = (
+            call_id_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        )
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT actual_usage_json, actual_nano
+                FROM model_budget_calls
+                WHERE status = 'SETTLED'
+                  AND call_id LIKE ? ESCAPE '\\'
+                  AND instr(call_id, ?) > 0
+                """,
+                (escaped_prefix + "%", f":{stage}:"),
+            ).fetchall()
+        usages = [
+            ModelUsage.model_validate_json(row["actual_usage_json"]) for row in rows
+        ]
+        return SettledUsageSummary(
+            usage=ModelUsage(
+                input_tokens=sum(usage.input_tokens for usage in usages),
+                cached_input_tokens=sum(usage.cached_input_tokens for usage in usages),
+                cache_write_tokens=sum(usage.cache_write_tokens for usage in usages),
+                output_tokens=sum(usage.output_tokens for usage in usages),
+            ),
+            actual_cost_usd=_from_nano(
+                sum(int(row["actual_nano"] or 0) for row in rows)
+            ),
+            settled_calls=len(rows),
+        )
+
+    def scope_snapshot(
+        self,
+        call_id_prefix: str,
+        *,
+        limit_usd: Decimal,
+    ) -> BudgetSnapshot:
+        if not call_id_prefix:
+            raise ValueError("call id prefix must be non-empty")
+        if limit_usd <= 0:
+            raise ValueError("scope budget limit must be positive")
+        escaped_prefix = (
+            call_id_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        )
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT
+                    COALESCE(SUM(CASE WHEN status = 'SETTLED' THEN actual_nano ELSE 0 END), 0) AS spent_nano,
+                    COALESCE(SUM(CASE WHEN status IN ('RESERVED', 'UNKNOWN') THEN reserved_nano ELSE 0 END), 0) AS reserved_nano,
+                    SUM(CASE WHEN status = 'SETTLED' THEN 1 ELSE 0 END) AS settled_calls,
+                    SUM(CASE WHEN status IN ('RESERVED', 'UNKNOWN') THEN 1 ELSE 0 END) AS reserved_calls
+                FROM model_budget_calls
+                WHERE call_id LIKE ? ESCAPE '\\'
+                """,
+                (escaped_prefix + "%",),
+            ).fetchone()
+        assert row is not None
+        limit_nano = _to_nano(limit_usd)
+        spent_nano = int(row["spent_nano"])
+        reserved_nano = int(row["reserved_nano"])
+        return BudgetSnapshot(
+            limit_usd=_from_nano(limit_nano),
+            spent_usd=_from_nano(spent_nano),
+            reserved_usd=_from_nano(reserved_nano),
+            remaining_usd=_from_nano(limit_nano - spent_nano - reserved_nano),
+            settled_calls=int(row["settled_calls"] or 0),
+            reserved_calls=int(row["reserved_calls"] or 0),
         )
 
     def _initialize(self) -> None:
@@ -447,6 +518,86 @@ class SQLiteBudgetLedger:
 
     def _transaction(self):  # type: ignore[no-untyped-def]
         return _ImmediateTransaction(self._connection, self._lock)
+
+
+class ScopedBudgetLedger:
+    """Persisted namespace cap layered on the cumulative provider ledger."""
+
+    def __init__(
+        self,
+        ledger: SQLiteBudgetLedger,
+        *,
+        call_id_prefix: str,
+        limit_usd: Decimal,
+        max_calls: int = 120,
+    ) -> None:
+        if not call_id_prefix:
+            raise ValueError("call id prefix must be non-empty")
+        if limit_usd <= 0:
+            raise ValueError("scope budget limit must be positive")
+        if max_calls <= 0:
+            raise ValueError("scope model call limit must be positive")
+        self._ledger = ledger
+        self._call_id_prefix = call_id_prefix
+        self._limit_usd = limit_usd
+        self._max_calls = max_calls
+        self._lock = RLock()
+
+    def reserve(
+        self,
+        call_id: str,
+        *,
+        pricing: ModelPricing,
+        maximum_usage: ModelUsage,
+    ) -> BudgetReservation:
+        self._validate_call_id(call_id)
+        with self._lock:
+            snapshot = self.snapshot()
+            if snapshot.settled_calls + snapshot.reserved_calls >= self._max_calls:
+                raise BudgetError(
+                    "EXPERIMENT_CALL_LIMIT_EXHAUSTED",
+                    "model call would exceed the experiment POST ceiling",
+                )
+            if pricing.cost(maximum_usage) > snapshot.remaining_usd:
+                raise BudgetError(
+                    "EXPERIMENT_BUDGET_EXHAUSTED",
+                    "model call would exceed the experiment incremental budget",
+                )
+            return self._ledger.reserve(
+                call_id,
+                pricing=pricing,
+                maximum_usage=maximum_usage,
+            )
+
+    def settle(
+        self,
+        call_id: str,
+        *,
+        actual_usage: ModelUsage,
+    ) -> BudgetSettlement:
+        self._validate_call_id(call_id)
+        return self._ledger.settle(call_id, actual_usage=actual_usage)
+
+    def mark_unknown(self, call_id: str) -> BudgetReservation:
+        self._validate_call_id(call_id)
+        return self._ledger.mark_unknown(call_id)
+
+    def release(self, call_id: str) -> None:
+        self._validate_call_id(call_id)
+        self._ledger.release(call_id)
+
+    def snapshot(self) -> BudgetSnapshot:
+        return self._ledger.scope_snapshot(
+            self._call_id_prefix,
+            limit_usd=self._limit_usd,
+        )
+
+    def _validate_call_id(self, call_id: str) -> None:
+        if not call_id.startswith(self._call_id_prefix):
+            raise BudgetError(
+                "EXPERIMENT_BUDGET_SCOPE_MISMATCH",
+                "model call id is outside the experiment namespace",
+            )
 
 
 class _ImmediateTransaction:

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import inspect
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from app.compiler import budget as budget_module
 from app.compiler.budget import (
     BudgetError,
     ModelPricing,
@@ -254,3 +256,121 @@ def test_usage_summary_includes_every_settled_attempt_for_a_namespace(
     assert summary.actual_cost_usd == LUNA_PRICING.cost(first) + LUNA_PRICING.cost(
         second
     )
+
+
+def test_usage_summary_can_isolate_reasoner_and_critic_stages(
+    tmp_path: Path,
+) -> None:
+    with SQLiteBudgetLedger(
+        tmp_path / "budget.db",
+        limit_usd=Decimal(10),
+    ) as ledger:
+        summarize_stage = getattr(ledger, "settled_usage_by_stage", None)
+        assert summarize_stage is not None
+        reasoner_usage = ModelUsage(
+            input_tokens=1_000,
+            cache_write_tokens=800,
+            output_tokens=50,
+        )
+        critic_usage = ModelUsage(
+            input_tokens=2_000,
+            cached_input_tokens=500,
+            cache_write_tokens=1_000,
+            output_tokens=75,
+        )
+        for call_id, usage in (
+            ("experiment:case-1:run:0:reasoner:1", reasoner_usage),
+            ("experiment:case-1:run:0:critic:1", critic_usage),
+            ("other:case-1:run:0:critic:1", reasoner_usage),
+        ):
+            ledger.reserve(call_id, pricing=LUNA_PRICING, maximum_usage=usage)
+            ledger.settle(call_id, actual_usage=usage)
+
+        critic = summarize_stage("experiment:", "critic")
+
+    assert critic.settled_calls == 1
+    assert critic.usage == critic_usage
+    assert critic.actual_cost_usd == LUNA_PRICING.cost(critic_usage)
+
+
+def test_scoped_budget_rejects_incremental_experiment_exposure_before_send(
+    tmp_path: Path,
+) -> None:
+    scoped_type = getattr(budget_module, "ScopedBudgetLedger", None)
+    assert scoped_type is not None
+    pricing = ModelPricing(
+        provider="OPENAI",
+        model_name="test-model",
+        input_usd_per_million=Decimal(1),
+        cached_input_usd_per_million=Decimal(1),
+        cache_write_usd_per_million=Decimal(1),
+        output_usd_per_million=Decimal(1),
+        pricing_version="test-v1",
+    )
+    maximum = ModelUsage(input_tokens=200_000, output_tokens=0)
+    actual = ModelUsage(input_tokens=100_000, output_tokens=0)
+    with SQLiteBudgetLedger(
+        tmp_path / "budget.db",
+        limit_usd=Decimal(10),
+    ) as ledger:
+        scoped = scoped_type(
+            ledger,
+            call_id_prefix="experiment-1:",
+            limit_usd=Decimal("0.25"),
+        )
+        scoped.reserve(
+            "experiment-1:case-1:reasoner:1",
+            pricing=pricing,
+            maximum_usage=maximum,
+        )
+        scoped.settle(
+            "experiment-1:case-1:reasoner:1",
+            actual_usage=actual,
+        )
+
+        with pytest.raises(BudgetError) as raised:
+            scoped.reserve(
+                "experiment-1:case-2:reasoner:1",
+                pricing=pricing,
+                maximum_usage=maximum,
+            )
+
+        assert raised.value.code == "EXPERIMENT_BUDGET_EXHAUSTED"
+        assert scoped.snapshot().spent_usd == Decimal("0.100000000")
+        assert scoped.snapshot().remaining_usd == Decimal("0.150000000")
+        assert ledger.snapshot().settled_calls == 1
+
+
+def test_scoped_budget_enforces_absolute_model_post_ceiling(tmp_path: Path) -> None:
+    scoped_type = getattr(budget_module, "ScopedBudgetLedger", None)
+    assert scoped_type is not None
+    assert "max_calls" in inspect.signature(scoped_type).parameters
+    usage = ModelUsage(input_tokens=1_000, output_tokens=10)
+    with SQLiteBudgetLedger(
+        tmp_path / "budget.db",
+        limit_usd=Decimal(10),
+    ) as ledger:
+        scoped = scoped_type(
+            ledger,
+            call_id_prefix="experiment-1:",
+            limit_usd=Decimal(1),
+            max_calls=1,
+        )
+        scoped.reserve(
+            "experiment-1:case-1:reasoner:1",
+            pricing=LUNA_PRICING,
+            maximum_usage=usage,
+        )
+        scoped.settle(
+            "experiment-1:case-1:reasoner:1",
+            actual_usage=usage,
+        )
+
+        with pytest.raises(BudgetError) as raised:
+            scoped.reserve(
+                "experiment-1:case-2:reasoner:1",
+                pricing=LUNA_PRICING,
+                maximum_usage=usage,
+            )
+
+    assert raised.value.code == "EXPERIMENT_CALL_LIMIT_EXHAUSTED"
