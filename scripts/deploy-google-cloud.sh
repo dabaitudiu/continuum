@@ -65,6 +65,17 @@ for CONTINUUM_ROLE in \
     --quiet >/dev/null
 done
 
+if gcloud projects get-iam-policy "${CONTINUUM_PROJECT_ID}" \
+  --flatten='bindings[].members' \
+  --filter="bindings.role=roles/run.invoker AND bindings.members=serviceAccount:${CONTINUUM_SERVICE_ACCOUNT}" \
+  --format='value(bindings.role)' | grep -qx 'roles/run.invoker'; then
+  gcloud projects remove-iam-policy-binding "${CONTINUUM_PROJECT_ID}" \
+    --member="serviceAccount:${CONTINUUM_SERVICE_ACCOUNT}" \
+    --role=roles/run.invoker \
+    --condition=None \
+    --quiet >/dev/null
+fi
+
 if ! gcloud firestore databases describe \
   --database="${CONTINUUM_DATABASE}" \
   --project="${CONTINUUM_PROJECT_ID}" >/dev/null 2>&1; then

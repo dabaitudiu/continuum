@@ -25,7 +25,7 @@ The screen exposes `Execution mode: DETERMINISTIC_REFERENCE`, the backend-author
 - Acceptance checks the exact mission revision and world snapshot used for compilation.
 - Decision, Claim, Evidence, dependency edges, audit, inbox, and outbox commit atomically; replay returns the existing receipt without a second mission revision.
 - Source revisions bind to the currently active Runtime artifact instance, so update → recompile → update remains invalidatable.
-- A separate outbox relay worker transactionally backfills legacy projection schema, then pages over the Firestore pending-outbox projection; a least-privilege Scheduler identity invokes only that Cloud Run Job every two minutes with OAuth, so old pending Missions cannot be starved by newer idle Missions and retries do not require command replay.
+- A separate outbox relay worker transactionally backfills legacy projection schema, then pages over the Firestore pending-outbox projection; deployment also removes the obsolete project-level runtime invoker grant before a least-privilege Scheduler identity is bound only to that Cloud Run Job and invokes it every two minutes with OAuth. Old pending Missions cannot be starved by newer idle Missions, and retries do not require command replay.
 - The compiler can propose canonical state, but deterministic Runtime code remains the only owner of state transitions.
 
 ## Honest model-evidence boundary

@@ -19,6 +19,7 @@ def test_deploy_separates_resource_region_from_vertex_endpoint(
 printf '%s\\n' "$*" >> "$GCLOUD_LOG"
 case "$*" in
   "auth list"*) printf '%s\\n' 'developer@example.com' ;;
+  "projects get-iam-policy"*) printf '%s\\n' 'roles/run.invoker' ;;
   "run services describe"*) printf '%s\\n' 'https://continuum.example.test' ;;
 esac
 """,
@@ -70,6 +71,16 @@ printf '%s\\n' '{"status":"ok"}'
         if line.startswith("projects add-iam-policy-binding ")
     ]
     assert all("roles/run.invoker" not in line for line in project_grants)
+    legacy_removal = next(
+        line
+        for line in commands.splitlines()
+        if line.startswith("projects remove-iam-policy-binding ")
+    )
+    assert "roles/run.invoker" in legacy_removal
+    assert (
+        "serviceAccount:continuum-runtime@continuum-test.iam.gserviceaccount.com"
+        in legacy_removal
+    )
     job_grant = next(
         line
         for line in commands.splitlines()

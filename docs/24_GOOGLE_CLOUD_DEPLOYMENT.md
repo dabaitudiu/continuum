@@ -9,7 +9,7 @@
 - Google ADK agents using Gemini through Vertex AI;
 - FastAPI/OpenTelemetry spans exported to Google Cloud Trace.
 
-The runtime service account receives only its data-plane roles: `roles/datastore.user`, `roles/pubsub.publisher`, `roles/aiplatform.user`, and `roles/cloudtrace.agent`. Cloud Scheduler uses a separate `${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID:-continuum-outbox-scheduler}` identity that receives `roles/run.invoker` only on the relay Job, not at project scope. The deployer still needs permission to enable APIs, create resources, grant those roles, act as the scheduler service account, build, and deploy Cloud Run and Scheduler resources.
+The runtime service account receives only its data-plane roles: `roles/datastore.user`, `roles/pubsub.publisher`, `roles/aiplatform.user`, and `roles/cloudtrace.agent`. Cloud Scheduler uses a separate `${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID:-continuum-outbox-scheduler}` identity that receives `roles/run.invoker` only on the relay Job, not at project scope. During upgrade, the script detects and removes the obsolete unconditional project-level `roles/run.invoker` grant from the runtime identity before installing the scoped binding. The deployer still needs permission to enable APIs, create resources, grant and revoke those roles, act as the scheduler service account, build, and deploy Cloud Run and Scheduler resources.
 
 ## Prerequisites
 
