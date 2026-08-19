@@ -5,6 +5,7 @@ import pytest
 from app.sources.identity import (
     Artifact,
     ArtifactType,
+    IngestedSource,
     SourceRef,
     SourceType,
     TrustClass,
@@ -33,60 +34,108 @@ def artifact(*, scope: str = "tenant:alpha") -> Artifact:
     )
 
 
-def add_revision(
-    registry: InMemorySourceRegistry,
+def ingest(
     source_artifact: Artifact,
     label: str,
     value: dict[str, object],
-) -> None:
-    ingested = ingest_json_revision(
+    *,
+    parser_version: str = "json-v1",
+    valid_from: datetime = NOW,
+    valid_until: datetime | None = None,
+) -> IngestedSource:
+    return ingest_json_revision(
         source_artifact,
         revision_label=label,
         value=value,
         created_at=NOW,
-        valid_from=NOW,
-        parser_version="json-v1",
+        valid_from=valid_from,
+        valid_until=valid_until,
+        parser_version=parser_version,
     )
-    registry.add_revision(ingested.revision, ingested.fragments)
 
 
-def populated_registry() -> InMemorySourceRegistry:
-    registry = InMemorySourceRegistry()
-    source_artifact = artifact()
-    registry.add_artifact(source_artifact)
-    add_revision(registry, source_artifact, "r1", {"approved": False})
-    add_revision(registry, source_artifact, "r2", {"approved": True})
+def add_ingested(
+    registry: InMemorySourceRegistry,
+    ingested: IngestedSource,
+) -> None:
+    registry.add_revision(ingested.revision)
+    registry.add_representation(
+        ingested.representation,
+        ingested.fragments,
+    )
+
+
+def bind_snapshot(
+    registry: InMemorySourceRegistry,
+    ingested: IngestedSource,
+    snapshot_id: str = "world:release-2",
+) -> None:
     registry.add_world_snapshot(
         WorldSnapshot(
-            world_snapshot_id="world:release-2",
+            world_snapshot_id=snapshot_id,
             owner_scope="tenant:alpha",
             current_revisions={
-                "record:release-candidate": registry.revision_id_for(
-                    "record:release-candidate", "r2"
+                ingested.revision.artifact_id: ingested.revision.revision_id
+            },
+            current_representations={
+                ingested.revision.revision_id: (
+                    ingested.representation.representation_id
                 )
             },
             created_at=NOW,
         )
     )
-    return registry
 
 
-def test_current_fragment_resolves_in_bound_world_snapshot() -> None:
-    registry = populated_registry()
-    ref = SourceRef.parse("record:release-candidate@r2#$.approved")
+def populated_registry() -> tuple[
+    InMemorySourceRegistry,
+    IngestedSource,
+    IngestedSource,
+]:
+    registry = InMemorySourceRegistry()
+    source_artifact = artifact()
+    registry.add_artifact(source_artifact)
+    r1 = ingest(source_artifact, "r1", {"approved": False})
+    r2 = ingest(source_artifact, "r2", {"approved": True})
+    add_ingested(registry, r1)
+    add_ingested(registry, r2)
+    bind_snapshot(registry, r2)
+    return registry, r1, r2
+
+
+def test_current_qualified_fragment_resolves_in_bound_world_snapshot() -> None:
+    registry, _, r2 = populated_registry()
+    ref = r2.fragment_at("$.approved").source_ref()
 
     resolved = registry.resolve(ref, "world:release-2")
 
     assert resolved.ref == ref
     assert resolved.artifact.owner_scope == "tenant:alpha"
     assert resolved.revision.revision_label == "r2"
+    assert resolved.representation == r2.representation
     assert resolved.fragment.logical_path == "$.approved"
+    assert resolved.is_historical_revision is False
+    assert resolved.is_historical_representation is False
     assert resolved.is_historical is False
 
 
-def test_historical_fragment_is_rejected_unless_explicitly_allowed() -> None:
-    registry = populated_registry()
-    ref = SourceRef.parse("record:release-candidate@r1#$.approved")
+def test_unqualified_ref_resolves_through_snapshot_active_representation() -> None:
+    registry, _, r2 = populated_registry()
+    shorthand = SourceRef(
+        artifact_id=r2.revision.artifact_id,
+        revision_label="r2",
+        logical_path="$.approved",
+    )
+
+    resolved = registry.resolve(shorthand, "world:release-2")
+
+    assert resolved.ref.representation_id == r2.representation.representation_id
+    assert resolved.fragment.source_ref() == resolved.ref
+
+
+def test_historical_revision_is_rejected_unless_explicitly_allowed() -> None:
+    registry, r1, _ = populated_registry()
+    ref = r1.fragment_at("$.approved").source_ref()
 
     with pytest.raises(SourceRegistryError) as raised:
         registry.resolve(ref, "world:release-2")
@@ -98,27 +147,96 @@ def test_historical_fragment_is_rejected_unless_explicitly_allowed() -> None:
         "world:release-2",
         allow_historical=True,
     )
+    assert resolved.is_historical_revision is True
     assert resolved.is_historical is True
 
 
+def test_parser_versions_coexist_and_old_provenance_resolves_exactly() -> None:
+    registry = InMemorySourceRegistry()
+    source_artifact = artifact()
+    registry.add_artifact(source_artifact)
+    parser_v1 = ingest(
+        source_artifact,
+        "r1",
+        {"approved": True},
+        parser_version="json-v1",
+    )
+    parser_v2 = ingest(
+        source_artifact,
+        "r1",
+        {"approved": True},
+        parser_version="json-v2",
+    )
+    registry.add_revision(parser_v1.revision)
+    registry.add_representation(
+        parser_v1.representation,
+        parser_v1.fragments,
+    )
+    registry.add_representation(
+        parser_v2.representation,
+        parser_v2.fragments,
+    )
+    bind_snapshot(registry, parser_v2)
+
+    current = registry.resolve(
+        parser_v2.fragment_at("$.approved").source_ref(),
+        "world:release-2",
+    )
+    assert current.representation.parser_version == "json-v2"
+
+    old_ref = parser_v1.fragment_at("$.approved").source_ref()
+    with pytest.raises(SourceRegistryError) as raised:
+        registry.resolve(old_ref, "world:release-2")
+    assert raised.value.code == "STALE_PARSED_REPRESENTATION"
+
+    historical = registry.resolve(
+        old_ref,
+        "world:release-2",
+        allow_historical=True,
+    )
+    assert historical.representation.parser_version == "json-v1"
+    assert historical.fragment.fragment_id == str(old_ref)
+    assert historical.is_historical_representation is True
+
+
+def test_same_content_business_revisions_coexist() -> None:
+    registry = InMemorySourceRegistry()
+    source_artifact = artifact()
+    registry.add_artifact(source_artifact)
+    r1 = ingest(source_artifact, "r1", {"approved": True})
+    r2 = ingest(source_artifact, "r2", {"approved": True})
+
+    add_ingested(registry, r1)
+    add_ingested(registry, r2)
+    bind_snapshot(registry, r2)
+
+    assert r1.revision.content_hash == r2.revision.content_hash
+    assert registry.revision_id_for(source_artifact.artifact_id, "r1") != (
+        registry.revision_id_for(source_artifact.artifact_id, "r2")
+    )
+
+
 def test_unknown_fragment_is_an_error_not_a_warning() -> None:
-    registry = populated_registry()
+    registry, _, r2 = populated_registry()
+    ref = SourceRef(
+        artifact_id=r2.revision.artifact_id,
+        revision_label="r2",
+        representation_id=r2.representation.representation_id,
+        logical_path="$.invented",
+    )
 
     with pytest.raises(SourceRegistryError) as raised:
-        registry.resolve(
-            SourceRef.parse("record:release-candidate@r2#$.invented"),
-            "world:release-2",
-        )
+        registry.resolve(ref, "world:release-2")
 
     assert raised.value.code == "UNKNOWN_SOURCE_FRAGMENT"
 
 
 def test_cross_scope_reference_is_rejected_even_when_source_exists() -> None:
-    registry = populated_registry()
+    registry, _, r2 = populated_registry()
 
     with pytest.raises(SourceRegistryError) as raised:
         registry.resolve(
-            SourceRef.parse("record:release-candidate@r2#$.approved"),
+            r2.fragment_at("$.approved").source_ref(),
             "world:release-2",
             request_scope="tenant:other",
         )
@@ -126,33 +244,32 @@ def test_cross_scope_reference_is_rejected_even_when_source_exists() -> None:
     assert raised.value.code == "UNAUTHORIZED_SOURCE_REFERENCE"
 
 
-def test_registry_never_overwrites_an_existing_revision() -> None:
-    registry = populated_registry()
-    source_artifact = artifact()
+def test_registry_never_overwrites_business_revision_content() -> None:
+    registry, _, r2 = populated_registry()
+    changed = ingest(artifact(), "r2", {"approved": "changed"})
 
     with pytest.raises(SourceRegistryError) as raised:
-        add_revision(registry, source_artifact, "r2", {"approved": "changed"})
+        registry.add_revision(changed.revision)
 
     assert raised.value.code == "REVISION_ALREADY_EXISTS"
     original = registry.resolve(
-        SourceRef.parse("record:release-candidate@r2#$.approved"),
+        r2.fragment_at("$.approved").source_ref(),
         "world:release-2",
     )
-    assert original.fragment.text_hash != "changed"
+    assert original.revision.content_hash == r2.revision.content_hash
 
 
 def test_snapshot_cannot_bind_revision_from_another_artifact() -> None:
-    registry = populated_registry()
+    registry, _, r2 = populated_registry()
 
     with pytest.raises(SourceRegistryError) as raised:
         registry.add_world_snapshot(
             WorldSnapshot(
                 world_snapshot_id="world:invalid",
                 owner_scope="tenant:alpha",
-                current_revisions={
-                    "record:other": registry.revision_id_for(
-                        "record:release-candidate", "r2"
-                    )
+                current_revisions={"record:other": r2.revision.revision_id},
+                current_representations={
+                    r2.revision.revision_id: r2.representation.representation_id
                 },
                 created_at=NOW,
             )
@@ -161,29 +278,22 @@ def test_snapshot_cannot_bind_revision_from_another_artifact() -> None:
     assert raised.value.code == "WORLD_SNAPSHOT_INVALID"
 
 
-def test_snapshot_cannot_bind_revision_outside_its_validity_interval() -> None:
+def test_snapshot_requires_active_representation_for_each_revision() -> None:
     registry = InMemorySourceRegistry()
     source_artifact = artifact()
     registry.add_artifact(source_artifact)
-    ingested = ingest_json_revision(
-        source_artifact,
-        revision_label="expired",
-        value={"approved": False},
-        created_at=NOW,
-        valid_from=NOW - timedelta(days=2),
-        valid_until=NOW - timedelta(days=1),
-        parser_version="json-v1",
-    )
-    registry.add_revision(ingested.revision, ingested.fragments)
+    r1 = ingest(source_artifact, "r1", {"approved": True})
+    add_ingested(registry, r1)
 
     with pytest.raises(SourceRegistryError) as raised:
         registry.add_world_snapshot(
             WorldSnapshot(
-                world_snapshot_id="world:after-expiry",
+                world_snapshot_id="world:missing-parser",
                 owner_scope="tenant:alpha",
                 current_revisions={
-                    source_artifact.artifact_id: ingested.revision.revision_id
+                    source_artifact.artifact_id: r1.revision.revision_id
                 },
+                current_representations={},
                 created_at=NOW,
             )
         )
@@ -191,13 +301,31 @@ def test_snapshot_cannot_bind_revision_outside_its_validity_interval() -> None:
     assert raised.value.code == "WORLD_SNAPSHOT_INVALID"
 
 
-def test_allowed_refs_are_current_scoped_and_deterministically_sorted() -> None:
-    registry = populated_registry()
+def test_snapshot_cannot_bind_revision_outside_validity_interval() -> None:
+    registry = InMemorySourceRegistry()
+    source_artifact = artifact()
+    registry.add_artifact(source_artifact)
+    expired = ingest(
+        source_artifact,
+        "expired",
+        {"approved": False},
+        valid_from=NOW - timedelta(days=2),
+        valid_until=NOW - timedelta(days=1),
+    )
+    add_ingested(registry, expired)
+
+    with pytest.raises(SourceRegistryError) as raised:
+        bind_snapshot(registry, expired, "world:after-expiry")
+
+    assert raised.value.code == "WORLD_SNAPSHOT_INVALID"
+
+
+def test_allowed_refs_are_active_qualified_scoped_and_sorted() -> None:
+    registry, _, r2 = populated_registry()
 
     refs = registry.allowed_refs("tenant:alpha", "world:release-2")
 
     assert refs == sorted(refs, key=str)
-    assert refs == [
-        SourceRef.parse("record:release-candidate@r2#$.approved")
-    ]
+    assert refs == [r2.fragment_at("$.approved").source_ref()]
+    assert refs[0].representation_id == r2.representation.representation_id
     assert registry.allowed_refs("tenant:other", "world:release-2") == []

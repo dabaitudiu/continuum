@@ -6,7 +6,13 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.sources.identity import Artifact, Fragment, Revision, SourceRef
+from app.sources.identity import (
+    Artifact,
+    Fragment,
+    ParsedRepresentation,
+    Revision,
+    SourceRef,
+)
 
 
 class SourceRegistryError(Exception):
@@ -22,6 +28,7 @@ class WorldSnapshot(BaseModel):
     world_snapshot_id: str
     owner_scope: str
     current_revisions: dict[str, str]
+    current_representations: dict[str, str]
     created_at: datetime
 
     @field_validator("world_snapshot_id", "owner_scope")
@@ -38,8 +45,11 @@ class ResolvedSource(BaseModel):
     ref: SourceRef
     artifact: Artifact
     revision: Revision
+    representation: ParsedRepresentation
     fragment: Fragment
     world_snapshot_id: str
+    is_historical_revision: bool
+    is_historical_representation: bool
     is_historical: bool
 
 
@@ -69,6 +79,7 @@ class InMemorySourceRegistry:
         self._artifacts: dict[str, Artifact] = {}
         self._revisions: dict[str, Revision] = {}
         self._revision_ids_by_label: dict[tuple[str, str], str] = {}
+        self._representations: dict[str, ParsedRepresentation] = {}
         self._fragments: dict[tuple[str, str], Fragment] = {}
         self._snapshots: dict[str, WorldSnapshot] = {}
         self._lock = RLock()
@@ -82,14 +93,9 @@ class InMemorySourceRegistry:
                 )
             self._artifacts[artifact.artifact_id] = artifact
 
-    def add_revision(
-        self,
-        revision: Revision,
-        fragments: tuple[Fragment, ...] | list[Fragment],
-    ) -> None:
+    def add_revision(self, revision: Revision) -> None:
         with self._lock:
-            artifact = self._artifacts.get(revision.artifact_id)
-            if artifact is None:
+            if revision.artifact_id not in self._artifacts:
                 raise SourceRegistryError(
                     "UNKNOWN_SOURCE_ARTIFACT",
                     f"artifact does not exist: {revision.artifact_id}",
@@ -104,10 +110,37 @@ class InMemorySourceRegistry:
                     "revision identity or label already exists: "
                     f"{revision.artifact_id}@{revision.revision_label}",
                 )
+            self._revisions[revision.revision_id] = revision
+            self._revision_ids_by_label[label_key] = revision.revision_id
+
+    def add_representation(
+        self,
+        representation: ParsedRepresentation,
+        fragments: tuple[Fragment, ...] | list[Fragment],
+    ) -> None:
+        with self._lock:
+            revision = self._revisions.get(representation.revision_id)
+            if revision is None:
+                raise SourceRegistryError(
+                    "UNKNOWN_SOURCE_REVISION",
+                    f"revision does not exist: {representation.revision_id}",
+                )
+            if representation.representation_id in self._representations:
+                raise SourceRegistryError(
+                    "REPRESENTATION_ALREADY_EXISTS",
+                    "parsed representation already exists: "
+                    f"{representation.representation_id}",
+                )
+            artifact = self._artifacts[revision.artifact_id]
             fragment_map: dict[tuple[str, str], Fragment] = {}
             for fragment in fragments:
-                self._validate_fragment(artifact, revision, fragment)
-                key = (revision.revision_id, fragment.logical_path)
+                self._validate_fragment(
+                    artifact,
+                    revision,
+                    representation,
+                    fragment,
+                )
+                key = (representation.representation_id, fragment.logical_path)
                 if key in fragment_map:
                     raise SourceRegistryError(
                         "FRAGMENT_ALREADY_EXISTS",
@@ -115,8 +148,9 @@ class InMemorySourceRegistry:
                     )
                 fragment_map[key] = fragment
 
-            self._revisions[revision.revision_id] = revision
-            self._revision_ids_by_label[label_key] = revision.revision_id
+            self._representations[representation.representation_id] = (
+                representation
+            )
             self._fragments.update(fragment_map)
 
     def add_world_snapshot(self, snapshot: WorldSnapshot) -> None:
@@ -126,13 +160,25 @@ class InMemorySourceRegistry:
                     "WORLD_SNAPSHOT_ALREADY_EXISTS",
                     f"world snapshot already exists: {snapshot.world_snapshot_id}",
                 )
+            revision_ids = set(snapshot.current_revisions.values())
+            if set(snapshot.current_representations) != revision_ids:
+                raise SourceRegistryError(
+                    "WORLD_SNAPSHOT_INVALID",
+                    "every current revision must have exactly one active "
+                    "parsed representation",
+                )
             for artifact_id, revision_id in snapshot.current_revisions.items():
                 artifact = self._artifacts.get(artifact_id)
                 revision = self._revisions.get(revision_id)
+                representation = self._representations.get(
+                    snapshot.current_representations[revision_id]
+                )
                 if (
                     artifact is None
                     or revision is None
                     or revision.artifact_id != artifact_id
+                    or representation is None
+                    or representation.revision_id != revision_id
                     or artifact.owner_scope != snapshot.owner_scope
                     or snapshot.created_at < revision.valid_from
                     or (
@@ -183,31 +229,79 @@ class InMemorySourceRegistry:
                     "UNAUTHORIZED_SOURCE_REFERENCE",
                     f"source is not allowed in scope: {effective_scope}",
                 )
+
             revision_id = self.revision_id_for(
                 ref.artifact_id,
                 ref.revision_label,
             )
             revision = self._revisions[revision_id]
-            fragment = self._fragments.get((revision_id, ref.logical_path))
-            if fragment is None:
-                raise SourceRegistryError(
-                    "UNKNOWN_SOURCE_FRAGMENT",
-                    f"fragment does not exist: {ref}",
-                )
             current_revision_id = snapshot.current_revisions.get(ref.artifact_id)
-            historical = current_revision_id != revision_id
-            if historical and not allow_historical:
+            historical_revision = current_revision_id != revision_id
+            if historical_revision and not allow_historical:
                 raise SourceRegistryError(
                     "STALE_SOURCE_REFERENCE",
                     f"revision is not current in {world_snapshot_id}: {ref}",
                 )
+
+            representation_id = ref.representation_id
+            if representation_id is None:
+                if historical_revision:
+                    raise SourceRegistryError(
+                        "UNQUALIFIED_HISTORICAL_REFERENCE",
+                        "historical refs must identify a parsed representation",
+                    )
+                representation_id = snapshot.current_representations.get(
+                    revision_id
+                )
+            representation = self._representations.get(
+                representation_id or ""
+            )
+            if (
+                representation is None
+                or representation.revision_id != revision_id
+            ):
+                raise SourceRegistryError(
+                    "UNKNOWN_PARSED_REPRESENTATION",
+                    f"parsed representation does not exist for revision: {ref}",
+                )
+
+            current_representation_id = snapshot.current_representations.get(
+                revision_id
+            )
+            historical_representation = (
+                current_representation_id != representation_id
+            )
+            if historical_representation and not allow_historical:
+                raise SourceRegistryError(
+                    "STALE_PARSED_REPRESENTATION",
+                    "parsed representation is not active in "
+                    f"{world_snapshot_id}: {ref}",
+                )
+
+            canonical_ref = ref.model_copy(
+                update={"representation_id": representation_id},
+                deep=True,
+            )
+            fragment = self._fragments.get(
+                (representation_id, ref.logical_path)
+            )
+            if fragment is None:
+                raise SourceRegistryError(
+                    "UNKNOWN_SOURCE_FRAGMENT",
+                    f"fragment does not exist: {canonical_ref}",
+                )
             return ResolvedSource(
-                ref=ref,
+                ref=canonical_ref,
                 artifact=artifact,
                 revision=revision,
+                representation=representation,
                 fragment=fragment,
                 world_snapshot_id=world_snapshot_id,
-                is_historical=historical,
+                is_historical_revision=historical_revision,
+                is_historical_representation=historical_representation,
+                is_historical=(
+                    historical_revision or historical_representation
+                ),
             )
 
     def allowed_refs(
@@ -224,15 +318,11 @@ class InMemorySourceRegistry:
                 artifact = self._artifacts[artifact_id]
                 if artifact.owner_scope != scope:
                     continue
-                revision = self._revisions[revision_id]
+                representation_id = snapshot.current_representations[revision_id]
                 refs.extend(
-                    SourceRef(
-                        artifact_id=artifact_id,
-                        revision_label=revision.revision_label,
-                        logical_path=logical_path,
-                    )
-                    for candidate_revision_id, logical_path in self._fragments
-                    if candidate_revision_id == revision_id
+                    fragment.source_ref()
+                    for (candidate_id, _), fragment in self._fragments.items()
+                    if candidate_id == representation_id
                 )
             return sorted(refs, key=str)
 
@@ -249,22 +339,27 @@ class InMemorySourceRegistry:
     def _validate_fragment(
         artifact: Artifact,
         revision: Revision,
+        representation: ParsedRepresentation,
         fragment: Fragment,
     ) -> None:
-        if fragment.revision_id != revision.revision_id:
+        if fragment.representation_id != representation.representation_id:
             raise SourceRegistryError(
-                "FRAGMENT_REVISION_MISMATCH",
-                f"fragment belongs to another revision: {fragment.fragment_id}",
+                "FRAGMENT_REPRESENTATION_MISMATCH",
+                f"fragment belongs to another representation: {fragment.fragment_id}",
             )
         try:
-            ref = fragment.source_ref(revision.revision_label)
+            ref = fragment.source_ref()
         except ValueError as error:
             raise SourceRegistryError(
                 "FRAGMENT_REFERENCE_INVALID",
                 f"fragment id is not canonical: {fragment.fragment_id}",
             ) from error
-        if ref.artifact_id != artifact.artifact_id:
+        if (
+            ref.artifact_id != artifact.artifact_id
+            or ref.revision_label != revision.revision_label
+            or ref.representation_id != representation.representation_id
+        ):
             raise SourceRegistryError(
                 "FRAGMENT_REFERENCE_INVALID",
-                f"fragment belongs to another artifact: {fragment.fragment_id}",
+                f"fragment provenance is inconsistent: {fragment.fragment_id}",
             )
