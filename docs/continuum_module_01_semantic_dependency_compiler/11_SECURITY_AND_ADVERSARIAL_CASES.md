@@ -28,6 +28,13 @@
 24. Empty retrieval is treated as `NOT_EXISTS` proof.
 25. New semantic epoch becomes executable before old Decisions stale/certify irrelevance.
 26. Dense contradiction output is truncated and reported complete.
+27. Upstream Decision D42 is degraded to a document/ref, so D50 escapes when D42 becomes stale/superseded.
+28. Agent bypasses the governed tool gateway and mixes a future W18 observation into a W17 proposal.
+29. Epoch publication requires a fleet-wide atomic Decision-row fan-out and becomes unavailable.
+30. Malformed/fabricated model output is persisted as durable business DENY.
+31. A single interpreter reads “training expired” as ENTAILED_TRUE and false proof canonicalizes.
+32. Same-predicate contradiction support is misrepresented as generic cross-predicate reasoning.
+33. Safe-but-blocked missions are removed from operational denominators.
 
 ## Trust classification
 
@@ -42,7 +49,7 @@ authority_rank
 
 Example authority ordering is domain-configured, never model-invented.
 
-Authority classification、precedence、proposal-outcome mapping、universe/selection、normalization/review、entity roles、Evidence/contradiction coverage、proof、temporal/epoch、predicate/decision-class and supported-logic rules are immutable `CompilerPolicyArtifact` revisions outside the enterprise world snapshot. Accepted Decisions retain critical provenance to exact proposal/entity context、material policies、applicability/temporal facts and selective boundary/rule/Evidence/contradiction guards；full manifests are audit derivation, not a super-dependency。
+Authority classification、precedence、proposal-outcome mapping、governed read、upstream Decision binding、universe/selection、normalization/review、entity roles、Evidence/contradiction coverage、proof verification、temporal/epoch、predicate/decision-class/registered-constraint and operational rules are immutable `CompilerPolicyArtifact` revisions outside the enterprise world snapshot. Accepted Decisions retain critical provenance to exact proposal/entity/observation/upstream context、verification receipts、material policies、applicability/temporal facts and selective guards；full manifests are audit derivation, not a super-dependency。
 
 ## Prompt injection isolation and semantic invariance
 
@@ -74,6 +81,8 @@ Refs are issued from a request-scoped allowlist. Cross-tenant references fail ev
 
 The allowlist is backed by `SourceUniverseSnapshot → RuleNormalizationManifest → SourceSetManifest`. Missing/stale authority attestation、fragment accounting、review receipt or selector completeness yields `RUN_BLOCKED`。
 
+Every material read also carries a signed `GovernedObservation` bound to the executable world/semantic epoch and gateway authorization context. Unversioned、future、mixed-epoch or bypass observations are `INPUT_REJECTION`, never proof. A model-emitted forbidden/cross-scope ref is an execution failure with null business disposition, not a semantic rejection。
+
 ## Stale revision defense
 
 The model can read historical revisions only if the request allows them. Historical refs are tagged and cannot accidentally compile as current governing dependencies.
@@ -81,6 +90,7 @@ The model can read historical revisions only if the request allows them. Histori
 ## Model-label distrust
 
 - Canonical materiality is selected by deterministic proof role; the model has no CRITICAL/SUPPORTING write field.
+- Every selected model-interpreted enterprise/applicability proof requires an independent `CONFIRMED`; REFUTED/INDETERMINATE triggers deterministic reselection and cannot canonicalize.
 - Contradiction impact is computed from reachability、proof eligibility and precedence；the replacement schema has no model severity field.
 - `INDETERMINATE` cannot be selected as proof.
 - APPLICABLE/NOT_APPLICABLE require deterministic current predicate proof；an unsupported model N/A is INDETERMINATE.
@@ -88,11 +98,13 @@ The model can read historical revisions only if the request allows them. Histori
 - Models cannot author Requirements、outcomes、predicate/entity keys；cross-entity matches are proof-ineligible.
 - `NOT_EXISTS`/empty-retrieval absence is explicitly unsupported in P0.
 - Time/epoch authorization is checked synchronously；model output cannot mint guards/certificates.
+- Required upstream Decisions keep exact Decision→Decision bindings；STALE/SUPERSEDED/INVALID cannot satisfy and successor rebinding is never implicit.
+- Compiler/model/schema/ref/transport/verifier failure has no business disposition and cannot authorize a durable DENY。
 - Display proposition text cannot affect semantic identity or DENY proof selection.
 
 ## Context and logic fail-closed rules
 
-Evidence/applicability and contradiction inputs are fragment-complete deterministic partitions with exact receipts. Output uses fragment wrappers + actual matches；silent top-K、negative-cross-product truncation and normalizer omission are forbidden. Governing logic outside DIRECT_ATOM/ALL_OF produces `REJECTED_UNSUPPORTED_LOGIC`；material/absence semantics outside P0 catalog produce `REJECTED_UNSUPPORTED_PREDICATE`。
+Evidence/applicability and contradiction inputs are fragment-complete deterministic partitions with exact receipts. Output uses fragment wrappers + actual matches；silent top-K、negative-cross-product truncation and normalizer omission are forbidden. P0 contradiction claims only direct same-predicate/entity/target conflict；cross-predicate invariants require a registered deterministic contract/template or emit `UNSUPPORTED_CROSS_PREDICATE_RELATION_P0`. Governing logic outside DIRECT_ATOM/ALL_OF produces `REJECTED_UNSUPPORTED_LOGIC`；material/absence semantics outside P0 catalog produce `REJECTED_UNSUPPORTED_PREDICATE`。
 
 ## Adversarial benchmark cases
 
@@ -104,7 +116,7 @@ At least:
 - 10 contradictory-authority cases;
 - 10 dependency-omission cases.
 
-Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、Evidence top-K/receipt traps、dense/cross-partition conflicts、cross-entity matches、ambiguous applicability/entailment、two-way applicability transitions、exact temporal expiry、semantic-epoch races、proposal outcome substitution attempts、K6 case-specific template traps and unsupported logic/predicate/absence。
+Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、Evidence top-K/receipt traps、direct same-predicate versus registered/unsupported cross-predicate cases、cross-entity matches、ambiguous applicability/entailment、selected-proof false interpretation、D42→D50→activation、governed-read bypass/mixing、zero-fan-out epoch races、execution-failure/result-taxonomy traps、operational denominator traps、proposal outcome substitution、K6 traps and unsupported logic/predicate/absence。
 
 ## Security acceptance
 

@@ -2,38 +2,42 @@
 
 ## Status
 
-The product owner selected **Option B's direction** and rejected concrete specifications through Revision 3. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 4 is normative for typed contracts、proposal/Requirement authority、artifact lifecycles、coverage proof、temporal/epoch safety、terminal semantics、migration and ablation.
+The product owner selected **Option B's direction** and rejected concrete specifications through Revision 4. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 5 is normative for typed contracts、proposal/Requirement/Decision dependency authority、governed reads、artifact lifecycles、coverage/verification proof、scalable temporal/epoch safety、result taxonomy、migration and ablation.
 
-Revision 4 is presented for product-owner review and is not approved or implemented. Module 01 remains `REDESIGN REQUIRED`.
+Revision 5 is presented for product-owner review and is not approved or implemented. Module 01 remains `REDESIGN REQUIRED`.
 
 ## Component topology
 
 ```mermaid
 flowchart TD
-    A[DecisionProposal + DecisionEntityContext + World + Policy] --> V[0I. Trusted Input Validation]
-    V --> U[0U. Authoritative SourceUniverseSnapshot]
+    A[Proposal + Entity + Governed Observations + Upstream Decisions] --> G[0G. Executable Read / Epoch Fence]
+    G --> V[0I. Trusted Input Validation]
+    V --> D0[0D. Exact Upstream Decision Binding]
+    D0 --> U[0U. Authoritative SourceUniverseSnapshot]
     U --> R[0N. RuleNormalizationManifest]
     R --> C[0S. SourceSetManifest + selective coverage guards]
     C --> C1[Universe / normalization / selection / hard-limit validation]
     C1 -->|incomplete or partial| RB[RUN_BLOCKED]
     C1 --> D[1A. Trusted Template + Entity Requirement Instantiation]
     D --> F[1B. Complete Obligation / Applicability Accounting]
-    F --> G[2A/B. EvidenceCoveragePlan + Fragment Evidence Map]
-    G --> G1[2C. Complete receipts + binding validation]
+    F --> E2[2A/B. EvidenceCoveragePlan + Fragment Evidence Map]
+    E2 --> G1[2C. Complete receipts + binding validation]
     F --> H[3A/B. Independent Fragment Contradiction Map]
     H --> H1[3C. Complete receipts + global join / precedence / impact]
-    G1 --> I[4. Applicability + Proof + Completeness + Temporal Guards]
-    H1 --> I
+    G1 --> P[4A. Provisional Proof Selection]
+    H1 --> P
+    P --> PV[4V. Independent Selected Proof Verification]
+    PV --> I[4B. Verified Proof + Completeness + Temporal Guards]
     I --> J[5. Deterministic Proposal Acceptance Gate]
     J -->|ACCEPTED| K[Deterministic Canonicalizer]
     J -->|REJECT / REVIEW| L[Immutable non-accepted CompilationResult]
     K --> M[Immutable accepted CompilationResult]
     M --> N[RuntimeAcceptanceService]
-    N --> B[Semantic-Epoch Publication / Authorization Barrier]
+    N --> B[ChangeSet Publication / Per-Decision Authorization Barrier]
     B --> O[Continuum canonical Runtime]
 ```
 
-Structural errors may take an early terminal path. Unknown/incomplete universe、normalization、selection、Evidence or contradiction coverage is execution-blocking, not semantic success. Unsupported governing logic/predicate/absence produces a typed fail-closed result. Missing evidence、applicability ambiguity、contradictions、entity mismatch、indeterminate entailment and proposal-outcome mismatch reach their relevant semantic stages before deterministic disposition.
+Trusted-input rejection、execution failure and semantic non-acceptance are disjoint. A model/schema/ref/transport failure is `RUN_FAILED` with no business disposition；unknown/incomplete pre-call coverage/capacity is execution-blocking. Unsupported governing logic/predicate/absence/unregistered cross-predicate relation produces a typed semantic result. Missing evidence、applicability ambiguity、direct contradictions、stale upstream Decision and proposal-outcome mismatch reach their relevant semantic stages before deterministic disposition.
 
 ## Trust boundaries
 
@@ -61,21 +65,26 @@ Structural errors may take an early terminal path. Unknown/incomplete universe�
 - canonical IDs, ordering, deduplication, hashes, and compiler state transitions;
 - validity-bearing provenance for applicability、material policies and selective coverage/rule/eligibility guards；the whole manifest is audit-only;
 - finite temporal validity horizons for time-sensitive proofs and explicit P0 `NOT_EXISTS` non-support；
-- semantic-epoch validity envelope / irrelevance-certificate authorization contract；
+- semantic-epoch validity envelope / complete ChangeSet-range authorization contract；irrelevance certificates are optional caches；
+- complete governed-observation closure and executable read/epoch fencing；
+- exact `UpstreamDecisionBinding` and canonical Decision→Decision reachability；
+- independent selected enterprise-proof verification and deterministic reselection；
+- executable ChangeSet log + per-envelope authorization intersection without fleet-wide writes；
 - immutable Runtime acceptance under exact proposal/entity/mission/world/universe/policy/derived-artifact binding.
 
 ### Probabilistic boundary
 
 - fragment-to-evidence/applicability bounded semantic matches、role、entailment、value and asserted horizon；
 - independent fragment-to-predicate contradiction matches。
+- exact selected-fragment proof verification verdicts only。
 
-Model output is immutable analysis IR only. It cannot author business outcome、Requirement、predicate/entity identity、canonical applicability、`CRITICAL | SUPPORTING`、canonical contradiction impact、deterministic precedence、coverage completeness、final disposition、Runtime mutations、Decision staleness、epochs/certificates or side-effect authority.
+Model output is immutable analysis IR only. It cannot author business outcome、Requirement、upstream Decision、predicate/entity identity、canonical applicability、`CRITICAL | SUPPORTING`、canonical contradiction impact、deterministic precedence、coverage completeness、final disposition、Runtime mutations、Decision staleness、epochs/certificates or side-effect authority.
 
 ## Compiler stages
 
-### Stage 0I/0U/0N/0S — Trusted input、universe、normalization and selection
+### Stage 0G/0I/0D/0U/0N/0S — Governed input、upstream Decisions、universe、normalization and selection
 
-Validate proposal producer/version/outcome mapping、entity roles and exact snapshots；validate an authoritative universe root；account every fragment through trusted normalization；then derive rule/Evidence/contradiction inventories and selective Runtime guards. Incomplete/unknown/review-required coverage fails closed，and derived manifests never become members of their input world snapshot.
+Validate one executable governed read/epoch closure、proposal/entity inputs and exact upstream Decision envelopes/status；then validate universe、normalization、selection and selective guards. Mixed/future/bypass observations are input rejection；a stale/superseded upstream cannot satisfy proof and is never auto-rebound。
 
 ### Stage 1A/1B — Deterministic Requirement Decomposition and Accounting
 
@@ -89,9 +98,9 @@ Build a no-top-K `EvidenceCoveragePlan` over every certified eligible fragment a
 
 Independently process all contradiction-eligible fragments. Each emits only actual matches, so output is O(fragments+matches), not a negative cross-product. Complete receipts and global reduce find cross-partition conflicts、apply precedence and derive impact from reachability/proof eligibility；the schema has no severity authority.
 
-### Stage 4 — Deterministic Applicability、Proof、Completeness and Temporal Validity
+### Stage 4A/4V/4B — Selection、Independent Proof Verification、Completeness and Temporal Validity
 
-Finalize applicability after contradiction、select stable proofs、derive materiality、compute assessments and emit finite `TemporalValidityGuard`s/`DecisionValidityEnvelope`. This stage has no model call.
+Provisional selection chooses stable enterprise candidates；the narrow independent verifier sees only exact fragment/target/entity/claimed semantics and returns `CONFIRMED | REFUTED | INDETERMINATE`. Only confirmed enterprise/applicability proof canonicalizes；code reselects otherwise. Upstream Decision proof is exact deterministic binding. Final code derives materiality、assessments、temporal guards and the envelope.
 
 ### Stage 5 — Deterministic Proposal Acceptance Gate
 
@@ -102,25 +111,29 @@ Compute an evidence-supported validation class and compare it to immutable `Deci
 ```mermaid
 stateDiagram-v2
     [*] --> RECEIVED
-    RECEIVED --> TRUSTED_INPUTS_VALIDATED
+    RECEIVED --> GOVERNED_INPUTS_VALIDATED
+    GOVERNED_INPUTS_VALIDATED --> TRUSTED_INPUTS_VALIDATED
     TRUSTED_INPUTS_VALIDATED --> CONTEXT_COVERAGE_VALIDATED
     CONTEXT_COVERAGE_VALIDATED --> REQUIREMENTS_INSTANTIATED_AND_ACCOUNTED
     REQUIREMENTS_INSTANTIATED_AND_ACCOUNTED --> EVIDENCE_COVERAGE_VALIDATED
     EVIDENCE_COVERAGE_VALIDATED --> BINDINGS_VALIDATED
     BINDINGS_VALIDATED --> CONTRADICTIONS_VALIDATED
-    CONTRADICTIONS_VALIDATED --> PROOFS_AND_COMPLETENESS_COMPUTED
+    CONTRADICTIONS_VALIDATED --> PROVISIONAL_PROOFS_SELECTED
+    PROVISIONAL_PROOFS_SELECTED --> SELECTED_PROOFS_INDEPENDENTLY_VERIFIED
+    SELECTED_PROOFS_INDEPENDENTLY_VERIFIED --> PROOFS_AND_COMPLETENESS_COMPUTED
     PROOFS_AND_COMPLETENESS_COMPUTED --> GATE_EVALUATED
     GATE_EVALUATED --> CANONICALIZED: ACCEPTED
     GATE_EVALUATED --> COMPLETED_NOT_ACCEPTED: REJECT / REVIEW
     CANONICALIZED --> COMPLETED_ACCEPTED
 
+    RECEIVED --> COMPLETED_INPUT_REJECTED: invalid governed/trusted input
     RECEIVED --> RUN_BLOCKED: source coverage unknown / auth
     REQUIREMENTS_INSTANTIATED_AND_ACCOUNTED --> RUN_BLOCKED: provider / budget / evidence coverage
-    BINDINGS_VALIDATED --> RUN_BLOCKED: partial contradiction partitions
+    BINDINGS_VALIDATED --> RUN_FAILED: model/transport/protocol failure
+    BINDINGS_VALIDATED --> RUN_BLOCKED: preflight capacity unavailable
     CONTEXT_COVERAGE_VALIDATED --> COMPLETED_UNSUPPORTED_LOGIC
-    CONTEXT_COVERAGE_VALIDATED --> TERMINAL_STRUCTURAL_ERROR
-    REQUIREMENTS_INSTANTIATED_AND_ACCOUNTED --> TERMINAL_STRUCTURAL_ERROR
-    BINDINGS_VALIDATED --> TERMINAL_STRUCTURAL_ERROR
+    CONTEXT_COVERAGE_VALIDATED --> RUN_FAILED: compiler/model structural invariant
+    REQUIREMENTS_INSTANTIATED_AND_ACCOUNTED --> RUN_FAILED: compiler structural invariant
     RECEIVED --> RUN_FAILED: internal / persistence invariant
     CONTEXT_COVERAGE_VALIDATED --> RUN_FAILED: internal / persistence invariant
     REQUIREMENTS_INSTANTIATED_AND_ACCOUNTED --> RUN_FAILED: internal / persistence invariant
@@ -142,22 +155,27 @@ Claim(derived requirement)
   --REQUIRES[CRITICAL]-->
 Decision
 
+UpstreamDecision(exact envelope)
+  --REQUIRES / AUTHORIZES[CRITICAL]-->
+DownstreamDecision
+
 CompilerPolicyArtifact / selective CoverageGuard
   --GOVERNED_BY[CRITICAL]-->
 Claim(decision interpretation)
   --REQUIRES[CRITICAL]-->
 Decision
 
-DecisionProposal / DecisionEntityContext / TemporalValidityGuard /
+DecisionProposal / DecisionEntityContext / GovernedObservationSet /
+SelectedProofVerificationReceipt / TemporalValidityGuard /
 DecisionValidityEnvelope
   --VALIDATED_AS / BINDS_ENTITY / AUTHORIZES_WHILE_CURRENT[CRITICAL]-->
 Decision
 ```
 
-Support and later invalidation use graph reachability. Existing Source → Claim → Claim → Decision semantics remain valid. Canonical state contains Stage-4 selected proof、applicability guards and materially participating policy/coverage semantic keys；full manifests/receipts remain immutable audit derivation. APPROVE uses all root closures；DENY uses one stable failed path selected without proposition text. No redundant direct edge is required.
+Support and later invalidation use graph reachability. Existing Source → Claim → Claim → Decision semantics remain valid, and contract-required upstream proof is a distinct first-class Decision → Decision edge. Canonical state contains independently verified selected proof、applicability/upstream guards and materially participating policy/coverage semantic keys；full manifests/receipts remain immutable audit derivation. APPROVE uses all root closures；DENY uses one stable failed path selected without proposition text. No redundant direct source edge is required.
 
 ## Integration boundary
 
-The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate an accepted canonical result into Runtime graph mutations, after checking exact proposal/entity/mission/world/universe/policy hashes、clock horizon、derived envelope and semantic epoch. A newer executable epoch requires an unbroken deterministic irrelevance-certificate chain or authorization is denied. Runtime still owns Decision lifecycle、stale propagation、action blocking and side-effect authorization.
+The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate an accepted canonical result into Runtime graph mutations, after checking exact proposal/entity/observation/upstream/mission/world/universe/policy hashes、clock horizon and derived envelope. `PublishEpochTxn` atomically advances the complete ChangeSet/read fence without Decision fan-out；`AuthorizeSideEffectTxn` intersects the exact envelope with intervening ChangeSets and rechecks upstream currentness in the same conditional commit as the side effect. Runtime still owns lifecycle、stale projection、action blocking and authorization.
 
 The old critic and reasoner-only routes remain only as explicit benchmark baselines during migration. Neither is a production fallback for the replacement pipeline.

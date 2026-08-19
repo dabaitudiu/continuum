@@ -184,23 +184,30 @@ At minimum the following are versioned `CompilerPolicyArtifact` records：
 - proof-selection policy;
 - Evidence-coverage policy;
 - context-partition policy;
+- governed-read policy;
+- upstream-Decision binding policy;
+- selected-proof verification policy;
+- registered cross-predicate constraint policy;
+- operational limit profile;
 - temporal-validity policy;
 - semantic-epoch policy;
 - supported-logic policy;
 
-`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `DecisionProposal`/`DecisionEntityContext` are signed immutable request-input envelopes in a separate request store；they reference but are not members of the input world and do not create a fourth compiler artifact namespace. `RuleNormalizationManifest`、`SourceSetManifest`、Evidence/contradiction certificates、applicability/temporal guards、`DecisionValidityEnvelope` and `DecisionInterpretation` are compiler-derived records. Material policy refs and selective coverage/rule/Evidence/contradiction/applicability guard keys are validity-bearing；full derived inventories are audit derivation, not one coarse CRITICAL dependency.
+`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `DecisionProposal`/`DecisionEntityContext`/`GovernedObservationSet` are signed immutable request inputs in separate stores；they reference but are not members of the input world and do not create a fourth compiler artifact namespace. `UpstreamDecisionBinding` references a first-class Continuum Decision/envelope and never re-encodes it as an enterprise fragment. `RuleNormalizationManifest`、`SourceSetManifest`、Evidence/contradiction/selected-proof verification certificates、applicability/temporal guards、`DecisionValidityEnvelope` and `DecisionInterpretation` are compiler-derived records。
+
+Every material agent/tool/compiler read has a signed `GovernedObservation` with tool/source identity/version、content hash、authorization context、world snapshot and executable semantic epoch. All material proposal inputs form a complete `GovernedObservationSet` under one `GovernedReadView`. Unversioned、future、mixed or bypass reads are typed input rejection and cannot become canonical proof。
 
 ## Source-universe coverage
 
-Every compilation first binds to a content-addressed authoritative `SourceUniverseSnapshot` containing owner scope、registry/catalog source、namespaces、complete artifact revisions、sync/index watermarks、snapshot hash and completeness authority. It then derives normalization and selection manifests containing exact input snapshot IDs/policy bundle ID、coverage boundaries、fragment/rule accounting、included/excluded inventories、retrieval versions、contradiction eligibility and partitions.
+Every compilation first binds one executable `GovernedReadView`, then a content-addressed authoritative `SourceUniverseSnapshot` containing the same epoch/world fence、owner scope、registry/catalog source、namespaces、complete artifact revisions、sync/index watermarks、snapshot hash and completeness authority. It then derives normalization and selection manifests containing exact input snapshot IDs/policy bundle ID、coverage boundaries、fragment/rule accounting、included/excluded inventories、retrieval versions、contradiction eligibility and partitions.
 
-Required chain is `SourceUniverseSnapshot → SourceSelectionPolicy → SourceSetManifest`。A selector cannot claim completeness without a validated complete universe root. Unknown/incomplete attestation or retrieved subset causes `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`。Runtime invalidation uses selective boundary/rule/eligibility guards so unrelated inventory changes do not stale all Decisions merely because a manifest hash changed.
+Required chain is `GovernedReadView → SourceUniverseSnapshot → SourceSelectionPolicy → SourceSetManifest`。A selector cannot claim completeness without a validated complete universe root. Unknown/incomplete attestation or retrieved subset causes `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`。Runtime invalidation uses selective boundary/rule/eligibility guards so unrelated inventory changes do not stale all Decisions merely because a manifest hash changed.
 
 ## Revision semantics
 
-A compiler request is bound to a `world_snapshot_id`. Every referenced revision must be valid in that snapshot, and every current revision is bound to one active parsed representation.
+A compiler request is bound to a `world_snapshot_id` and executable semantic epoch/read fence. Every referenced revision must be valid in that governed snapshot, and every current revision is bound to one active parsed representation.
 
-If a model cites an older revision that exists but was not current for the snapshot, validation fails with `STALE_SOURCE_REFERENCE` unless the task explicitly allows historical reasoning.
+If trusted input references an older revision outside the declared snapshot it is input rejection. If a model emits any stale/forbidden ref outside its partition schema, the compiler attempt is `RUN_FAILED: MODEL_PROTOCOL_INTEGRITY_FAILURE` with no business disposition。
 
 ## Parser versioning
 

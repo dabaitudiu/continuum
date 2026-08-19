@@ -9,13 +9,13 @@
 The SDC sits between agent reasoning and Continuum's canonical decision graph.
 
 ```text
-Enterprise artifacts / tools
+Governed enterprise artifacts / tools at one executable epoch
         ↓
-Domain agent emits immutable DecisionProposal + DecisionEntityContext
+Domain agent emits immutable Proposal + Entity/Observation/Upstream refs
         ↓
-Trusted Requirement templates + bounded Evidence/contradiction interpretation
+Trusted templates + bounded Evidence/direct contradiction interpretation
         ↓
-Semantic Dependency Compiler
+Semantic Dependency Compiler + independent selected-proof verification
         ↓
 Compilation Result
         ↓
@@ -47,9 +47,15 @@ The module must support:
 11. Canonical graph compilation with stable semantic identity and reproducible output.
 12. Fail-closed behavior for unsupported logic/predicate/absence.
 13. Validity-bearing applicability and finite temporal proofs.
-14. Selective invalidation plus semantic-epoch authorization envelope without async stale window.
+14. Selective invalidation plus zero-fan-out ChangeSet publication/per-envelope authorization without async stale window.
 15. Method-blind annotations、K6 generality metrics、paired adversarial/mutation outcomes and external blind set.
 16. Live Gemini DEV before blind reveal and Gemini-primary blind evaluation；mock-only validation is insufficient.
+17. First-class exact upstream Decision proof and transitive Decision→Decision invalidation.
+18. Governed material-read closure bound to one executable world/semantic epoch.
+19. Independent verification for every selected model-interpreted enterprise/applicability proof.
+20. Disjoint input rejection、execution failure and semantic business-result taxonomy.
+21. Explicit direct same-predicate contradiction scope and registered/fail-closed cross-predicate relations.
+22. Operational success/block/calls/tokens/latency/cost gate with blocked missions retained.
 
 ## Non-goals
 
@@ -68,18 +74,20 @@ This module does **not** own:
 ## Hard invariants
 
 1. Domain agent owns the proposed business outcome；compiler/model cannot replace it.
-2. Models interpret bounded Evidence/contradictions only；they cannot author Requirement、predicate/entity IDs or canonical source IDs.
+2. Models interpret bounded Evidence/direct contradictions and verify exact selected proof only；they cannot author Requirement、upstream Decision、predicate/entity IDs or canonical source IDs.
 3. Every dependency reference must resolve to an allowed, versioned source object.
-4. Canonicalization must be deterministic for the same validated proposal/entity/snapshots/clock/epoch.
+4. Canonicalization must be deterministic for the same validated proposal/entity/observation/upstream/snapshots、model outputs、clock/epoch.
 5. The compiler must never persist hidden chain-of-thought. Store structured claims, concise rationale, citations, and validation evidence only.
-6. Unsupported/unknown ref/entity/semantic shape is a compilation error, not a warning.
+6. Unsupported semantic shape fails closed；malformed trusted input is input rejection；model-generated schema/ref/entity violation is execution failure with no business disposition.
 7. Critical dependency omissions must be measurable through method-blind evaluation, not assumed away from receipts.
 8. A decision cannot become canonically `VALID` merely because a model/domain agent says “approved”.
 9. Demo-specific IDs such as `D42`, `ACME`, `policy-v13`, and `PEN_TEST` must not appear in compiler logic/templates.
 10. Canonical materiality and contradiction impact are deterministic results, never model authority.
 11. Accepted Decisions depend on selected proofs/applicability/temporal/epoch guards and materially used selective semantics, not the whole inventory as one coarse dependency.
 12. Incomplete universe/normalization/selection/Evidence/contradiction coverage and unsupported logic/predicate/absence fail closed.
-13. Compiler-derived records never join their input snapshot；Runtime denies at expiry or across uncovered newer semantic epochs.
+13. Compiler-derived records never join their input snapshot；Runtime denies at expiry、invalid upstream or any relevant intervening executable ChangeSet regardless of Decision-row lag.
+14. An unversioned、future、mixed or bypass material observation can never become canonical proof.
+15. Only independently CONFIRMED model-interpreted enterprise/applicability proof becomes canonical CRITICAL；verifier failure never becomes business DENY.
 
 ## Why this module is competition-worthy
 

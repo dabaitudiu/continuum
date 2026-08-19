@@ -9,6 +9,8 @@ Focus on deterministic code:
 - source identity;
 - fragment resolution;
 - proposal producer/outcome immutability、entity-role binding and cross-entity rejection；
+- governed-observation closure、gateway signature、executable read fence and future/mixed/bypass rejection；
+- exact upstream Decision ID/compilation/envelope/outcome/status/epoch binding、supersession non-rewrite and D→D reachability；
 - temporal validity guard and exclusive authorization horizon;
 - scope checks;
 - separate enterprise-world/policy snapshots and exact derived-artifact envelope validation;
@@ -18,15 +20,18 @@ Focus on deterministic code:
 - SourceSetManifest boundary、included/excluded rule inventory、retrieval version、coverage status/hash and selective guard derivation;
 - stable PredicateIdentity and DIRECT_ATOM/ALL_OF normalization；P0 `NOT_EXISTS`、`EXISTS+FALSE` and retrieval absence rejection；
 - trusted reusable template instantiation、per-obligation accounting、entity-bound IDs、APPLICABLE/NOT_APPLICABLE proof and INDETERMINATE;
-- EvidenceCoveragePlan eligibility/no-top-K limits、one-wrapper-per-fragment receipts、actual-match caps and partial/dense blocking；
+- EvidenceCoveragePlan eligibility/no-top-K limits、one-wrapper-per-fragment receipts、preflight capacity blocking and post-call partial/protocol failure；
 - EvidenceBinding cross-links、applicability-vs-state target separation、three-state entailment、proof eligibility and proof-selected materiality;
+- selected-proof verifier minimal input/independence/three-valued verdict、deterministic reselection and only-CONFIRMED canonicalization；
 - scalable fragment contradiction partition/receipt union、actual-match output、cross-partition entity-aware join、precedence and impact;
 - deterministic RequirementAssessment truth table, support paths, blocking IDs, and one-assessment-per-requirement;
 - deterministic proof-role selection and opposite-truth conflict preservation;
-- transitive Source → Claim → Claim → Decision reachability;
+- transitive Source → Claim → Claim → Decision and Decision → Decision reachability;
 - deterministic `APPROVE | DENY | REVIEW` acceptance rules;
 - proposal outcome mismatch rejects without replacement；
-- `DecisionValidityEnvelope` epoch vector、irrelevance-certificate chain and authorization denial across uncovered changes；
+- `DecisionValidityEnvelope` observation/upstream/verification/epoch binding and authorization denial across relevant ChangeSets；
+- zero required Decision-row writes in epoch publication and conditional epoch-pointer/upstream-hash authorization commit；
+- disjoint INPUT_REJECTION / EXECUTION_FAILURE / SEMANTIC_RESULT records；model/protocol failure has no business disposition；
 - deterministic minimal DecisionJustification independent of proposition display、case/domain/local-ID order;
 - unsupported-logic and unsupported-predicate typed fail-closed results;
 - canonical edge normalization;
@@ -52,6 +57,9 @@ Useful invariants:
 - changing proposal outcome never lets compiler canonicalize a different outcome under the same proposal ID；
 - time passage to exact exclusive horizon denies authorization without source mutation；
 - any uncovered newer semantic epoch denies side-effect authorization；
+- any relevant intervening ChangeSet or invalid upstream Decision denies authorization even if the Decision row still says VALID；
+- publishing an epoch never requires materializing per-Decision stale/certificate rows；
+- N0/N1 share primary outputs；only verification/reselection differs；
 - changing an irrelevant inventory artifact may change audit manifest hash but not selective Runtime guard/edge set;
 - semantically relevant catalog/rule/selection changes alter only matching coverage guards.
 
@@ -65,10 +73,13 @@ Cases:
 - unknown ref rejected;
 - stale revision rejected;
 - cross-scope ref rejected;
+- malformed signed input is typed INPUT_REJECTION；model-emitted forbidden ref/schema/target and transport failure are RUN_FAILED with null business disposition；
+- W18 bypass/mixed observation cannot enter a W17/E17 proposal；
+- D42 exact VALID binding satisfies D50；D42 STALE/SUPERSEDED invalidates D50→activation and never auto-binds D42'；
 - a domain-proposal/rationale omission is supplied by trusted template instantiation and flows downstream;
 - a missing/duplicate template/obligation receipt cannot appear as complete accounting;
 - Alice Requirement cannot use Bob evidence；Vendor-A cannot use Vendor-B evidence；
-- Evidence/applicability fragment inventory has no silent top-K；missing/dense/partial receipt blocks；
+- Evidence/applicability fragment inventory has no silent top-K；preflight capacity blocks and post-call missing/partial receipt fails execution；
 - INDETERMINATE obligation applicability prevents normal acceptance;
 - a Requirement without determinate proof evidence reaches contradiction and completeness before gate rejection;
 - INDETERMINATE evidence cannot satisfy a DIRECT_ATOM;
@@ -76,7 +87,9 @@ Cases:
 - equal-authority contradiction reaches a dedicated typed pass and forces review;
 - model SUPPORTING/severity advisory cannot suppress selected-proof materiality or blocking contradiction impact;
 - cross-partition contradiction is joined, while missing partition blocks the run;
-- contradiction output emits one wrapper/ref plus actual matches and remains inside declared v4 call/token/output limits；
+- contradiction output emits one wrapper/ref plus actual matches and remains inside declared v5 call/token/output limits；
+- direct same-predicate conflicts are detected；registered cross-predicate constraint violations and unsupported relations are separate paths；
+- primary interpreter falsely reads “training expired” as true；Stage 4V refutes it and deterministic selection retries/fails closed；
 - incomplete/unknown SourceUniverse/SourceSet and incomplete/review-required normalization fail closed;
 - applicable unsupported OR/threshold/exception logic cannot canonicalize;
 - a transitive Claim support path is accepted without redundant direct source edges;
@@ -86,7 +99,7 @@ Cases:
 - no replacement failure falls back to old critic;
 - runtime revision changes after compile → accept fails.
 - source bytes unchanged but temporal horizon expires → authorization denied/Decision stale；
-- enterprise、new-rule membership、policy、catalog/selector races across semantic epochs cannot authorize before stale/certification；
+- enterprise、new-rule membership、policy、catalog/selector races publish ChangeSets without Decision fan-out and cannot authorize across a relevant intersection；
 - material absence obligation produces `ABSENCE_PROOF_NOT_SUPPORTED_P0` with no canonical graph；
 - proposal proof implies another outcome → supplied proposal rejected, no substitute Decision。
 
@@ -106,6 +119,7 @@ Must test:
 - missing evidence case;
 - contradiction case;
 - paired clean/injected semantic-invariance case.
+- selected-proof verification schema/minimal-context/independence case；
 
 ### Benchmark tests
 
@@ -137,10 +151,11 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - equal-authority conflict cannot silently accept;
 - model severity cannot downgrade validity-critical conflict;
 - complete contradiction partition union detects cross-partition conflict;
-- incomplete partition union returns RUN_BLOCKED rather than zero contradictions;
-- complete Evidence fragment union finds applicability/state candidates without top-K；partial/dense union blocks；
+- preflight partition capacity returns RUN_BLOCKED；post-call incomplete union returns RUN_FAILED rather than zero contradictions;
+- complete Evidence fragment union finds applicability/state candidates without top-K；preflight dense capacity blocks and post-call partial union fails；
 - contradiction map output is O(fragments+actual matches), not a negative cross-product；
-- wrong-entity evidence never satisfies/canonicalizes a Requirement；invented entity/target is invalid structure；
+- wrong-entity evidence never satisfies/canonicalizes a Requirement；model-invented entity/target is execution failure with null business disposition；
+- model-invented target/ref/schema violation is execution failure，not business rejection；
 - a critical fragment mutation makes an accepted Decision stale;
 - a counterevidence fragment mutation makes an accepted DENY Decision stale;
 - an unselected failed/satisfied sibling fragment mutation leaves that DENY Decision valid;
@@ -158,6 +173,13 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - time-sensitive proof missing horizon is insufficient；exact expiry denies authorization without source revision；
 - valid proposal whose proof supports another class is rejected without outcome substitution；
 - uncovered semantic-epoch races for enterprise/new-rule/policy/catalog changes deny authorization；
+- D42→D50→activation first-class Decision dependency、stale propagation and D42' supersession non-rewrite；
+- governed W17/W18 future/mixed/bypass observations are input rejected；
+- epoch publication has zero required Decision writes；authorization intersects every intervening ChangeSet under unchanged pointer；
+- flaky/malformed primary、contradiction or verifier call yields retryable RUN_FAILED and null business disposition；
+- selected false proof is independently REFUTED/INDETERMINATE、reselected or fails closed；
+- direct contradiction/registered cross-predicate constraint/unsupported relation metrics cannot share a denominator；
+- operational metrics retain blocked missions and publish per-domain/class median/p95 calls、tokens、latency and cost；
 - K6 fixtures contain zero case-specific predicates/rules/dependency templates and new in-scope cases reuse frozen schemas；
 - paraphrased equivalent Requirement selects identical Runtime proof;
 - paired injection cannot suppress Requirements/evidence/contradictions or flip outcome/disposition/mutation quality;
@@ -165,11 +187,11 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - unsupported OR/threshold/exception/quantified logic returns typed no-canonical result;
 - semantic incompleteness cannot skip contradiction/completeness;
 - existing transitive Claim/Decision dependency semantics satisfy completeness;
-- three-arm ablation routing and metrics are isolated correctly;
+- A/B/N0/N1 ablation routing and metrics are isolated correctly;
 - method-blind DEV annotation is frozen before replacement output、versioned/hashed/append-only and unavailable to production;
 - experiment order is OpenAI DEV → Gemini DEV → freeze → Gemini-primary blind；production/agents cannot access blind bodies.
 
-The synthetic normative P0-1…P0-27 counterexamples in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify contracts only and cannot be reported as live-model or benchmark evidence.
+The synthetic normative P0-1…P0-33 counterexamples in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify contracts only and cannot be reported as live-model or benchmark evidence.
 
 ## Mutation tests
 
@@ -186,7 +208,12 @@ Artificially:
 - advance trusted time to immediately before、exactly at and after `valid_until`；
 - bind Alice's target to Bob's evidence and swap Vendor A/B；
 - attempt compiler outcome substitution under the same proposal ID；
-- advance enterprise/universe/policy/catalog semantic epochs with and without valid irrelevance certificates；
+- advance enterprise/universe/policy/catalog semantic epochs with exact ChangeSets、valid/invalid range proofs and optional irrelevance caches；
+- keep lazy Decision row VALID while publishing a relevant ChangeSet and verify authorization denies；
+- swap exact upstream envelope/status and attempt silent successor rebinding；
+- mix governed observations from adjacent epochs and bypass the read gateway；
+- corrupt primary/verifier schema/ref/receipt and assert business disposition remains null；
+- flip verifier verdict、exhaust candidate/call capacity and verify no unconfirmed proof canonicalizes；
 - add one relevant governing source and one irrelevant inventory artifact;
 - change normalization/selection/catalog semantics independently;
 - remove one Evidence or contradiction partition receipt；force dense-match limit；
@@ -201,8 +228,8 @@ P0 targets are modest but measurable:
 
 - deterministic validation/canonicalization < 100 ms for a 100-node template-instantiated graph on laptop, excluding model calls and partition planning;
 - source registry lookup does not scan all source text;
-- Evidence/contradiction partition planning obeys versioned v4 hard limits and never silently truncates；zero fragment-map repairs keep the actual worst case ≤128 calls、2,024,288 input and 1,245,184 output tokens combined;
-- live Gemini latency recorded separately.
+- Evidence/contradiction partition planning obeys v5 hard limits and never silently truncates；fragment maps remain ≤128 calls before verification；verification is separately capped/metered and total protocol calls ≤192;
+- per provider/domain/class operational gate records successful-compilation/context-block rates and median/p95 calls、input/output tokens、latency、settled cost with blocked missions retained.
 
 ## CI split
 
@@ -221,4 +248,4 @@ P0 targets are modest but measurable:
 
 Mock tests can never turn a live-Gemini acceptance row green.
 
-The redesign sequence remains bounded: Experiments 2A/2B–4、integrated 30-case Experiment 5、6A OpenAI full DEV、6B Gemini full DEV、7 freeze、8 Gemini-primary blind. None of the paid/full/blind stages runs during architecture review；CI contains no blind bodies。
+The redesign sequence remains bounded: Experiments 2A/2B/2C–4、integrated A/B/N0/N1 30-case Experiment 5、6A OpenAI full DEV、6B Gemini full DEV、7 freeze、8 Gemini-primary blind. None of the paid/full/blind stages runs during architecture review；CI contains no blind bodies。

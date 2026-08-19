@@ -2,15 +2,18 @@
 
 ## Architecture decision
 
-The old Completeness Critic remains rejected. Revision 4 replaces it with seven disjoint contracts:
+The old Completeness Critic remains rejected. Revision 5 replaces it with ten disjoint contracts:
 
-1. authoritative universe + fragment-complete normalization prove the obligation input inventory;
-2. approved reusable templates plus trusted entity roles deterministically instantiate every semantic Requirement/applicability target；
-3. no-top-K `EvidenceCoveragePlan` and fragment receipts cover Evidence/applicability discovery；
-4. scalable independent fragment contradiction observation covers the same target semantics without ref×predicate negative output；
-5. deterministic applicability/proof/completeness derives materiality、impact and RequirementAssessments；
-6. temporal guards and epoch-bound validity envelope define authorization lifetime；
-7. deterministic proposal Gate and selective provenance mapping decide Runtime eligibility without outcome substitution.
+1. governed observations prove proposal/compiler reads came from one executable world/epoch；
+2. authoritative universe + fragment-complete normalization prove the obligation input inventory;
+3. approved reusable templates plus trusted entity roles deterministically instantiate every semantic Requirement/applicability/upstream target；
+4. exact `UpstreamDecisionBinding`s preserve first-class Decision→Decision proof；
+5. no-top-K `EvidenceCoveragePlan` and fragment receipts cover Evidence/applicability discovery；
+6. scalable independent fragment contradiction observation guarantees direct same-predicate conflicts only；
+7. narrow independent selected-proof verification blocks single-interpreter false proof；
+8. deterministic applicability/proof/completeness derives materiality、impact and RequirementAssessments；
+9. temporal guards plus executable ChangeSet/per-envelope authorization define lifetime without fleet-wide writes；
+10. deterministic proposal Gate and selective provenance mapping decide Runtime eligibility without outcome substitution.
 
 No pass emits `UNKNOWN_SOURCE_REQUIRED`, edits canonical state, or decides final disposition.
 
@@ -33,15 +36,15 @@ Accounting rules：
 - every normalized obligation and decision-class template appears exactly once;
 - reusable template + entity role binding deterministically defines semantic ID/topology;
 - incompatible/duplicate/missing template or entity role → fail-closed coverage conflict;
-- unsupported logic/predicate → typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE`;
+- unsupported logic/predicate/cross-predicate relation → typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE`;
 - `NOT_EXISTS`/retrieval-derived absence → typed `ABSENCE_PROOF_NOT_SUPPORTED_P0`;
-- invented target/entity/ref → structural failure.
+- model-invented target/entity/ref → compiler/model execution failure with no business disposition.
 
 This catches a domain-proposal/rationale omission by construction without making the compiler a second Decision Maker or a vague critic。
 
 ## Complete Evidence and Applicability Discovery
 
-`EvidenceCoveragePlan` contains all instantiated Requirement/applicability targets and every fragment certified eligible by versioned entity/source-role/namespace rules. It has no top-K field. Deterministic partitions yield one `FragmentEvidenceObservation` per ref with only actual matches；empty means processed/no match reported. Exact receipts prove processing coverage, while method-blind annotations measure semantic recall/precision. Partial、dense、over-limit or best-effort retrieval coverage is `RUN_BLOCKED`；complete no-match becomes insufficient evidence, never absence proof。
+`EvidenceCoveragePlan` contains all instantiated Requirement/applicability targets and every fragment certified eligible by versioned entity/source-role/namespace rules. It has no top-K field. Deterministic partitions yield one observation/ref；empty means processed/no match reported. Best-effort retrieval or preflight capacity is `RUN_BLOCKED`；post-call partial/malformed coverage is `RUN_FAILED` with no business disposition；complete no-match is insufficient evidence, never absence proof。
 
 ## Independent Contradiction Pass
 
@@ -58,15 +61,17 @@ The pass is independent of Stage-2 bindings.
 
 Deterministic partitioning assigns every eligible ref exactly once. Each map call emits one `FragmentSemanticObservation` per ref with actual `matched_predicates[]` and a receipt. Reducer verifies every expected partition、target/input hash、wrapper and processed-ref union before semantic reduction.
 
-Determinate opposing matches are globally joined by stable predicate **plus entity and entailment target**, so sources in different partitions can conflict without mixing entities/applicability/business state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction. Output complexity is O(fragments+actual matches), not a negative cross-product。
+Determinate opposing matches are globally joined by the same stable predicate **plus entity、entailment target and overlapping normalized scope/time**, so sources in different partitions can conflict without mixing entities/applicability/business state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction. Output complexity is O(fragments+actual matches), not a negative cross-product。
 
-If executable hard limits、dense output、timeout、truncation、missing receipt or union mismatch prevent complete coverage, the result is `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. It is never reported as a zero-contradiction success.
+Cross-predicate logical relations are outside this contradiction guarantee. They must be represented by a versioned decision-class/RequirementTemplate evaluator that emits a normalized constraint predicate；otherwise `UNSUPPORTED_CROSS_PREDICATE_RELATION_P0` fails closed. Benchmark reports direct contradictions、registered constraints and unsupported relations separately。
+
+If preflight hard limits cannot represent complete coverage, the result is `RUN_BLOCKED`. Timeout、truncation、malformed/missing receipt or union mismatch after invocation is `RUN_FAILED` with no business disposition. Neither may be reported as a zero-contradiction success。
 
 Observations are not binding candidates. An unbound precedence winner may make the conflict/omission visible but cannot be promoted to proof or Runtime provenance by the contradiction pass；without a matching validated Stage-2 binding, completeness remains insufficient.
 
 ### Deterministic precedence and impact
 
-Only versioned policy may resolve authority. The Revision-4 model schema has no severity/resolution authority.
+Only versioned policy may resolve authority. The Revision-5 model schema has no severity/resolution authority.
 
 Conflict impact is `VALIDITY_CRITICAL` iff:
 
@@ -76,14 +81,17 @@ Conflict impact is `VALIDITY_CRITICAL` iff:
 
 Otherwise it is `NON_BLOCKING`. Thus a model cannot downgrade a blocking conflict to SUPPORTING.
 
-## Deterministic Proof Selection
+## Deterministic Proof Selection and Independent Verification
 
-The model never supplies canonical CRITICAL/SUPPORTING. For each contract-derived proof role, code filters bindings by ref/scope/time/authority/role/predicate eligibility and determinate entailment, applies precedence, then orders by versioned proof policy and stable source identity.
+The model never supplies canonical CRITICAL/SUPPORTING. For each contract-derived enterprise proof role, code filters and orders candidates deterministically. A separate verifier then receives only the exact selected fragment、target/entity、claimed entailment/value and normalized semantics。
 
-- selected necessary proof → `CRITICAL`;
+- verifier `CONFIRMED` selected necessary proof → `CRITICAL`;
+- verifier `REFUTED | INDETERMINATE` → analysis-only and deterministic next-candidate selection；
+- verifier protocol/transport failure → `RUN_FAILED`, never semantic refutation；
 - unselected explanatory candidate → `SUPPORTING`;
 - indeterminate/ineligible/irrelevant candidate → analysis-only;
-- absent determinate candidate for a required role → `INSUFFICIENT_EVIDENCE`.
+- absent confirmed candidate for a required role → `INSUFFICIENT_EVIDENCE`;
+- exact accepted/current/VALID upstream Decision → `UPSTREAM_DECISION` proof and first-class Decision→Decision critical edge；stale/superseded/invalid never satisfies and a successor is never auto-bound。
 
 An incorrect model label therefore cannot suppress invalidation on a proof actually selected by code.
 
@@ -93,10 +101,10 @@ An incorrect model label therefore cannot suppress invalidation on a proof actua
 
 | Condition | Assessment |
 |---|---|
-| every applicable obligation has a validated APPLICABLE justification and every state role matches expected state | `SATISFIED` |
+| every applicable obligation has a verified APPLICABLE justification、every enterprise proof is CONFIRMED、every state role matches expected state and required upstream Decisions are VALID | `SATISFIED` |
 | applicability is proved and covered state evidence proves the opposite, no unresolved critical conflict | `UNSATISFIED` |
 | unresolved validity-critical contradiction | `CONTRADICTED` |
-| missing role or only indeterminate evidence | `INSUFFICIENT_EVIDENCE` |
+| missing/unverified role、only indeterminate evidence or invalid upstream Decision | `INSUFFICIENT_EVIDENCE` |
 
 Normalized obligation、applicability evidence and factual state are not interchangeable. A conflict with a selected APPLICABLE/NOT_APPLICABLE guard is validity-critical, not an ordinary business-condition DENY。
 
@@ -112,15 +120,16 @@ Selected proof uses:
 
 ```text
 Source → DIRECT Claim → zero or more ALL_OF Claims → Decision
+Upstream Decision → Downstream Decision
 ```
 
-A valid transitive path is sufficient. No duplicate Source → derived Claim or intermediate Claim → Decision edge is required. Applicability facts and selective policy/coverage guards use parallel critical paths；full manifests/receipts remain audit derivation。
+A valid transitive source/claim path is sufficient；no redundant direct source edge is required. A contract-required upstream Decision is not a source and keeps its separate Decision→Decision critical edge. Applicability facts and selective policy/coverage guards use parallel critical paths；full manifests/receipts remain audit derivation。
 
 ## Gate effects
 
 - applicable unsupported logic → `REJECTED_UNSUPPORTED_LOGIC`;
 - applicable unsupported predicate → `REJECTED_UNSUPPORTED_PREDICATE`;
-- universe/normalization/source/Evidence/contradiction coverage incomplete → execution `RUN_BLOCKED`;
+- universe/normalization/source capacity unavailable before calls → execution `RUN_BLOCKED`；post-call model/protocol/receipt failure → `RUN_FAILED`，both without business disposition;
 - unresolved template/accounting conflict → `REJECTED_REQUIREMENT_COVERAGE`;
 - insufficient determinate evidence → `REJECTED_INCOMPLETE_REQUIREMENTS` or `NEEDS_HUMAN_REVIEW`;
 - unresolved validity-critical contradiction → `NEEDS_HUMAN_REVIEW`;
@@ -139,12 +148,15 @@ Report separately:
 - Evidence/applicability receipt completion、semantic match recall/precision and no-match false-negative rate；
 - entailment confusion including INDETERMINATE;
 - proof-selected CRITICAL recall/precision;
-- contradiction pair and deterministic-impact recall;
+- same-predicate contradiction pair and deterministic-impact recall；registered/unsupported cross-predicate categories separately;
+- selected-proof N0/N1 verification precision、false-proof acceptance、reselection、calls/cost/latency delta;
+- governed-read isolation、upstream Decision binding/transitive stale and result-class confusion;
 - universe/normalization/source/Evidence/contradiction coverage completion and hard-limit usage;
 - APPLICABLE/N/A proof completeness and transition stale recall;
 - RequirementAssessment accuracy;
 - disposition and accepted-case coverage;
 - selective policy/rule/coverage invalidation and `coverage_induced_unnecessary_invalidation_rate`.
-- temporal-expiry and semantic-epoch authorization escape rates（both target 0）。
+- temporal-expiry and semantic-epoch authorization escape rates（both target 0）；epoch publication required Decision-row writes target 0；
+- per-domain/class operational success/context-block and median/p95 calls、tokens、latency、settled cost。
 
 Safe rejection over almost every case is not proof of compiler usefulness.

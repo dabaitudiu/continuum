@@ -4,13 +4,13 @@
 
 Structural integrity is checked immediately after the stage that introduces a typed object. Semantic uncertainty is preserved until the relevant semantic stage; source/context incompleteness blocks execution rather than being mistaken for semantic rejection.
 
-### S0 Proposal/entity、universe、normalization、policy and source coverage
+### S0G/S0I/S0D Proposal/entity/observation/upstream、universe、normalization、policy and source coverage
 
-Validate immutable `DecisionProposal` producer/version/outcome mapping/hash、trusted `DecisionEntityContext` role bindings、input `EnterpriseWorldSnapshot` and separate `CompilerPolicySnapshot/Bundle`。Validate authoritative registry、namespace enumeration、watermarks、attestation and hash in `SourceUniverseSnapshot`；then recompute fragment-complete normalization and SourceSet selection hashes. Every deterministic semantic component emits `PolicyUsageTrace`；an interpretation-affecting config read outside the bundle is `UNVERSIONED_POLICY_INPUT` and prevents canonicalization. Derived manifests bind these inputs but cannot be members of the input world snapshot。
+Validate one complete `GovernedObservationSet` against the executable `GovernedReadView`、immutable `DecisionProposal` producer/version/outcome/world/epoch binding、trusted `DecisionEntityContext` roles，and every exact contract-required upstream Decision ID/compilation/envelope/status/outcome/epoch. Unversioned/future/mixed/bypass material reads are input rejection；a successor never auto-rebinds an upstream role. Then validate registry/universe、normalization and SourceSet hashes. Every deterministic semantic component emits `PolicyUsageTrace`；an interpretation-affecting config read outside the bundle is execution failure `UNVERSIONED_POLICY_INPUT`. Derived manifests bind these inputs but cannot be members of the input world snapshot。
 
-Anything other than complete universe、normalization、selection and partition coverage yields `RUN_BLOCKED`. A model cannot override this；silent parser omission cannot become `NO_GOVERNING_RULE`。
+Unavailable/incomplete universe、normalization or selection before model calls yields `RUN_BLOCKED`. Post-call malformed/partial partition coverage yields `RUN_FAILED` with no business disposition. A model cannot override either；silent parser omission cannot become `NO_GOVERNING_RULE`。
 
-Validate normalized governing-rule forms/templates and catalog representability. Unsupported logic yields `REJECTED_UNSUPPORTED_LOGIC`；material unregistered/absence semantics yields `REJECTED_UNSUPPORTED_PREDICATE`（including `ABSENCE_PROOF_NOT_SUPPORTED_P0`）；unparsed/review-required normalization blocks. No result has canonical output。
+Validate normalized governing-rule forms/templates and catalog representability. Unsupported logic yields `REJECTED_UNSUPPORTED_LOGIC`；material unregistered/absence/cross-predicate semantics yields `REJECTED_UNSUPPORTED_PREDICATE`（including `ABSENCE_PROOF_NOT_SUPPORTED_P0` / `UNSUPPORTED_CROSS_PREDICATE_RELATION_P0`）；unparsed/review-required normalization blocks. No result has canonical output。
 
 ### S1 Requirement template/entity instantiation and accounting
 
@@ -20,19 +20,19 @@ Instantiation receipts must account exactly once for every normalized obligation
 
 ### S2 Evidence/applicability coverage and binding integrity
 
-Validate `EvidenceCoveragePlan` hard limits、complete eligible-fragment union、target/eligibility hashes and one fragment wrapper per assigned ref. There is no top-K field. Missing/truncated/dense/partial receipts block. Check ref existence、manifest/scope/currentness、source role、already-instantiated target key、exact subject/object entity equality、predicate compatibility、`REQUIREMENT_PREDICATE | APPLICABILITY_PREDICATE` target and three-state entailment. Governing authority is deterministically bound from approved rule/template provenance；it cannot masquerade as applicability or state proof.
+Validate `EvidenceCoveragePlan` hard limits、complete eligible-fragment union、target/eligibility hashes and one fragment wrapper per assigned ref. There is no top-K field. Preflight capacity blocks；post-call missing/truncated/malformed/partial receipts fail execution. Check ref existence、manifest/scope/currentness、source role、already-instantiated target key、exact subject/object entity equality、predicate compatibility、target and three-state entailment。
 
-The model supplies no canonical materiality. `INDETERMINATE` is valid analysis but proof-ineligible. Historical、unauthorized or fabricated refs remain structural failures; fuzzy repair is forbidden.
+The model supplies no canonical materiality. `INDETERMINATE` is valid analysis but proof-ineligible. A faithfully observed historical/wrong-entity proposition may be semantic proof-ineligible；a model-emitted unauthorized/fabricated/out-of-plan ref is execution failure. Fuzzy repair is forbidden.
 
 ### S3 Contradiction inventory and impact
 
-Validate `ContradictionCoveragePlan` executable hard limits、eligibility matrix、deterministic partition membership and every receipt. Receipt union must equal the full eligible inventory with one fragment wrapper per ref and matching target/input hashes. Missing/truncated/dense/partial partitions block the run.
+Validate `ContradictionCoveragePlan` executable hard limits、eligibility matrix、deterministic partition membership and every receipt. Receipt union must equal the full eligible inventory with one fragment wrapper per ref and matching target/input hashes. Preflight hard/dense capacity blocks；post-call missing/truncated/malformed/partial partitions fail execution。
 
-Globally join actual determinate opposing matches by stable predicate/entity identity and target, including applicability/cross-partition pairs. Validate refs、truth/value、scope、time and authority. Apply versioned precedence. Derive `VALIDITY_CRITICAL | NON_BLOCKING` from reachability、proof eligibility and resolution state；the model schema has no severity field。
+Globally join actual determinate opposing matches only by the same stable predicate/entity/target and overlapping normalized scope/time, including applicability/cross-partition pairs. Cross-predicate invariants are deterministic registered decision-class/template evaluators and never enter this join. Validate refs、truth/value、scope、time and authority. Apply versioned precedence. Derive `VALIDITY_CRITICAL | NON_BLOCKING` from reachability、proof eligibility and resolution state；the model schema has no severity field。
 
-### S4 Proof selection and completeness
+### S4A/S4V/S4B Proof selection、independent verification and completeness
 
-First reduce applicability contradictions/precedence and finalize APPLICABLE/N/A justifications or INDETERMINATE. This determines the effective Requirement set. Then, for every required proof role, choose an eligible determinate binding using authority/preference tier、stable source identity and binding semantic key. Selected bindings become `CRITICAL`；unselected explanatory candidates become `SUPPORTING`；indeterminate/ineligible candidates remain analysis-only。
+First reduce applicability contradictions/precedence and freeze the deterministic candidate order. For every model-interpreted enterprise proof/applicability role, Stage 4V verifies the provisionally selected exact fragment/target/entity/claim independently. Only `CONFIRMED` can become `CRITICAL`；`REFUTED | INDETERMINATE` is analysis-only and code tries the next candidate. Verifier failure is execution failure, not a verdict. Contract-required upstream roles accept only exact current/VALID `UpstreamDecisionBinding`s and become first-class Decision→Decision critical edges。
 
 Compute one assessment per template-instantiated effective Requirement. DIRECT_ATOM uses selected role evidence and contradiction state. ALL_OF uses the fixed conjunction truth table. Verify every time-sensitive selected proof/applicability fact against immutable source time fields and emit finite `[valid_from, valid_until)` guards. Do not demand redundant direct evidence on derived Requirements.
 
@@ -40,25 +40,19 @@ Compute one assessment per template-instantiated effective Requirement. DIRECT_A
 
 Compute an evidence-supported `APPROVE | DENY | REVIEW` validation class from root assessments and compare it with immutable domain-agent `DecisionProposal`. Mismatch rejects/reviews the supplied proposal；it cannot generate a substitute Decision. Accepted APPROVE/DENY emits a `DecisionJustification` plus epoch-bound `DecisionValidityEnvelope`。
 
-## Early structural errors
+## Result-class boundaries
 
-- invalid schema after configured bounded repairs（zero for v4 fragment maps）；
-- duplicate/unknown local IDs、invalid predicate identity or requirement cycle;
-- unauthorized/malformed proposal、illegal/missing entity role or model-authored target/entity key；
-- fabricated、unauthorized、cross-scope or stale ref;
-- illegal source role/authority relation;
-- manifest/world/hash mismatch;
-- inconsistent typed cross-link.
+Malformed/unauthorized signed proposal/entity/upstream/observation/world inputs are completed `INPUT_REJECTION` records with no business disposition and may skip semantic stages。
 
-These may terminate early with an exact stage trace and no canonical output.
+Model schema/enum/local-ID/forbidden target/ref/entity、receipt/protocol/verifier/transport failures and internal invariants are `RUN_FAILED` `EXECUTION_FAILURE` records with no business disposition. A retry is a new immutable attempt and never reuses partial output。
 
 ## Execution-blocking conditions
 
-- credential/provider/transport/budget unavailable;
+- credential/provider/budget unavailable before calls;
 - source universe `INCOMPLETE | UNKNOWN`;
 - normalization `INCOMPLETE | REVIEW_REQUIRED` or missing accounting/review receipt;
 - hard limits cannot represent the complete Evidence/applicability or contradiction inventory;
-- partition timeout、dense output、truncation、missing receipt or coverage mismatch.
+- complete plan exceeds declared context/dense/verification capacity before calls.
 
 These return `RUN_BLOCKED`, not a semantic disposition. Partial contradiction results are never published as complete.
 
@@ -70,6 +64,8 @@ These return `RUN_BLOCKED`, not a semantic disposition. Partial contradiction re
 - applicability is `INDETERMINATE` or conflicts with its candidate proof;
 - current authorities conflict;
 - supplied proposal outcome disagrees with evidence;
+- an exact required upstream Decision is STALE/SUPERSEDED/INVALID；
+- selected candidate is REFUTED/INDETERMINATE and no confirmed alternative remains；
 - a structurally valid fragment match refers to the wrong entity；
 - model advisory materiality text is wrong.
 
@@ -82,10 +78,11 @@ Canonicalization runs only after `ACCEPTED`.
 ### Stable proof mapping
 
 - every selected RequirementAssessment maps to a Claim identified from stable predicate/topology semantics, not display text;
-- every Stage-4 `SELECTED_PROOF` binding maps SourceFragment → DIRECT Claim through validity-bearing `SUPPORTED_BY | GOVERNED_BY`;
+- every independently confirmed Stage-4 `SELECTED_PROOF` binding maps SourceFragment → DIRECT Claim through validity-bearing `SUPPORTED_BY | GOVERNED_BY`;
 - every selected ALL_OF relationship maps prerequisite Claim → derived Claim;
 - selected roots map Claim → Decision;
-- exact `DecisionProposal` and `DecisionEntityContext` bind the canonical Decision and unchanged outcome；
+- exact `DecisionProposal`、`DecisionEntityContext` and `GovernedObservationSet` bind the canonical Decision and unchanged outcome；
+- exact `UpstreamDecisionBinding` maps upstream Decision → downstream Decision through `REQUIRES | AUTHORIZES[CRITICAL]`；
 - selected applicability facts map through APPLICABLE/NOT_APPLICABLE guard Claims；
 - materially used policy refs and selective boundary/rule-set/Evidence/contradiction-eligibility guards map through a `DecisionInterpretation` Claim；full manifests remain audit-only derivation;
 - `TemporalValidityGuard` and `DecisionValidityEnvelope` bind trusted expiry/semantic epoch to side-effect authorization；
@@ -110,6 +107,7 @@ Canonicalizer cannot:
 - infer `NOT_EXISTS`/absence from an empty retrieval or cross-bind entities；
 - add redundant direct edges;
 - change the proposed outcome;
+- trust an unverified selected enterprise proof or silently substitute an upstream successor；
 - omit policy/applicability/selective-coverage provenance that materially produced the justification.
 
 ## Stable DENY proof selection
@@ -127,13 +125,13 @@ Human-readable proposition text is excluded. Semantically equivalent paraphrases
 
 ## Compilation hash
 
-The Revision-4 hash covers at least:
+The Revision-5 hash covers at least:
 
-- exact proposal/producer/outcome/entity context plus stable predicate/template semantics;
+- exact proposal/producer/outcome/entity/observation/upstream context plus stable predicate/template semantics;
 - exact `CompilerPolicyBundle` refs/hashes;
 - exact world/universe/policy input IDs and derived `RuleNormalizationManifest`/`SourceSetManifest`/partition receipts;
 - requirement template/obligation instantiation receipts、validated applicability justifications and selective guards;
-- Evidence plan/partitions/fragment observations/receipts、validated bindings、proof selection and canonical materiality;
+- Evidence plan/partitions/fragment observations/receipts、validated bindings、independent verification receipts、proof selection and canonical materiality;
 - contradiction plan/fragment observations/receipts、global pairs、precedence and deterministic impact;
 - RequirementAssessments、validation class、unchanged proposal comparison and DecisionJustification;
 - temporal guards、authorization horizon、validated epoch vector and DecisionValidityEnvelope；
@@ -144,6 +142,6 @@ Changing only `proposition_display` must not change the semantic proof key or ca
 
 ## Runtime invalidation contract
 
-Accepted graph validity depends on proposal/entity binding、selected enterprise evidence/applicability facts、temporal horizon and interpretation/coverage semantics. Relevant revisions of selected fragments、catalog/entity roles/normalization/selection/authority/outcome/proof policies、governing rule set or Evidence/contradiction eligibility enter invalidation through stable guards. A full manifest hash change caused only by irrelevant inventory/supporting content must not automatically stale all Decisions；unknown boundary impact may conservatively stale only Decisions inside that boundary and is measured。
+Accepted graph validity depends on proposal/entity/observation/upstream binding、independently confirmed enterprise evidence/applicability facts、temporal horizon and interpretation/coverage semantics. Relevant revisions of upstream Decision status/envelope、selected fragments、catalog/entity roles/normalization/selection/authority/outcome/proof policies、governing rule set or Evidence/contradiction eligibility enter invalidation through stable guards. A full manifest hash change caused only by irrelevant inventory/supporting content must not automatically stale all Decisions。
 
-`RuntimeAcceptanceService` rechecks exact proposal/entity/mission/world/universe/policy snapshots、derived envelope、selective guards、trusted clock、semantic epoch and compilation hash before atomic mutation/authorization. At expiry it denies synchronously. A newer executable semantic epoch requires a complete deterministic irrelevance-certificate chain or denial, eliminating async invalidation lag. Runtime—not the compiler/model—owns status transitions、epochs and certificates.
+`RuntimeAcceptanceService` rechecks exact proposal/entity/observation/upstream/mission/world/universe/policy snapshots、derived envelope、selective guards、trusted clock and compilation hash. `PublishEpochTxn` publishes the complete ChangeSet/read fence without Decision-row fan-out；the side-effect transaction checks every intervening ChangeSet、upstream currentness and unchanged epoch pointer before commit. Relevant intersection/expiry/invalid upstream denies synchronously regardless of stale projection lag. Runtime—not the compiler/model—owns status transitions、epochs、certificates and authorization.
