@@ -145,6 +145,7 @@ def test_report_bundle_separates_evidence_lanes_and_records_configuration(
     assert "deterministic_reference" in markdown
     assert "live_gemini" in markdown
     assert "BLOCKED" in markdown
+    assert "compiler-lab-product-report.md" in markdown
 
 
 def test_cli_returns_nonzero_for_a_failed_metric_gate_and_zero_for_reference_pass(
@@ -160,14 +161,10 @@ def test_live_openai_cli_without_key_writes_blocked_not_pass_evidence(
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
-    exit_code = main(
-        ["run", "--suite", "live-openai", "--output-dir", str(tmp_path)]
-    )
+    exit_code = main(["run", "--suite", "live-openai", "--output-dir", str(tmp_path)])
 
     payload = json.loads(
-        (tmp_path / "module-01-dependency-compiler.json").read_text(
-            encoding="utf-8"
-        )
+        (tmp_path / "module-01-dependency-compiler.json").read_text(encoding="utf-8")
     )
     run = payload["runs"][0]
     assert exit_code == 1

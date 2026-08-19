@@ -1,4 +1,11 @@
-import type { ContinuumApi, GraphReadModel, MissionControlReadModel, MissionSummary } from './types'
+import type {
+  CompilerLabStatusDto,
+  CompilerLabViewDto,
+  ContinuumApi,
+  GraphReadModel,
+  MissionControlReadModel,
+  MissionSummary,
+} from './types'
 
 class ContinuumApiError extends Error {
   constructor(
@@ -50,4 +57,14 @@ export const httpApi: ContinuumApi = {
     method: 'POST',
     body: JSON.stringify({ mission_id: missionId, event_id: eventId }),
   }),
+  getCompilerLabStatus: () => request<CompilerLabStatusDto>('/api/demo/compiler/status'),
+  runCompilerScenario: (scenarioId, requestId) =>
+    request<CompilerLabViewDto>(`/api/demo/compiler/scenarios/${encodeURIComponent(scenarioId)}`, {
+      method: 'POST',
+      body: JSON.stringify({ request_id: requestId }),
+    }),
+  acceptCompilerScenario: (requestId) =>
+    request<CompilerLabViewDto>(`/api/demo/compiler/${encodeURIComponent(requestId)}/accept`, {
+      method: 'POST',
+    }),
 }

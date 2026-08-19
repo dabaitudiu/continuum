@@ -73,6 +73,87 @@ function control(phase: ScenarioPhase): MissionControlReadModel {
   }
 }
 
+function compilerStatusFixture() {
+  return {
+    execution_mode: 'DETERMINISTIC_REFERENCE',
+    scenarios: [
+      { scenario_id: 'authorized-access', label: 'Authorized access', summary: 'All critical source fragments are current and complete.', expected_disposition: 'ACCEPTED' },
+      { scenario_id: 'missing-governing-clause', label: 'Missing governing clause', summary: 'The draft omits the current policy dependency.', expected_disposition: 'REJECTED_INCOMPLETE_DEPENDENCIES' },
+    ],
+    evidence: {
+      deterministic_reference: { status: 'PASS', provider: 'REFERENCE', model: 'deterministic-reference-v1', reason: 'Repeatable product fixture; not live model evidence.', credentials_configured: true },
+      openai: {
+        status: 'BLOCKED', provider: 'OPENAI', model: 'gpt-5.6-luna', reason: 'OPENAI_API_KEY is not configured', credentials_configured: false,
+        budget: { limit_usd: '10.000000000', spent_usd: '0E-9', reserved_usd: '0E-9', remaining_usd: '10.000000000', settled_calls: 0, reserved_calls: 0, pricing_version: 'openai-2026-08-19' },
+      },
+      gemini: { status: 'BLOCKED', provider: 'GOOGLE', model: 'gemini-3.5-flash', reason: 'Gemini credentials are not configured', credentials_configured: false },
+    },
+  }
+}
+
+function compilerViewFixture(status = 'ACCEPTED', withReceipt = false) {
+  const sourceRefs = [
+    'policy:access@v13!policy-representation#$.rule',
+    'record:employee@r18!employee-representation#$.status',
+    'record:access-request@r45!request-representation#$.scope',
+  ]
+  const claims = [
+    ['policy-rule', 'RULE', 'Current policy requires active employment and manager approval.', sourceRefs[0], 'GOVERNED_BY'],
+    ['employee-status', 'FACT', 'The requester has an active FTE engineering record.', sourceRefs[1], 'SUPPORTED_BY'],
+    ['request-scope', 'FACT', 'The request is limited to production read access for Project Phoenix.', sourceRefs[2], 'SUPPORTED_BY'],
+  ]
+  const accepted = status === 'ACCEPTED'
+  return {
+    scenario_id: accepted ? 'authorized-access' : 'missing-governing-clause',
+    scenario_label: accepted ? 'Authorized access' : 'Missing governing clause',
+    scenario_summary: accepted ? 'All critical source fragments are current and complete.' : 'The draft omits the current policy dependency.',
+    execution_mode: 'DETERMINISTIC_REFERENCE',
+    aggregate: {
+      request: {
+        request_id: `reference-compiler:${accepted ? 'authorized-access' : 'missing-governing-clause'}:abc123`,
+        mission_id: 'compiler-reference-1', work_item_id: 'compile-access', agent_id: 'reference-compiler-adapter',
+        world_snapshot_id: 'world:compiler-reference:v13', expected_mission_revision: 0,
+        decision_type: 'PRIVILEGED_ACCESS_REVIEW', risk_class: 'HIGH', owner_scope: 'tenant:continuum-reference',
+        allowed_source_refs: sourceRefs, allow_historical: false, created_at: '2026-08-19T04:30:00Z',
+      },
+      state: 'COMPILED',
+      draft: {
+        request_id: 'reference-compiler:authorized-access:abc123', decision_type: 'PRIVILEGED_ACCESS_REVIEW', proposed_outcome: 'APPROVED',
+        claims: claims.map(([id, type, statement, ref, relation]) => ({
+          claim_local_id: id, claim_type: type, statement,
+          dependencies: [{ source_ref: ref, relation, materiality: 'CRITICAL', purpose: 'Critical authorization input' }],
+          derived_from_claims: [], materiality: 'CRITICAL', confidence: 1,
+        })),
+        decision_dependencies: [], unresolved_questions: [], rationale_summary: 'The bounded source set was evaluated.',
+        model_metadata: { provider: 'REFERENCE', model_name: 'deterministic-reference-v1', prompt_version: 'reasoner-v1', temperature: 0, execution_id: 'reference:reasoner:1', input_tokens: 0, cached_input_tokens: 0, output_tokens: 0 },
+      },
+      result: {
+        compilation_id: accepted ? 'compilation:123' : 'blocked:123', request_id: 'reference-compiler:authorized-access:abc123', status,
+        decision_candidate: accepted ? { decision_id: 'decision:123', decision_type: 'PRIVILEGED_ACCESS_REVIEW', outcome: 'APPROVED', rationale_summary: 'The bounded source set was evaluated.' } : null,
+        canonical_claims: accepted ? claims.map(([id, type, statement]) => ({ claim_id: `claim:${id}`, claim_local_id: id, claim_type: type, statement, materiality: 'CRITICAL', confidence: 1 })) : [],
+        canonical_edges: [], validation_findings: [],
+        critic_findings: accepted ? [] : [{ finding_id: 'critic:missing:0000', finding_type: 'MISSING_DEPENDENCY', severity: 'CRITICAL', message: 'The governing privileged access policy clause is missing.', candidate_ref: sourceRefs[0], claim_local_id: null }],
+        contradictions: [], compiler_version: 'sdc-1', validation_policy_version: 'validation-v1',
+        compilation_hash: accepted ? 'a'.repeat(64) : null,
+        model_metadata: { provider: 'REFERENCE', model_name: 'deterministic-reference-v1', prompt_version: 'reasoner-v1', temperature: 0, execution_id: 'reference:reasoner:1', input_tokens: 0, cached_input_tokens: 0, output_tokens: 0 },
+        critic_model_metadata: null,
+      },
+      outbox: [], updated_at: '2026-08-19T04:30:00Z',
+    },
+    sources: sourceRefs.map((source_ref, index) => ({
+      source_ref, logical_key: ['privileged-access-policy', 'employee-directory-record', 'access-request-record'][index],
+      artifact_type: index === 0 ? 'POLICY' : 'RECORD', source_type: index === 0 ? 'POLICY' : 'STRUCTURED_RECORD', trust_class: 'AUTHORITATIVE', authority_rank: index === 0 ? 100 : 80,
+      revision_label: ['v13', 'r18', 'r45'][index], source_hash: String(index + 1).repeat(64), fragment_hash: String(index + 4).repeat(64), logical_path: ['$.rule', '$.status', '$.scope'][index], content: 'Reference content', historical: false,
+    })),
+    evidence: compilerStatusFixture().evidence,
+    runtime_receipt: withReceipt ? {
+      duplicate: false, mission_id: 'compiler-reference-1', mission_revision: 1, decision_id: 'decision:123',
+      claim_ids: ['claim:policy-rule', 'claim:employee-status', 'claim:request-scope'], evidence_ids: sourceRefs,
+      compilation_id: 'compilation:123', compilation_hash: 'a'.repeat(64), audit_event_id: 'audit:compiler-accept:123', audit_link: '/api/demo/compiler/reference-compiler:authorized-access:abc123',
+    } : null,
+  }
+}
+
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -438,5 +519,100 @@ describe('App', () => {
 
     expect(screen.getByText('financial-F7')).toBeVisible()
     expect(screen.queryByText('policy-v12')).not.toBeInTheDocument()
+  })
+
+  it('operates Compiler Lab from exact source refs through a runtime receipt', async () => {
+    const compiled = compilerViewFixture()
+    const accepted = compilerViewFixture('ACCEPTED', true)
+    const api = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(control('CREATED')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+      getCompilerLabStatus: vi.fn().mockResolvedValue(compilerStatusFixture()),
+      runCompilerScenario: vi.fn().mockResolvedValue(compiled),
+      acceptCompilerScenario: vi.fn().mockResolvedValue(accepted),
+    } as unknown as ContinuumApi
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Compiler Lab' }))
+
+    expect(await screen.findByText('SEMANTIC DEPENDENCY COMPILER / MODULE 01')).toBeVisible()
+    expect(screen.getByText('OPENAI EVIDENCE')).toBeVisible()
+    expect(screen.getByText('KEY NOT CONFIGURED')).toBeVisible()
+    expect(screen.getByText('$0.00 / $10.00 CUMULATIVE CAP')).toBeVisible()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run reference compilation' }))
+
+    expect((await screen.findAllByText(source => source.includes('policy:access@v13!'))).length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('Current policy requires active employment and manager approval.')).toBeVisible()
+    expect(screen.getByText('Compilation disposition: ACCEPTED')).toBeVisible()
+    expect(screen.getByText('a'.repeat(64))).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Commit accepted compilation to Runtime' }))
+
+    expect(await screen.findByText('RUNTIME ACCEPTED')).toBeVisible()
+    expect(screen.getAllByText('decision:123')[0]).toBeVisible()
+    expect(screen.getByText('audit:compiler-accept:123')).toBeVisible()
+  })
+
+  it('shows compiler rejection evidence and never offers a runtime mutation', async () => {
+    const rejected = compilerViewFixture('REJECTED_INCOMPLETE_DEPENDENCIES')
+    const api = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(control('CREATED')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+      getCompilerLabStatus: vi.fn().mockResolvedValue(compilerStatusFixture()),
+      runCompilerScenario: vi.fn().mockResolvedValue(rejected),
+      acceptCompilerScenario: vi.fn(),
+    } as unknown as ContinuumApi
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Compiler Lab' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Missing governing clause' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Run reference compilation' }))
+
+    expect(await screen.findByText('Compilation disposition: REJECTED_INCOMPLETE_DEPENDENCIES')).toBeVisible()
+    expect(screen.getByText('The governing privileged access policy clause is missing.')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Commit accepted compilation to Runtime' })).not.toBeInTheDocument()
+    expect(api.acceptCompilerScenario).not.toHaveBeenCalled()
+  })
+
+  it('retries Runtime acceptance without discarding the accepted compilation', async () => {
+    const compiled = compilerViewFixture()
+    const accepted = compilerViewFixture('ACCEPTED', true)
+    const api = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(control('CREATED')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+      getCompilerLabStatus: vi.fn().mockResolvedValue(compilerStatusFixture()),
+      runCompilerScenario: vi.fn().mockResolvedValue(compiled),
+      acceptCompilerScenario: vi.fn()
+        .mockRejectedValueOnce(new Error('Runtime temporarily unavailable'))
+        .mockResolvedValueOnce(accepted),
+    } as unknown as ContinuumApi
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Compiler Lab' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Run reference compilation' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Commit accepted compilation to Runtime' }))
+
+    expect(await screen.findByText('Runtime temporarily unavailable')).toBeVisible()
+    expect(screen.getByText('Compilation disposition: ACCEPTED')).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('RUNTIME ACCEPTED')).toBeVisible()
+    expect(api.acceptCompilerScenario).toHaveBeenCalledTimes(2)
+    expect(api.runCompilerScenario).toHaveBeenCalledTimes(1)
   })
 })

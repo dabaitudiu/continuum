@@ -57,3 +57,7 @@ The budget is expected to be consumed by real uncertainty: document identity, de
 ## Definition of done
 
 This module is done only when all P0 rows in `13_ACCEPTANCE_MATRIX_AND_KILL_CRITERIA.md` are PASS, including a **live Gemini benchmark**. Codex or any other coding agent may not redefine incomplete P0 work as “optional”, “post-gate”, or “outside the current product boundary”.
+
+## Current status
+
+Phases A–G are implemented and Compiler Lab is locally deliverable. The module itself remains **not done** because authenticated OpenAI/Gemini evidence is absent, several metric rows therefore remain `PARTIAL`, and the required live Gemini row is `BLOCKED`. See the current acceptance matrix and `docs/reports/module-01-dependency-compiler.md`.

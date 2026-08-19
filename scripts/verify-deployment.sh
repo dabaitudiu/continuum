@@ -34,6 +34,7 @@ if [[ "${CONTINUUM_EXPECT_CLOUD}" == "1" ]]; then
     .status == "ok" and
     .agent_mode == "google_adk" and
     .runtime_store == "firestore" and
+    .compiler_store == "firestore" and
     .event_transport == "pubsub" and
     .telemetry_exporter == "google_cloud_trace"
   ' <<<"${CONTINUUM_HEALTH}" >/dev/null

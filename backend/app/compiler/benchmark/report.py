@@ -45,8 +45,10 @@ def _markdown(report: BenchmarkReport) -> str:
         "",
         f"Generated: `{report.generated_at.isoformat()}`",
         "",
-        "> `deterministic_reference` validates corpus/metric/runner plumbing only. "
-        "It is not live-model acceptance evidence.",
+        (
+            "> `deterministic_reference` validates corpus/metric/runner plumbing only. "
+            "It is not live-model acceptance evidence."
+        ),
         "",
         "| Evidence lane | Baseline | Status | Recall | Precision | Contradiction | Stale escape | Unnecessary | Determinism | Cost USD |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
@@ -90,8 +92,17 @@ def _markdown(report: BenchmarkReport) -> str:
             "",
             "## Acceptance interpretation",
             "",
-            "Metric PASS in a deterministic reference lane does not turn the Live OpenAI "
-            "or Live Gemini rows green. Missing credentials remain BLOCKED, not SKIPPED-as-PASS.",
+            (
+                "Metric PASS in a deterministic reference lane does not turn the Live OpenAI "
+                "or Live Gemini rows green. Missing credentials remain BLOCKED, not "
+                "SKIPPED-as-PASS."
+            ),
+            "",
+            (
+                "The locally delivered Compiler Lab and runtime-acceptance evidence are "
+                "documented in `docs/reports/compiler-lab-product-report.md`. They prove the "
+                "deterministic product boundary, not live-model dependency quality."
+            ),
             "",
         )
     )

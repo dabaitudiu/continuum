@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DecisionGraph } from './components/DecisionGraph'
+import { CompilerLab } from './components/CompilerLab'
 import type {
   ContinuumApi,
   MissionControlReadModel,
@@ -98,7 +99,7 @@ export function App({ api }: { api: ContinuumApi }) {
   const [busy, setBusy] = useState(false)
   const [historyBusy, setHistoryBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'route' | 'graph' | 'missions'>('route')
+  const [view, setView] = useState<'route' | 'graph' | 'missions' | 'compiler'>('route')
   const [missions, setMissions] = useState<MissionSummary[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [retryIntent, setRetryIntent] = useState<RetryIntent | null>(null)
@@ -276,17 +277,20 @@ export function App({ api }: { api: ContinuumApi }) {
           <button className={view === 'route' ? 'is-active' : ''} onClick={() => setView('route')}>Mission route</button>
           <button className={view === 'graph' ? 'is-active' : ''} onClick={() => setView('graph')}>Decision graph</button>
           <button className={view === 'missions' ? 'is-active' : ''} onClick={() => void openHistory()}>Mission history</button>
+          <button className={view === 'compiler' ? 'is-active' : ''} onClick={() => { setView('compiler'); setError(null); setRetryIntent(null) }}>Compiler Lab</button>
         </nav>
         <div className="mode-disclosure">
           <i />
-          {control.execution_mode === 'GOOGLE_ADK_GEMINI'
+          {view === 'compiler'
+            ? 'COMPILER EVIDENCE'
+            : control.execution_mode === 'GOOGLE_ADK_GEMINI'
             ? 'GOOGLE ADK · GEMINI'
             : 'LOCAL DETERMINISTIC'}
         </div>
-        <button className="reset-button" onClick={() => void createScenario()} disabled={busy}><RotateCcw /> Reset</button>
+        <button className="reset-button" aria-label="Reset" onClick={() => void createScenario()} disabled={busy}><RotateCcw /> Reset mission</button>
       </header>
 
-      <section className="mission-heading">
+      {view !== 'compiler' ? <section className="mission-heading">
         <div>
           <p className="eyebrow">VENDOR ONBOARDING / {control.subject.id}</p>
           <h1>{control.subject.name}</h1>
@@ -301,9 +305,9 @@ export function App({ api }: { api: ContinuumApi }) {
           <span>{busy ? actionCopy[control.next_action].busy : actionCopy[control.next_action].label}</span>
           <ArrowRight aria-hidden="true" />
         </button>
-      </section>
+      </section> : null}
 
-      {error ? (
+      {error && view !== 'compiler' ? (
         <div className="error-banner" role="alert">
           <AlertTriangle />{error}
           <div className="error-actions">
@@ -312,9 +316,11 @@ export function App({ api }: { api: ContinuumApi }) {
           </div>
         </div>
       ) : null}
-      <div className="announcement" aria-live="polite">{phaseLabel}: {phaseDescription}</div>
+      {view !== 'compiler' ? <div className="announcement" aria-live="polite">{phaseLabel}: {phaseDescription}</div> : null}
 
-      {view === 'missions' ? (
+      {view === 'compiler' ? (
+        <CompilerLab api={api} />
+      ) : view === 'missions' ? (
         <MissionHistory
           activeMissionId={control.mission.mission_id}
           busy={historyBusy}
@@ -352,7 +358,7 @@ export function App({ api }: { api: ContinuumApi }) {
         </section>
       )}
 
-      {view !== 'missions' ? <MissionTimeline control={control} /> : null}
+      {view !== 'missions' && view !== 'compiler' ? <MissionTimeline control={control} /> : null}
     </main>
   )
 }

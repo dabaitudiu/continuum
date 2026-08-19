@@ -1,6 +1,6 @@
 # Module 01 — Semantic Dependency Compiler Benchmark
 
-Generated: `2026-08-19T04:14:42.429976+00:00`
+Generated: `2026-08-19T05:04:37.793431+00:00`
 
 > `deterministic_reference` validates corpus/metric/runner plumbing only. It is not live-model acceptance evidence.
 
@@ -20,3 +20,5 @@ Generated: `2026-08-19T04:14:42.429976+00:00`
 ## Acceptance interpretation
 
 Metric PASS in a deterministic reference lane does not turn the Live OpenAI or Live Gemini rows green. Missing credentials remain BLOCKED, not SKIPPED-as-PASS.
+
+The locally delivered Compiler Lab and runtime-acceptance evidence are documented in `docs/reports/compiler-lab-product-report.md`. They prove the deterministic product boundary, not live-model dependency quality.

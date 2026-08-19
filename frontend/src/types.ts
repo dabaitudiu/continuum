@@ -1,4 +1,4 @@
-export type NodeKind = 'artifact' | 'evidence' | 'decision' | 'action'
+export type NodeKind = 'artifact' | 'evidence' | 'claim' | 'decision' | 'action'
 
 export type NodeStatus =
   | 'CURRENT'
@@ -15,6 +15,7 @@ export type RelationType =
   | 'DERIVED_FROM'
   | 'REQUIRES'
   | 'AUTHORIZES'
+  | 'CONTRADICTED_BY'
 
 export interface GraphNodeDto {
   [key: string]: unknown
@@ -166,6 +167,170 @@ export interface MissionSummary {
   }
 }
 
+export interface BudgetEvidenceDto {
+  limit_usd: string
+  spent_usd: string
+  reserved_usd: string
+  remaining_usd: string
+  settled_calls: number
+  reserved_calls: number
+  pricing_version: string
+}
+
+export interface ProviderEvidenceDto {
+  status: 'PASS' | 'FAIL' | 'BLOCKED'
+  provider: string
+  model: string
+  reason?: string | null
+  credentials_configured: boolean
+  report_run_id?: string | null
+  budget?: BudgetEvidenceDto | null
+}
+
+export interface CompilerEvidenceDto {
+  deterministic_reference: ProviderEvidenceDto
+  openai: ProviderEvidenceDto
+  gemini: ProviderEvidenceDto
+}
+
+export interface ReferenceScenarioDto {
+  scenario_id: string
+  label: string
+  summary: string
+  expected_disposition: string
+}
+
+export interface CompilerLabStatusDto {
+  execution_mode: 'DETERMINISTIC_REFERENCE'
+  scenarios: ReferenceScenarioDto[]
+  evidence: CompilerEvidenceDto
+}
+
+export interface ReferenceSourceDto {
+  source_ref: string
+  logical_key: string
+  artifact_type: string
+  source_type: string
+  trust_class: string
+  authority_rank: number
+  revision_label: string
+  source_hash: string
+  fragment_hash: string
+  logical_path: string
+  content: unknown
+  historical: boolean
+}
+
+export interface CompilerDependencyDto {
+  source_ref: string
+  relation: string
+  materiality: string
+  purpose?: string | null
+}
+
+export interface CompilerClaimDraftDto {
+  claim_local_id: string
+  claim_type: string
+  statement: string
+  dependencies: CompilerDependencyDto[]
+  derived_from_claims: string[]
+  materiality: string
+  confidence: number
+}
+
+export interface CompilerFindingDto {
+  finding_id: string
+  code?: string
+  stage?: string
+  finding_type?: string
+  severity: string
+  message: string
+  source_ref?: string | null
+  candidate_ref?: string | null
+  claim_local_id?: string | null
+  blocking?: boolean
+}
+
+export interface CompilerContradictionDto {
+  finding_id: string
+  claim_or_topic: string
+  source_ref_a: string
+  source_ref_b: string
+  severity: string
+  precedence_rule_applied?: string | null
+  resolution: string
+}
+
+export interface CompilerAggregateDto {
+  request: {
+    request_id: string
+    mission_id: string
+    work_item_id: string
+    agent_id: string
+    world_snapshot_id: string
+    expected_mission_revision: number
+    decision_type: string
+    risk_class: string
+    owner_scope: string
+    allowed_source_refs: string[]
+    allow_historical: boolean
+    created_at: string
+  }
+  state: 'REQUESTED' | 'DRAFT_RECEIVED' | 'COMPILED'
+  draft?: {
+    request_id: string
+    decision_type: string
+    proposed_outcome: string
+    claims: CompilerClaimDraftDto[]
+    decision_dependencies: CompilerDependencyDto[]
+    unresolved_questions: Array<{ question: string; required_source_type: string; blocking: boolean }>
+    rationale_summary: string
+    model_metadata: Record<string, unknown>
+  } | null
+  result?: {
+    compilation_id: string
+    request_id: string
+    status: string
+    decision_candidate?: { decision_id: string; decision_type: string; outcome: string; rationale_summary: string } | null
+    canonical_claims: Array<{ claim_id: string; claim_local_id: string; claim_type: string; statement: string; materiality: string; confidence: number }>
+    canonical_edges: Array<{ edge_id: string; source_kind: string; source_id: string; target_kind: string; target_id: string; relation: string; materiality: string; purpose?: string | null }>
+    validation_findings: CompilerFindingDto[]
+    critic_findings: CompilerFindingDto[]
+    contradictions: CompilerContradictionDto[]
+    compiler_version: string
+    validation_policy_version: string
+    compilation_hash?: string | null
+    model_metadata?: Record<string, unknown> | null
+    critic_model_metadata?: Record<string, unknown> | null
+  } | null
+  outbox: Array<Record<string, unknown>>
+  updated_at: string
+}
+
+export interface RuntimeReceiptDto {
+  duplicate: boolean
+  mission_id: string
+  mission_revision: number
+  decision_id: string
+  claim_ids: string[]
+  evidence_ids: string[]
+  compilation_id: string
+  compilation_hash: string
+  audit_event_id: string
+  audit_link: string
+}
+
+export interface CompilerLabViewDto {
+  scenario_id: string
+  scenario_label: string
+  scenario_summary: string
+  execution_mode: 'DETERMINISTIC_REFERENCE'
+  aggregate: CompilerAggregateDto
+  sources: ReferenceSourceDto[]
+  evidence: CompilerEvidenceDto
+  runtime_receipt?: RuntimeReceiptDto | null
+}
+
 export interface ContinuumApi {
   listMissions(limit?: number): Promise<MissionSummary[]>
   createDemo(requestId: string): Promise<{ mission_id: string }>
@@ -174,4 +339,7 @@ export interface ContinuumApi {
   upgradePolicy(missionId: string, eventId: string): Promise<GraphReadModel>
   revalidate(missionId: string, requestId: string): Promise<GraphReadModel>
   uploadPenTest(missionId: string, eventId: string): Promise<unknown>
+  getCompilerLabStatus?(): Promise<CompilerLabStatusDto>
+  runCompilerScenario?(scenarioId: string, requestId: string): Promise<CompilerLabViewDto>
+  acceptCompilerScenario?(requestId: string): Promise<CompilerLabViewDto>
 }

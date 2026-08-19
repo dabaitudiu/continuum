@@ -3,7 +3,7 @@
 ## What this deploys
 
 - one public Cloud Run service containing Mission Control and the control-plane API;
-- a named Firestore Native-mode database used as the Mission system of record;
+- a named Firestore Native-mode database used as the Mission and compiler system of record (`missions` and `compiler_requests` collections);
 - one Pub/Sub topic receiving durable outbox events;
 - Google ADK agents using Gemini through Vertex AI;
 - FastAPI/OpenTelemetry spans exported to Google Cloud Trace.
@@ -44,6 +44,7 @@ The script is idempotent for existing APIs, service account, Firestore database,
   "runtime": "continuum",
   "agent_mode": "google_adk",
   "runtime_store": "firestore",
+  "compiler_store": "firestore",
   "event_transport": "pubsub",
   "telemetry_exporter": "google_cloud_trace"
 }
@@ -55,10 +56,21 @@ Run the complete release gate three times against the deployed URL:
 CONTINUUM_EXPECT_CLOUD=1 ./scripts/verify-deployment.sh CLOUD_RUN_URL 3
 ```
 
-Each run verifies v12 baseline, v13 drift, D42/D50 invalidation, D43 preservation, the durable pen-test wait, selective revalidation, D57/D58 supersession, exactly one committed activation side effect, and final `Vendor ACTIVE / Mission COMPLETED` state.
+Each run verifies v12 baseline, v13 drift, D42/D50 invalidation, D43 preservation, the durable pen-test wait, selective revalidation, D57/D58 supersession, exactly one committed activation side effect, and final `Vendor ACTIVE / Mission COMPLETED` state. The health gate also refuses a deployment where the compiler silently fell back from Firestore.
+
+The deployment script sets:
+
+```text
+CONTINUUM_RUNTIME_STORE=firestore
+CONTINUUM_COMPILER_STORE=firestore
+CONTINUUM_FIRESTORE_COLLECTION=missions
+CONTINUUM_FIRESTORE_COMPILER_COLLECTION=compiler_requests
+```
+
+The generic `POST /api/compiler/{request_id}/accept` route remains disabled unless a separate `CONTINUUM_RUNTIME_COMPILER_CAPABILITY` secret is injected. Do not put that capability in a public frontend environment variable. Compiler Lab uses its isolated, server-registered reference-fixture acceptance route and does not broaden the production capability.
 
 ## Verification boundary
 
-Local tests use contract fakes for Firestore and Pub/Sub and a real production container. They prove adapter semantics and packaging, but not IAM, regional availability, quota, live Gemini behavior, or Cloud Trace delivery. Those claims require running the deployment in an authenticated project and recording three stable end-to-end missions.
+Local tests use contract fakes for Firestore (including compiler aggregate/outbox persistence) and Pub/Sub and a real production container. They prove adapter semantics and packaging, but not IAM, regional availability, quota, live Gemini behavior, or Cloud Trace delivery. Those claims require running the deployment in an authenticated project and recording three stable end-to-end missions plus the authenticated compiler evidence lane.
 
 The relevant current Google references are the official [Cloud Run deploy command](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy), [Firestore database management](https://cloud.google.com/firestore/docs/manage-databases), [Pub/Sub CLI quickstart](https://docs.cloud.google.com/pubsub/docs/publish-receive-messages-gcloud), and [Vertex AI Gemini quickstart](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/quickstart).

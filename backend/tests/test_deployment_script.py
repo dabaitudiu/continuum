@@ -4,7 +4,6 @@ import os
 import subprocess
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -52,11 +51,12 @@ printf '%s\\n' '{"status":"ok"}'
 
     commands = gcloud_log.read_text()
     deploy = next(
-        line for line in commands.splitlines()
-        if line.startswith("run deploy ")
+        line for line in commands.splitlines() if line.startswith("run deploy ")
     )
     assert "--region=us-east1" in deploy
     assert "GOOGLE_CLOUD_LOCATION=global" in deploy
+    assert "CONTINUUM_COMPILER_STORE=firestore" in deploy
+    assert "CONTINUUM_FIRESTORE_COMPILER_COLLECTION=compiler_requests" in deploy
 
 
 def _write_executable(path: Path, content: str) -> None:

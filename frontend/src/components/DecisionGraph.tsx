@@ -18,6 +18,7 @@ import {
   Octagon,
   Play,
   RefreshCw,
+  ScrollText,
   ShieldCheck,
 } from 'lucide-react'
 import { useMemo } from 'react'
@@ -28,6 +29,7 @@ import type { GraphNodeDto, GraphReadModel, NodeStatus } from '../types'
 const iconByKind = {
   artifact: FileText,
   evidence: ShieldCheck,
+  claim: ScrollText,
   decision: GitBranch,
   action: Play,
 }
@@ -77,6 +79,7 @@ function RuntimeNode({ data, selected }: NodeProps<Node<GraphNodeDto>>) {
 const nodeTypes: NodeTypes = {
   artifact: RuntimeNode,
   evidence: RuntimeNode,
+  claim: RuntimeNode,
   decision: RuntimeNode,
   action: RuntimeNode,
 }

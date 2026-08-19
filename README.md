@@ -8,13 +8,17 @@ This repository is the canonical product and architecture handoff for a Google A
 
 ## Current product boundary
 
-The current product is the credential-free local Continuum prototype. Its purpose is to prove the semantic-resume thesis end to end; live Gemini/ADK and Google Cloud are optional post-gate integrations, not prerequisites for this product boundary.
+The current product has two credential-free surfaces: Mission Control proves Semantic Resume end to end, and Compiler Lab exposes the Semantic Dependency Compiler's exact source, claim, validation, and runtime-acceptance boundary. Live-model evidence remains a separate acceptance lane and is never inferred from deterministic reference fixtures.
 
-Three current-scope product milestones are complete:
+Four current-scope product milestones are implemented:
 
 1. **Phase G falsification gate:** Policy v12 → v13 deterministically makes D42 and D50 stale, preserves D43, blocks ActivateVendor, and dispatches only D42.
 2. **Local semantic runtime:** durable Mission/WorkItem state machines, Commitment matching, immutable Decision supersession, Side Effect Ledger safety, audit/outbox, optimistic concurrency, idempotent inbox, SQLite restart recovery, and a unified runtime/graph API.
 3. **Local Mission Control product:** a browser-operated Acme Analytics scenario with three semantic agent lanes, policy-drift impact, preserved work, durable missing-evidence wait, immutable D57/D58 supersession, and exactly-once vendor activation.
+4. **Semantic Dependency Compiler Phases B–G:** typed Decision/Claim/Dependency IR, deterministic validation and canonicalization, provider-neutral reasoner/critic adapters, completeness and contradiction gates, a 120-case three-domain benchmark, durable compiler repositories, runtime acceptance, and the browser-operated Compiler Lab.
+
+Module 01 is not declared fully accepted: its deterministic reference lane passes, but authenticated OpenAI and Gemini evidence are currently `BLOCKED` because no credentials were available to this process. The module definition of done still requires live Gemini evidence. See [the compiler benchmark report](docs/reports/module-01-dependency-compiler.md) and [the current P0 matrix](docs/continuum_module_01_semantic_dependency_compiler/13_ACCEPTANCE_MATRIX_AND_KILL_CRITERIA.md).
+
 An optional Google integration foundation also exists: bounded Google ADK/Gemini agents, a transactional Firestore repository, durable Pub/Sub outbox relay, Cloud Trace instrumentation, and a Cloud Run deployment path. These adapters are locally contract-tested but have no live-cloud evidence, and they are not counted as a completed product milestone. The UI and `/api/health` always disclose the active execution, persistence, event, and telemetry modes.
 
 ## Optional Google ADK + Gemini mode
@@ -50,6 +54,20 @@ The UI is available at `http://127.0.0.1:5173`; FastAPI runs at `http://127.0.0.
 Runtime state is stored in `backend/data/continuum.db` by default. Set `CONTINUUM_DB_PATH` to use another explicit SQLite file. Demo reset creates a new Mission namespace and does not delete audit history.
 Mission Control stores the active Mission pointer in the browser URL and local storage. Reloading `/missions/{mission_id}` restores the same durable Mission, including an open Commitment; only an explicit Reset creates a new namespace.
 The Mission history view lists recent durable namespaces from the runtime store and can reopen any prior Mission without replaying completed work.
+
+Open **Compiler Lab** in the top navigation to execute four bounded reference cases: accepted dependencies, a missing governing clause, conflicting equal-rank authorities, and a stale Policy v12 reference. The reference adapter is intentionally labeled deterministic and does not count as model evidence. Only an accepted immutable compilation exposes the demo Runtime commit action; rejected or review-required results cannot mutate Runtime.
+
+If an OpenAI key is supplied, the evidence benchmark can be run through the real Responses API. The SQLite ledger reserves estimated cost before every request and enforces a cumulative hard cap of **$10** across runs:
+
+```bash
+cd backend
+OPENAI_API_KEY='...' uv run python -m app.compiler.benchmark.cli run \
+  --suite evidence \
+  --budget-ledger data/openai-benchmark-budget.db \
+  --output-dir ../docs/reports
+```
+
+With no Gemini credentials, this command intentionally exits non-zero after writing the report because the Gemini lane remains `BLOCKED`; inspect the individual lane statuses rather than treating the process exit as an OpenAI failure. An unaudited `CONTINUUM_OPENAI_MODEL` override is rejected instead of weakening the budget guard.
 
 The production image serves the built React application and FastAPI API from one Cloud Run container:
 
@@ -127,6 +145,23 @@ POST /api/missions/{mission_id}/revalidate
 
 The simulator creates world input only. Decision and Action transitions remain owned by deterministic domain services. Graph state, processed IDs, audit records, and Mission state survive a new SQLite repository instance.
 
+## Semantic Dependency Compiler API
+
+```text
+POST /api/compiler/requests
+POST /api/compiler/{request_id}/draft
+POST /api/compiler/{request_id}/compile
+GET  /api/compiler/{request_id}
+POST /api/compiler/{request_id}/accept        # runtime capability only
+
+GET  /api/demo/compiler/status
+POST /api/demo/compiler/scenarios/{scenario_id}
+GET  /api/demo/compiler/{request_id}
+POST /api/demo/compiler/{request_id}/accept   # registered reference fixtures only
+```
+
+Compiler requests, drafts, results, findings, outbox events, compilation hashes, and Runtime receipts are immutable/idempotent under their request identity. The general acceptance endpoint requires `X-Continuum-Runtime-Capability`; the product demo endpoint separately accepts only a reference request registered by the server-side scenario runner.
+
 ## Safety invariants
 
 - Gemini or an agent may propose decisions and dependencies; the runtime owns canonical state.
@@ -148,6 +183,7 @@ The simulator creates world input only. Decision and Action transitions remain o
 6. Read the [local runtime evidence report](docs/reports/local-semantic-runtime-report.md).
 7. Review the [Mission Control product design](docs/superpowers/specs/2026-08-18-mission-control-product-design.md) and [local product report](docs/reports/mission-control-local-product-report.md).
 8. Use the [submission architecture](docs/submission/ARCHITECTURE.md), [four-minute demo script](docs/submission/DEMO_SCRIPT.md), and [evidence checklist](docs/submission/EVIDENCE_CHECKLIST.md) for final delivery.
+9. Review the [Compiler Lab product design](docs/superpowers/specs/2026-08-19-compiler-lab-product-design.md), [Compiler Lab product report](docs/reports/compiler-lab-product-report.md), and [Module 01 benchmark report](docs/reports/module-01-dependency-compiler.md).
 
 ## Explicit non-goals
 

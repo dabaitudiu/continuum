@@ -65,7 +65,7 @@ test('mobile navigation stays visible and the mission completes from the keyboar
   await page.setViewportSize({ width: viewportWidth, height: 844 })
   await page.goto('/')
 
-  for (const name of ['Mission route', 'Decision graph', 'Mission history']) {
+  for (const name of ['Mission route', 'Decision graph', 'Mission history', 'Compiler Lab']) {
     const button = page.getByRole('button', { name })
     const bounds = await button.boundingBox()
     expect(bounds, `${name} must have rendered bounds`).not.toBeNull()
@@ -88,4 +88,65 @@ test('mobile navigation stays visible and the mission completes from the keyboar
 
   await expect(page.getByRole('button', { name: 'Run scenario again' })).toBeVisible()
   await expect(page.getByTestId('route-activate-vendor')).toContainText('COMMITTED')
+})
+
+test('Compiler Lab proves accepted and blocked paths before runtime mutation', async ({ page }) => {
+  const consoleProblems: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'warning' || message.type() === 'error') consoleProblems.push(message.text())
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Compiler Lab' }).click()
+
+  const evidence = page.getByLabel('Model evidence status')
+  await expect(evidence.getByText('DETERMINISTIC REFERENCE')).toBeVisible()
+  await expect(evidence.getByText('OPENAI EVIDENCE')).toBeVisible()
+  await expect(evidence.getByText('GEMINI EVIDENCE')).toBeVisible()
+  await expect(evidence.getByText('BLOCKED')).toHaveCount(2)
+  await expect(evidence.getByText('$0.00 / $10.00 CUMULATIVE CAP')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Authorized access' }).click()
+  await page.getByRole('button', { name: 'Run reference compilation' }).click()
+  await expect(page.getByText('Compilation disposition: ACCEPTED')).toBeVisible()
+  await expect(page.locator('.source-entry code').filter({ hasText: 'policy:access@v13!' }).first()).toBeVisible()
+  await expect(page.getByText('Current policy requires active employment and manager approval.')).toBeVisible()
+  await expect(page.locator('.compilation-hash code')).toHaveText(/^[a-f0-9]{64}$/)
+
+  await page.getByRole('button', { name: 'Commit accepted compilation to Runtime' }).click()
+  const receipt = page.getByRole('region', { name: 'Runtime acceptance receipt' })
+  await expect(receipt.getByText('RUNTIME ACCEPTED')).toBeVisible()
+  await expect(receipt.getByText('COMMITTED ONCE')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Missing governing clause' }).click()
+  await page.getByRole('button', { name: 'Run reference compilation' }).click()
+  await expect(page.getByText('Compilation disposition: REJECTED_INCOMPLETE_DEPENDENCIES')).toBeVisible()
+  await expect(page.getByText('The proposed approval omits the governing privileged access policy clause.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Commit accepted compilation to Runtime' })).toHaveCount(0)
+  expect(consoleProblems).toEqual([])
+})
+
+test('Compiler Lab keeps all controls within a 320px viewport', async ({ page }) => {
+  const viewportWidth = 320
+  await page.setViewportSize({ width: viewportWidth, height: 844 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Compiler Lab' }).click()
+  await expect(page.getByRole('button', { name: 'Run reference compilation' })).toBeVisible()
+
+  const overflow = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+  }))
+  expect(overflow.document).toBeLessThanOrEqual(overflow.viewport)
+  expect(overflow.body).toBeLessThanOrEqual(overflow.viewport)
+
+  await page.getByRole('button', { name: 'Run reference compilation' }).click()
+  await expect(page.getByText('Compilation disposition: ACCEPTED')).toBeVisible()
+  const compiledOverflow = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+  }))
+  expect(compiledOverflow.document).toBeLessThanOrEqual(compiledOverflow.viewport)
+  expect(compiledOverflow.body).toBeLessThanOrEqual(compiledOverflow.viewport)
 })

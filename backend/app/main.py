@@ -6,37 +6,19 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.runtime_routes import build_runtime_router
+from app.agents.service import GoogleAdkMissionAgentService
+from app.api.compiler_demo_routes import (
+    CompilerEvidenceService,
+    build_compiler_demo_router,
+)
 from app.api.compiler_routes import build_compiler_router
 from app.api.read_models import graph_read_model
-from app.agents.service import GoogleAdkMissionAgentService
-from app.demo.fixture import seed_canonical_mission
-from app.events.outbox import GooglePubSubOutboxPublisher, OutboxRelay
-from app.observability.telemetry import configure_telemetry
-from app.domain.invalidation import InvalidationService
-from app.domain.models import (
-    ActionStatus,
-    DecisionStatus,
-    DomainEvent,
-    GraphSnapshot,
-    RevalidationPlan,
-)
-from app.domain.revalidation import RevalidationService
-from app.repository.graph_adapter import RuntimeGraphRepositoryAdapter
-from app.repository.protocol import GraphRepository
-from app.repository.runtime_firestore import FirestoreRuntimeRepository
-from app.repository.runtime_memory import InMemoryRuntimeRepository
-from app.repository.runtime_publishing import PublishingRuntimeRepository
-from app.repository.runtime_protocol import RuntimeRepository
-from app.repository.runtime_sqlite import SQLiteRuntimeRepository
-from app.runtime.coordinator import RuntimeCoordinator
-from app.runtime.errors import RuntimeDomainError
-from app.compiler.canonicalization import DeterministicCanonicalizer
+from app.api.runtime_routes import build_runtime_router
 from app.compiler.acceptance import RuntimeAcceptanceService
-from app.compiler.models import CriticProposal, DecisionDraft
+from app.compiler.canonicalization import DeterministicCanonicalizer
 from app.compiler.repository import CompilerRepository
 from app.compiler.repository_firestore import FirestoreCompilerRepository
 from app.compiler.repository_memory import InMemoryCompilerRepository
@@ -44,7 +26,29 @@ from app.compiler.repository_sqlite import SQLiteCompilerRepository
 from app.compiler.review import AuthorityPrecedencePolicy, DeterministicReviewGate
 from app.compiler.service import CompilerService
 from app.compiler.validation import DeterministicDraftValidator
-from app.sources.registry import InMemorySourceRegistry, SourceRegistry
+from app.demo.compiler_fixture import (
+    CompilerReferenceCatalog,
+    ReferenceAwareCompletenessCritic,
+    build_reference_catalog,
+)
+from app.demo.fixture import seed_canonical_mission
+from app.domain.invalidation import InvalidationService
+from app.domain.models import (
+    DomainEvent,
+)
+from app.domain.revalidation import RevalidationService
+from app.events.outbox import GooglePubSubOutboxPublisher, OutboxRelay
+from app.observability.telemetry import configure_telemetry
+from app.repository.graph_adapter import RuntimeGraphRepositoryAdapter
+from app.repository.protocol import GraphRepository
+from app.repository.runtime_firestore import FirestoreRuntimeRepository
+from app.repository.runtime_memory import InMemoryRuntimeRepository
+from app.repository.runtime_protocol import RuntimeRepository
+from app.repository.runtime_publishing import PublishingRuntimeRepository
+from app.repository.runtime_sqlite import SQLiteRuntimeRepository
+from app.runtime.coordinator import RuntimeCoordinator
+from app.runtime.errors import RuntimeDomainError
+from app.sources.registry import SourceRegistry
 
 
 class PolicyUpgradeRequest(BaseModel):
@@ -70,6 +74,8 @@ def create_app(
     compiler_source_registry: SourceRegistry | None = None,
     runtime_compiler_acceptor: Any | None = None,
     runtime_compiler_capability: str | None = None,
+    compiler_budget_path: Path | None = None,
+    compiler_evidence_report_path: Path | None = None,
     static_dir: Path | None = None,
 ) -> FastAPI:
     runtime_repo = runtime_repository or _default_runtime_repository(
@@ -85,8 +91,9 @@ def create_app(
     compiler_repo = compiler_repository or _default_compiler_repository(
         isolated=repository is not None or runtime_repository is not None
     )
-    semantic_compiler = compiler_service or _default_compiler_service()
-    source_registry = compiler_source_registry or InMemorySourceRegistry()
+    reference_catalog = build_reference_catalog()
+    semantic_compiler = compiler_service or _default_compiler_service(reference_catalog)
+    source_registry = compiler_source_registry or reference_catalog.registry
     compiler_acceptor = runtime_compiler_acceptor or RuntimeAcceptanceService(
         compiler_repo,
         runtime_repo,
@@ -139,21 +146,44 @@ def create_app(
             ),
         )
     )
+    app.include_router(
+        build_compiler_demo_router(
+            repository=compiler_repo,
+            compiler=semantic_compiler,
+            catalog=reference_catalog,
+            runtime_repository=runtime_repo,
+            runtime_acceptor=compiler_acceptor,
+            evidence=CompilerEvidenceService(
+                report_path=(
+                    compiler_evidence_report_path
+                    or Path(__file__).resolve().parents[2]
+                    / "docs"
+                    / "reports"
+                    / "module-01-dependency-compiler.json"
+                ),
+                budget_path=(
+                    compiler_budget_path
+                    or Path(
+                        os.environ.get(
+                            "CONTINUUM_OPENAI_BUDGET_LEDGER",
+                            Path(__file__).resolve().parents[1]
+                            / "data"
+                            / "openai-benchmark-budget.db",
+                        )
+                    )
+                ),
+            ),
+        )
+    )
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
         return {
             "status": "ok",
             "runtime": "continuum",
-            "agent_mode": (
-                "google_adk" if agent_reasoner is not None else "local"
-            ),
-            "runtime_store": str(
-                getattr(runtime_repo, "store_kind", "unknown")
-            ),
-            "compiler_store": str(
-                getattr(compiler_repo, "store_kind", "unknown")
-            ),
+            "agent_mode": ("google_adk" if agent_reasoner is not None else "local"),
+            "runtime_store": str(getattr(runtime_repo, "store_kind", "unknown")),
+            "compiler_store": str(getattr(compiler_repo, "store_kind", "unknown")),
             "event_transport": (
                 "pubsub"
                 if isinstance(runtime_repo, PublishingRuntimeRepository)
@@ -176,7 +206,9 @@ def create_app(
             runtime_snapshot = None
         if runtime_snapshot is not None and runtime_snapshot.world is not None:
             result = coordinator.upgrade_policy(request.mission_id, request.event_id)
-            return graph_read_model(result.snapshot.graph, revalidation.plan(request.mission_id))
+            return graph_read_model(
+                result.snapshot.graph, revalidation.plan(request.mission_id)
+            )
         event = DomainEvent(
             event_id=request.event_id,
             event_type="policy.version.changed",
@@ -236,7 +268,9 @@ def create_app(
                 mission_id,
                 request.request_id,
             )
-            return graph_read_model(result.snapshot.graph, revalidation.plan(mission_id))
+            return graph_read_model(
+                result.snapshot.graph, revalidation.plan(mission_id)
+            )
         try:
             plan = revalidation.plan(mission_id)
             already_processed = repo.has_processed_request(
@@ -298,30 +332,24 @@ def _default_runtime_repository(*, isolated: bool) -> RuntimeRepository:
                 "GOOGLE_CLOUD_PROJECT is required when "
                 "CONTINUUM_RUNTIME_STORE=firestore"
             )
-        repository: RuntimeRepository = (
-            FirestoreRuntimeRepository.from_environment(
-                project=project,
-                database=os.environ.get("CONTINUUM_FIRESTORE_DATABASE"),
-                collection=os.environ.get(
-                    "CONTINUUM_FIRESTORE_COLLECTION",
-                    "missions",
-                ),
-            )
+        repository: RuntimeRepository = FirestoreRuntimeRepository.from_environment(
+            project=project,
+            database=os.environ.get("CONTINUUM_FIRESTORE_DATABASE"),
+            collection=os.environ.get(
+                "CONTINUUM_FIRESTORE_COLLECTION",
+                "missions",
+            ),
         )
     elif store == "sqlite":
         configured_path = os.environ.get("CONTINUUM_DB_PATH")
         path = (
             Path(configured_path)
             if configured_path
-            else Path(__file__).resolve().parents[1]
-            / "data"
-            / "continuum.db"
+            else Path(__file__).resolve().parents[1] / "data" / "continuum.db"
         )
         repository = SQLiteRuntimeRepository(path)
     else:
-        raise RuntimeError(
-            "CONTINUUM_RUNTIME_STORE must be either sqlite or firestore"
-        )
+        raise RuntimeError("CONTINUUM_RUNTIME_STORE must be either sqlite or firestore")
 
     topic = os.environ.get("CONTINUUM_PUBSUB_TOPIC")
     if topic:
@@ -344,20 +372,13 @@ def _default_runtime_repository(*, isolated: bool) -> RuntimeRepository:
     return repository
 
 
-class _EmptyCompilerCritic:
-    def review(
-        self,
-        draft: DecisionDraft,
-        context: object,
-    ) -> CriticProposal:
-        return CriticProposal()
-
-
-def _default_compiler_service() -> CompilerService:
+def _default_compiler_service(
+    reference_catalog: CompilerReferenceCatalog,
+) -> CompilerService:
     return CompilerService(
         validator=DeterministicDraftValidator(),
         reviewer=DeterministicReviewGate(
-            critic=_EmptyCompilerCritic(),
+            critic=ReferenceAwareCompletenessCritic(reference_catalog),
             precedence_policy=AuthorityPrecedencePolicy(),
         ),
         canonicalizer=DeterministicCanonicalizer(
@@ -401,9 +422,7 @@ def _default_compiler_repository(*, isolated: bool) -> CompilerRepository:
             else Path(__file__).resolve().parents[1] / "data" / "continuum.db"
         )
         return SQLiteCompilerRepository(path)
-    raise RuntimeError(
-        "CONTINUUM_COMPILER_STORE must be either sqlite or firestore"
-    )
+    raise RuntimeError("CONTINUUM_COMPILER_STORE must be either sqlite or firestore")
 
 
 def _http_error(status_code: int, code: str, message: str) -> HTTPException:

@@ -15,7 +15,16 @@
 | Duplicate event ignored | PASS | idempotency test | no duplicate work item |
 | Side effect exactly-once behavior | PASS | ledger test | no duplicate email/activation |
 | Transient UI failure is recoverable | PASS | frontend retry/idempotency tests | retry preserves the active Mission and operation ID |
-| Keyboard and minimum-width operation | PASS | Chromium 320px keyboard E2E | all three views remain visible and the full mission completes with Enter |
+| Keyboard and minimum-width operation | PASS | Chromium 320px keyboard E2E | all four views remain visible; Mission Control completes with Enter and Compiler Lab has no page overflow |
+| Exact compiler source identity | PASS | identity, registry, validator tests | Compiler Lab exposes full revision/representation/fragment refs |
+| Typed compiler IR + deterministic hash | PASS | schema, pipeline, repeated-hash tests | claims and immutable compilation hash are visible |
+| Missing/stale/unauthorized dependency rejection | PASS | compiler validation and API tests | blocked reference cases expose findings and no Runtime action |
+| Material contradiction gate | PASS | precedence/contradiction tests | equal-rank conflict returns `NEEDS_HUMAN_REVIEW` |
+| Runtime compiler acceptance boundary | PASS | revision/world/CAS/idempotency/capability tests | accepted fixture commits once and returns an audit-linked receipt |
+| 120-case, three-domain dependency corpus | PASS | corpus/schema/distribution tests | benchmark report is committed |
+| Deterministic full-pipeline reference metrics | PASS | reproducible benchmark runner | report shows 100% reference recall/precision/contradiction/determinism |
+| Live OpenAI compiler evidence | BLOCKED | transport/budget contracts pass; no authenticated run | UI says key not configured; cumulative hard cap is $10 |
+| Live Gemini compiler evidence | BLOCKED | ADK transport contracts pass; no authenticated run | UI says credentials not configured |
 | Gemini used materially | DEFERRED | agent contract fixture only | requires authenticated live run |
 | ADK used | DEFERRED | adapter inspection only | requires authenticated live run |
 | Google Cloud deployed | DEFERRED | deployment-script contract test only | requires target cloud project |

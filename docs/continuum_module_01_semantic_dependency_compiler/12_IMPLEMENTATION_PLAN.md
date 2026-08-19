@@ -6,6 +6,10 @@
 
 This is a planning range, not a timer-based definition of done. If the work finishes far below the range, review whether meaningful evaluation or scope has been skipped before declaring completion.
 
+## Implementation status — 2026-08-19
+
+Phases A–G are implemented. Phase D's OpenAI and Gemini transports are locally contract-tested, but their authenticated evidence lanes are `BLOCKED` because this environment supplied neither key. Phase F's deterministic reference lane passes; it does not satisfy live-model acceptance. Consequently the stop condition at the end of this document remains in force.
+
 ## Phase A — Source identity kernel (5–6h)
 
 Build:
