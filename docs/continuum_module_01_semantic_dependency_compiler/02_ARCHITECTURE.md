@@ -2,22 +2,24 @@
 
 ## Status
 
-The product owner selected **Option B's direction** on 2026-08-19 and rejected the first concrete specification. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview; [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 2 is normative for typed contracts, coverage, proof authority, terminal semantics, migration, and ablation.
+The product owner selected **Option B's direction** on 2026-08-19 and rejected both the first concrete specification and Revision 2. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 3 is normative for typed contracts、artifact lifecycles、applicability/coverage proof、selective invalidation、terminal semantics、migration and ablation.
 
-Revision 2 is presented for product-owner review and is not approved or implemented. Module 01 remains `REDESIGN REQUIRED`.
+Revision 3 is presented for product-owner review and is not approved or implemented. Module 01 remains `REDESIGN REQUIRED`.
 
 ## Component topology
 
 ```mermaid
 flowchart TD
-    A[Artifact Ingestion + normalized governing rules] --> B[SourceRegistry / world snapshot]
-    B --> C[0. CompilerPolicyBundle + SourceSetManifest]
-    C --> C1[Coverage / hash / hard-limit validation]
+    A[EnterpriseWorldSnapshot + CompilerPolicySnapshot] --> U[0U. Authoritative SourceUniverseSnapshot]
+    U --> R[0N. RuleNormalizationManifest]
+    R --> C[0S. SourceSetManifest + selective coverage guards]
+    C --> C1[Universe / normalization / selection / hard-limit validation]
     C1 -->|incomplete or partial| RB[RUN_BLOCKED]
     C1 --> D[1A. Requirement Decomposition]
     C1 --> E[1B. Independent Obligation Coverage]
-    D --> F[1C. Deterministic Reconciliation]
-    E --> F
+    D --> F[1D. Deterministic Reconciliation]
+    E --> E1[1C. Provisional Applicability Proof]
+    E1 --> F
     F --> G[2. Evidence Binding Candidates]
     G --> G1[Deterministic eligibility validation]
     G1 --> H[3A. Partitioned Contradiction Observations]
@@ -31,17 +33,18 @@ flowchart TD
     N --> O[Continuum canonical Runtime]
 ```
 
-Structural errors may take an early terminal path. Unknown/incomplete source coverage or partial contradiction partitions are execution-blocking, not semantic success. Unsupported governing logic produces a typed fail-closed result. Missing evidence, contradictions, indeterminate entailment, and outcome mismatch reach their relevant semantic stages before deterministic disposition.
+Structural errors may take an early terminal path. Unknown/incomplete universe、normalization、selection or contradiction coverage is execution-blocking, not semantic success. Unsupported governing logic/predicate produces a typed fail-closed result. Missing evidence、applicability ambiguity、contradictions、indeterminate entailment and outcome mismatch reach their relevant semantic stages before deterministic disposition.
 
 ## Trust boundaries
 
 ### Trusted deterministic boundary
 
 - artifact/revision/representation/fragment identity;
-- `CompilerPolicyBundle` and complete `SourceSetManifest` identity;
-- request-scoped source inventory, coverage declaration, retrieval provenance, partitions, and access scope;
+- separate `EnterpriseWorldArtifact | CompilerPolicyArtifact | CompilerDerivedArtifact` identities and exact derivation bindings;
+- `CompilerPolicyBundle`、authoritative `SourceUniverseSnapshot`、fragment-complete `RuleNormalizationManifest` and complete `SourceSetManifest` identity;
+- request-scoped universe boundary、source inventory、normalization/selection receipts、retrieval provenance、partitions and access scope;
 - schema and local-ID integrity;
-- stable `PredicateIdentity` and normalized DIRECT_ATOM/ALL_OF topology;
+- stable pre-registered `PredicateIdentity` and normalized DIRECT_ATOM/ALL_OF topology；unknown material predicates fail closed;
 - source-ref existence and canonical resolution;
 - temporal validity and historical-read restrictions;
 - source-type and authority relation rules;
@@ -52,32 +55,32 @@ Structural errors may take an early terminal path. Unknown/incomplete source cov
 - support-path reachability over the typed DAG;
 - outcome-class rules and final compilation disposition;
 - canonical IDs, ordering, deduplication, hashes, and compiler state transitions;
-- validity-bearing provenance for all interpretation policies and the source manifest;
-- immutable Runtime acceptance under exact mission revision/world snapshot.
+- validity-bearing provenance for applicability、material policies and selective coverage/rule/eligibility guards；the whole manifest is audit-only;
+- immutable Runtime acceptance under exact mission/world/universe/policy/derived-artifact binding.
 
 ### Probabilistic boundary
 
 - semantic requirement decomposition;
-- independent governing-obligation discovery;
+- independent governing-obligation and applicability-binding candidates;
 - proposition-to-evidence role and entailment proposals;
 - partitioned semantic contradiction observations;
 - advisory counterfactual and contradiction severity text.
 
-Model output is immutable analysis IR only. It cannot set canonical `CRITICAL | SUPPORTING`, canonical contradiction impact, deterministic precedence, source completeness, final disposition, Runtime mutations, Decision staleness, or side-effect authority.
+Model output is immutable analysis IR only. It cannot set canonical applicability、`CRITICAL | SUPPORTING`、canonical contradiction impact、deterministic precedence、universe/normalization/selection completeness、final disposition、Runtime mutations、Decision staleness or side-effect authority.
 
 ## Compiler stages
 
-### Stage 0 — Source and policy coverage
+### Stage 0U/0N/0S — Universe、normalization and selection coverage
 
-Resolve a versioned `CompilerPolicyBundle`; build and validate a complete, auditable `SourceSetManifest`; identify governing/contradiction-eligible refs; and construct a coverage-preserving partition plan. Incomplete/unknown coverage fails closed.
+Validate an authoritative universe root；account every in-boundary fragment through trusted normalization；then derive the selected rule/contradiction inventory and selective Runtime guards. Incomplete/unknown/review-required coverage fails closed，and derived manifests never become members of their input world snapshot.
 
 ### Stage 1A — Requirement Decomposition
 
 Produce one untrusted outcome proposal plus atomic stable predicates and an `ALL_OF` DAG. Display propositions are non-authoritative; structured predicate identity drives IDs and normalization.
 
-### Stage 1B/1C — Independent Coverage and Reconciliation
+### Stage 1B/1C/1D — Independent Coverage、Applicability Proof and Reconciliation
 
-An outcome-blind pass inventories material governing obligations without seeing Stage-1A output. Deterministic reconciliation merges candidates by semantic key and adds valid coverage-only omissions to the effective Requirement set. It never invents placeholder refs.
+An outcome-blind pass inventories material obligations、Requirement candidates and applicability bindings without seeing Stage-1A output. It must retain a semantic Requirement candidate for every representable obligation even when proposed N/A. Stage 1C validates provisional proofs；Stage 3 independently checks applicability conflicts；Stage 4 alone finalizes APPLICABLE/NOT_APPLICABLE and validity provenance. Reconciliation never invents placeholder refs/codes or permits early N/A suppression.
 
 ### Stage 2 — Evidence Binding
 
@@ -141,17 +144,17 @@ Claim(derived requirement)
   --REQUIRES[CRITICAL]-->
 Decision
 
-CompilerPolicyArtifact / SourceSetManifestArtifact
+CompilerPolicyArtifact / selective CoverageGuard
   --GOVERNED_BY[CRITICAL]-->
 Claim(decision interpretation)
   --REQUIRES[CRITICAL]-->
 Decision
 ```
 
-Support and later invalidation use graph reachability. Existing Source → Claim → Claim → Decision semantics remain valid. Canonical state contains only Stage-4 selected proof bindings plus every materially participating interpretation-policy/manifest ref. APPROVE uses all root closures; DENY uses one stable failed path selected without proposition text. No redundant direct edge is required.
+Support and later invalidation use graph reachability. Existing Source → Claim → Claim → Decision semantics remain valid. Canonical state contains Stage-4 selected proof、applicability guards and materially participating policy/coverage semantic keys；full manifests/receipts remain immutable audit derivation. APPROVE uses all root closures；DENY uses one stable failed path selected without proposition text. No redundant direct edge is required.
 
 ## Integration boundary
 
-The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate an accepted canonical result into Runtime graph mutations, after checking the exact mission revision, world snapshot, policy bundle, and source manifest. Runtime still owns Decision lifecycle, stale propagation, action blocking, and side-effect authorization.
+The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate an accepted canonical result into Runtime graph mutations, after checking the exact mission revision、input world/universe/policy snapshots、derived-artifact envelope and selective guards. Runtime still owns Decision lifecycle、stale propagation、action blocking and side-effect authorization.
 
 The old critic and reasoner-only routes remain only as explicit benchmark baselines during migration. Neither is a production fallback for the replacement pipeline.

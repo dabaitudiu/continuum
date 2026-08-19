@@ -2,12 +2,14 @@
 
 ## Architecture decision
 
-The old Completeness Critic remains rejected. Revision 2 replaces it with four disjoint contracts:
+The old Completeness Critic remains rejected. Revision 3 replaces it with six disjoint contracts:
 
-1. independent governing-obligation coverage proposes typed semantic Requirements omitted by decomposition;
-2. deterministic reconciliation creates the effective Requirement set;
-3. partitioned independent contradiction observation covers the complete source inventory;
-4. deterministic proof selection/completeness derives materiality、contradiction impact and RequirementAssessments.
+1. authoritative universe + fragment-complete normalization prove the obligation input inventory;
+2. independent governing-obligation coverage proposes typed semantic Requirements/applicability bindings;
+3. deterministic applicability proof and reconciliation create justified exclusions/effective Requirements;
+4. partitioned independent contradiction observation covers applicability and requirement predicates;
+5. deterministic proof selection/completeness derives materiality、contradiction impact and RequirementAssessments;
+6. deterministic gate and selective provenance mapping decide Runtime eligibility.
 
 No pass emits `UNKNOWN_SOURCE_REQUIRED`, edits canonical state, or decides final disposition.
 
@@ -15,22 +17,22 @@ No pass emits `UNKNOWN_SOURCE_REQUIRED`, edits canonical state, or decides final
 
 ### Question
 
-> Given this request、decision class and the complete current governing-source universe, which material governing obligations apply?
+> Given this request、decision class and the universe-rooted、normalization-complete governing inventory, which material obligations may apply and what current facts support their applicability?
 
 ### Independence boundary
 
-The pass does not receive Stage-1 decomposition or proposed outcome. It cannot be biased toward confirming the initial requirement set. It sees every governing obligation declared by the validated SourceSetManifest plus normalized rule identity/logic metadata. Large inventories use deterministic disjoint partitions and complete receipt aggregation；partial coverage blocks rather than silently sampling.
+The pass does not receive Stage-1 decomposition or proposed outcome. It sees every obligation from the validated `RuleNormalizationManifest + SourceSetManifest` chain, including pre-registered applicability predicates. Large inventories use deterministic disjoint partitions and complete receipts；partial coverage blocks rather than silently sampling.
 
 ### Output and reconciliation
 
-It outputs one `RequirementCoverageObservation` per normalized governing obligation、a receipt covering the exact manifest inventory, and `RequirementCoverageCandidate[]` for APPLICABLE obligations. Observations use `APPLICABLE | NOT_APPLICABLE | INDETERMINATE`; INDETERMINATE cannot normally accept and incomplete receipts cannot masquerade as no omission.
+It outputs one advisory observation、candidate applicability bindings and Requirement candidates for every representable normalized obligation. Stage 1C validates only provisional proof；Stage 3 independently covers applicability conflicts；Stage 4 finalizes APPLICABLE only when all conditions remain true and NOT_APPLICABLE only from a stable determinate false guard. Both persist `ApplicabilityJustification`；otherwise INDETERMINATE fails closed. A model N/A label cannot suppress a Requirement before those passes。
 
 Deterministic reconciliation compares Stage 1A and coverage by semantic key:
 
 - match → origin `BOTH`;
-- valid coverage-only omission → add to effective set as `COVERAGE_PASS` and run downstream binding/contradiction/completeness;
+- valid coverage-only omission → retain as conditional `COVERAGE_PASS` candidate and run downstream binding/contradiction/completeness；Stage 4 applicability decides effective membership;
 - incompatible expected states/topology → fail-closed coverage conflict;
-- unsupported logic → typed `REJECTED_UNSUPPORTED_LOGIC`;
+- unsupported logic/predicate → typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE`;
 - unknown/fabricated ref → structural failure.
 
 This catches a Stage-1 omission in production without asking a vague critic to find arbitrary problems.
@@ -39,7 +41,7 @@ This catches a Stage-1 omission in production without asking a vague critic to f
 
 ### Input
 
-- reconciled effective Requirements;
+- reconciled supported Requirement candidates plus every applicability predicate/guard;
 - complete contradiction-eligible ref inventory from the manifest;
 - deterministic coverage plan and hard limits;
 - source content、authority/scope/time metadata and stable predicate contracts.
@@ -50,7 +52,7 @@ The pass is independent of Stage-2 bindings.
 
 Deterministic partitioning assigns every eligible ref exactly once. Each map call emits typed observations and a receipt. Reducer verifies every expected partition、input hash and processed-ref union before semantic reduction.
 
-Determinate opposing observations are globally joined by stable predicate identity **and entailment target**, so sources in different partitions can conflict without mixing obligation applicability with factual state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction.
+Determinate opposing observations are globally joined by stable predicate identity **and entailment target**, so sources in different partitions can conflict without mixing applicability with business state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction。
 
 If hard limits、timeout、truncation、missing receipt or union mismatch prevent complete coverage, the result is `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. It is never reported as a zero-contradiction success.
 
@@ -62,8 +64,8 @@ Only versioned policy may resolve authority. The model's severity and resolution
 
 Conflict impact is `VALIDITY_CRITICAL` iff:
 
-1. the affected effective Requirement reaches a Decision root;
-2. at least one side is eligible for a required proof role; and
+1. the affected applicability guard/effective Requirement reaches a Decision root;
+2. at least one side is eligible for a required proof role/guard; and
 3. authority/preference state is unresolved or changes the truth available to deterministic proof selection.
 
 Otherwise it is `NON_BLOCKING`. Thus a model cannot downgrade a blocking conflict to SUPPORTING.
@@ -85,12 +87,12 @@ An incorrect model label therefore cannot suppress invalidation on a proof actua
 
 | Condition | Assessment |
 |---|---|
-| every applicability role is TRUE and every state role matches expected state | `SATISFIED` |
-| every applicability role is TRUE and covered state evidence proves the opposite, no unresolved critical conflict | `UNSATISFIED` |
+| every applicable obligation has a validated APPLICABLE justification and every state role matches expected state | `SATISFIED` |
+| applicability is proved and covered state evidence proves the opposite, no unresolved critical conflict | `UNSATISFIED` |
 | unresolved validity-critical contradiction | `CONTRADICTED` |
 | missing role or only indeterminate evidence | `INSUFFICIENT_EVIDENCE` |
 
-Applicable governing evidence and factual state are not interchangeable. Governing applicability FALSE against an APPLICABLE reconciled obligation is a reconciliation conflict, not an ordinary business-condition DENY.
+Normalized obligation、applicability evidence and factual state are not interchangeable. A conflict with a selected APPLICABLE/NOT_APPLICABLE guard is validity-critical, not an ordinary business-condition DENY。
 
 ### ALL_OF
 
@@ -106,12 +108,13 @@ Selected proof uses:
 Source → DIRECT Claim → zero or more ALL_OF Claims → Decision
 ```
 
-A valid transitive path is sufficient. No duplicate Source → derived Claim or intermediate Claim → Decision edge is required. Policy/manifest provenance uses a parallel critical path through `DecisionInterpretation` Claim.
+A valid transitive path is sufficient. No duplicate Source → derived Claim or intermediate Claim → Decision edge is required. Applicability facts and selective policy/coverage guards use parallel critical paths；full manifests/receipts remain audit derivation。
 
 ## Gate effects
 
 - applicable unsupported logic → `REJECTED_UNSUPPORTED_LOGIC`;
-- source/partition coverage incomplete → execution `RUN_BLOCKED`;
+- applicable unsupported predicate → `REJECTED_UNSUPPORTED_PREDICATE`;
+- universe/normalization/source/partition coverage incomplete → execution `RUN_BLOCKED`;
 - unresolved requirement coverage conflict → `REJECTED_REQUIREMENT_COVERAGE`;
 - insufficient determinate evidence → `REJECTED_INCOMPLETE_REQUIREMENTS` or `NEEDS_HUMAN_REVIEW`;
 - unresolved validity-critical contradiction → `NEEDS_HUMAN_REVIEW`;
@@ -130,9 +133,10 @@ Report separately:
 - entailment confusion including INDETERMINATE;
 - proof-selected CRITICAL recall/precision;
 - contradiction pair and deterministic-impact recall;
-- source/partition coverage completion;
+- universe/normalization/source/partition coverage completion;
+- APPLICABLE/N/A proof completeness and transition stale recall;
 - RequirementAssessment accuracy;
 - disposition and accepted-case coverage;
-- policy/manifest invalidation behavior.
+- selective policy/rule/coverage invalidation and `coverage_induced_unnecessary_invalidation_rate`.
 
 Safe rejection over almost every case is not proof of compiler usefulness.

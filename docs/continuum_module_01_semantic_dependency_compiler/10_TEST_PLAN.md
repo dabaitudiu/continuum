@@ -10,11 +10,13 @@ Focus on deterministic code:
 - fragment resolution;
 - temporal validity;
 - scope checks;
-- CompilerPolicyBundle ref/hash/world-snapshot validation;
+- separate enterprise-world/policy snapshots and exact derived-artifact envelope validation;
 - PolicyUsageTrace completeness and `UNVERSIONED_POLICY_INPUT` rejection;
-- SourceSetManifest boundary、included/excluded inventory、retrieval version、coverage status and hash validation;
+- SourceUniverse authority/namespace/enumeration/watermark/hash validation;
+- RuleNormalizationManifest exact fragment accounting、parser/reviewer receipts and no silent omission;
+- SourceSetManifest boundary、included/excluded rule inventory、retrieval version、coverage status/hash and selective guard derivation;
 - stable PredicateIdentity and DIRECT_ATOM/ALL_OF normalization;
-- per-obligation requirement-coverage receipt、APPLICABLE/NOT_APPLICABLE/INDETERMINATE validation and deterministic reconciliation;
+- per-obligation receipt、deterministic APPLICABLE/NOT_APPLICABLE proof、INDETERMINATE and reconciliation;
 - EvidenceBinding cross-links、applicability-vs-state target separation、three-state entailment、proof eligibility and proof-selected materiality;
 - contradiction partition/receipt union、cross-partition join、deterministic precedence and impact;
 - deterministic RequirementAssessment truth table, support paths, blocking IDs, and one-assessment-per-requirement;
@@ -22,7 +24,7 @@ Focus on deterministic code:
 - transitive Source → Claim → Claim → Decision reachability;
 - deterministic `APPROVE | DENY | REVIEW` acceptance rules;
 - deterministic minimal DecisionJustification independent of proposition display、case/domain/local-ID order;
-- unsupported-logic typed fail-closed results;
+- unsupported-logic and unsupported-predicate typed fail-closed results;
 - canonical edge normalization;
 - duplicate edge handling;
 - materiality rules;
@@ -41,6 +43,8 @@ Useful invariants:
 - adding an unselected candidate cannot override a higher-precedence stable proof;
 - every complete partitioning of the same inventory reduces to the same contradiction set;
 - incomplete receipt union can never have completed contradiction status.
+- changing an irrelevant inventory artifact may change audit manifest hash but not selective Runtime guard/edge set;
+- semantically relevant catalog/rule/selection changes alter only matching coverage guards.
 
 ### Integration tests
 
@@ -61,13 +65,13 @@ Cases:
 - equal-authority contradiction reaches a dedicated typed pass and forces review;
 - model SUPPORTING/severity advisory cannot suppress selected-proof materiality or blocking contradiction impact;
 - cross-partition contradiction is joined, while missing partition blocks the run;
-- incomplete/unknown SourceSet fails closed;
+- incomplete/unknown SourceUniverse/SourceSet and incomplete/review-required normalization fail closed;
 - applicable unsupported OR/threshold/exception logic cannot canonicalize;
 - a transitive Claim support path is accepted without redundant direct source edges;
-- interpretation policy or SourceSetManifest revision makes an accepted Decision stale;
+- selected applicability fact、material policy/rule/coverage guard revision makes affected Decision stale；unrelated whole-manifest change does not;
 - only requirement-DAG roots connect to Decision; intermediate Claim → Decision edges are not duplicated;
 - reasoner-only and old-critic baselines cannot call Runtime acceptance;
-- no v2 failure falls back to old critic;
+- no replacement failure falls back to old critic;
 - runtime revision changes after compile → accept fails.
 
 ### Live Gemini contract tests
@@ -123,8 +127,14 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - an unselected failed/satisfied sibling fragment mutation leaves that DENY Decision valid;
 - supporting/irrelevant fragment mutation leaves it valid;
 - stale historical evidence cannot authorize acceptance;
-- SourceSetManifest incomplete/unknown state cannot accept;
-- every materially used interpretation-policy/manifest revision can stale a Decision;
+- SourceSet cannot declare complete without authoritative complete SourceUniverse root;
+- every fragment has exactly one normalization accounting outcome；silent parser omission cannot accept;
+- APPLICABLE all-true and NOT_APPLICABLE stable-false proof；unsupported N/A becomes INDETERMINATE;
+- applicability true→false and false→true both stale prior accepted Decisions;
+- relevant new governing source/selector/catalog/rule/eligibility change stales affected Decision;
+- unrelated inventory/supporting content change does not stale merely because manifest hash changed;
+- derived records never join their input world snapshot and future events reach guards without historical mutation;
+- material unregistered predicate yields `REJECTED_UNSUPPORTED_PREDICATE`;
 - paraphrased equivalent Requirement selects identical Runtime proof;
 - paired injection cannot suppress Requirements/evidence/contradictions or flip outcome/disposition/mutation quality;
 - prompt injection cannot create an authority edge;
@@ -132,9 +142,10 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - semantic incompleteness cannot skip contradiction/completeness;
 - existing transitive Claim/Decision dependency semantics satisfy completeness;
 - three-arm ablation routing and metrics are isolated correctly;
-- production packages cannot import DEV ground truth or access externally held blind-holdout bodies.
+- method-blind DEV annotation is frozen before replacement output、versioned/hashed/append-only and unavailable to production;
+- experiment order is OpenAI DEV → Gemini DEV → freeze → Gemini-primary blind；production/agents cannot access blind bodies.
 
-The synthetic normative P0-1…P0-11 counterexamples in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify contracts only and cannot be reported as live-model or benchmark evidence.
+The synthetic normative P0-1…P0-19 counterexamples in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify contracts only and cannot be reported as live-model or benchmark evidence.
 
 ## Mutation tests
 
@@ -147,6 +158,9 @@ Artificially:
 - duplicate a fragment;
 - modify one unrelated policy clause;
 - change an interpretation-policy revision;
+- transition an applicability fact in both directions;
+- add one relevant governing source and one irrelevant inventory artifact;
+- change normalization/selection/catalog semantics independently;
 - remove one contradiction partition receipt;
 - paraphrase a Requirement display string without changing structured semantics;
 - replace determinate evidence with ambiguous text.
@@ -179,4 +193,4 @@ P0 targets are modest but measurable:
 
 Mock tests can never turn a live-Gemini acceptance row green.
 
-The redesign experiment sequence remains bounded: targeted Experiments 2A/2B–4, then integrated 30-case Experiment 5. Full 120 DEV、externally owned blind holdout and live Gemini remain gated and are not run during architecture review. CI contains no blind-holdout bodies.
+The redesign sequence remains bounded: Experiments 2A/2B–4、integrated 30-case Experiment 5、6A OpenAI full DEV、6B Gemini full DEV、7 freeze、8 Gemini-primary blind. None of the paid/full/blind stages runs during architecture review；CI contains no blind bodies。

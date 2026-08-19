@@ -144,9 +144,11 @@ Reading a policy fragment is not enough to claim support for arbitrary policy lo
 
 ```text
 NormalizedRule
+  normalized_rule_id         stable content-addressed identity
   obligation_key             stable within the logical policy artifact
   governing_source_ref       exact current fragment
-  predicate_code             from the versioned PredicateCatalog
+  requirement_predicate_codes[]
+  applicability_predicate_codes[]
   expected_state
   logic_form                 DIRECT_ATOM | ALL_OF | OR | THRESHOLD |
                              EXCEPTION | QUANTIFIED | UNPARSED | OTHER
@@ -156,34 +158,39 @@ NormalizedRule
   normalized_rule_hash
 ```
 
-P0 accepts only `DIRECT_ATOM | ALL_OF`. Applicable `OR`、threshold、exception、quantified、unparsed or other unsupported forms produce a typed `REJECTED_UNSUPPORTED_LOGIC` result and no canonical graph. The compiler must never reinterpret them as conjunction. The normalized rule must be source-authored structured policy or produced by a controlled versioned parser and independently approved/signed; unreviewed model normalization is not a trusted acceptance input.
+P0 accepts only `DIRECT_ATOM | ALL_OF`. Applicable `OR`、threshold、exception、quantified or other unsupported forms produce `REJECTED_UNSUPPORTED_LOGIC`；a material rule outside the pre-registered catalog produces `REJECTED_UNSUPPORTED_PREDICATE`。The compiler must never reinterpret、invent or omit them. The normalized rule must be source-authored structured policy or produced by a controlled versioned parser and independently approved/signed；unreviewed model normalization is not a trusted acceptance input.
 
-Raw Markdown/PDF prose may still be ingested and shown as context, but if the governing semantics needed for a Decision lack a trusted normalized-rule representation, source coverage is not sufficient for normal acceptance.
+Every in-boundary fragment is accounted exactly once in a content-addressed `RuleNormalizationManifest` as `NORMALIZED_RULES | NO_GOVERNING_RULE | UNSUPPORTED_LOGIC | UNSUPPORTED_PREDICATE | UNPARSED_REVIEW_REQUIRED`, with parser/reviewer receipts. Raw Markdown/PDF prose may still be shown as context, but missing/unreviewed normalization blocks；silent parser omission is never “no rule”。
 
-## Compiler policy and source-manifest artifacts
+## Artifact namespaces
 
-Deterministic interpretation inputs use the same immutable identity model as enterprise sources. At minimum the following are versioned artifacts in the world snapshot:
+Immutable identity is shared, but lifecycle/membership is not：
+
+- `EnterpriseWorldArtifact` lives in an immutable enterprise world snapshot；
+- `CompilerPolicyArtifact` lives in a separate policy snapshot；
+- `CompilerDerivedArtifact` lives in the provenance store and points to its input world/universe/policy hashes；it never joins the same input world snapshot。
+
+At minimum the following are versioned `CompilerPolicyArtifact` records：
 
 - authority precedence policy;
 - authority classification policy;
 - outcome semantics policy;
 - source-selection policy;
+- source-universe/completeness policy;
+- rule-normalization and reviewer policy;
 - decision-class contract;
 - predicate catalog;
 - proof-selection policy;
 - context-partition policy;
 - supported-logic policy;
-- the exact `SourceSetManifest` produced for the compilation.
 
-Their canonical refs and content hashes are not audit-only metadata. Any materially participating policy/manifest ref becomes a validity-bearing Runtime dependency of an accepted Decision, so a revision change enters the ordinary deterministic invalidation path.
-
-Revision 2 extends the artifact/source-type vocabulary with trusted `COMPILER_POLICY` and `SOURCE_SET_MANIFEST` provenance classes. A manifest logical key is derived from scope、decision class、coverage-boundary digest and selection-policy logical key; its revision content hashes the complete selected universe/world snapshot. Relevant universe changes publish a superseding manifest revision so existing Runtime edges can invalidate deterministically.
+`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `RuleNormalizationManifest`、`SourceSetManifest`、partition certificates、applicability justifications and `DecisionInterpretation` are compiler-derived records. Material policy refs and selective coverage/rule/applicability guard keys are validity-bearing；full derived manifest inventories are audit derivation, not one coarse CRITICAL dependency.
 
 ## Source-universe coverage
 
-Every compilation binds to a content-addressed `SourceSetManifest` containing the selection policy/version, world snapshot, coverage boundary, included artifacts/fragments, excluded artifacts with reason codes, retrieval/index/query versions, contradiction-eligible refs, partition-plan hash, and `DECLARED_COMPLETE | INCOMPLETE | UNKNOWN` status.
+Every compilation first binds to a content-addressed authoritative `SourceUniverseSnapshot` containing owner scope、registry/catalog source、namespaces、complete artifact revisions、sync/index watermarks、snapshot hash and completeness authority. It then derives normalization and selection manifests containing exact input snapshot IDs/policy bundle ID、coverage boundaries、fragment/rule accounting、included/excluded inventories、retrieval versions、contradiction eligibility and partitions.
 
-Only a trusted source-selection component may declare completeness. A retrieved subset whose completeness cannot be proven for the decision class is `UNKNOWN` and causes `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. Silent truncation is forbidden.
+Required chain is `SourceUniverseSnapshot → SourceSelectionPolicy → SourceSetManifest`。A selector cannot claim completeness without a validated complete universe root. Unknown/incomplete attestation or retrieved subset causes `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`。Runtime invalidation uses selective boundary/rule/eligibility guards so unrelated inventory changes do not stale all Decisions merely because a manifest hash changed.
 
 ## Revision semantics
 

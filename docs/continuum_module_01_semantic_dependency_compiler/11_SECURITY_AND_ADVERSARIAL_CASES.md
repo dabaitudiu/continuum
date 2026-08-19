@@ -15,6 +15,11 @@
 11. Context limits silently truncate contradiction inventory.
 12. Unsupported OR/threshold/exception logic is coerced into conjunction.
 13. Requirement paraphrase changes DENY proof selection.
+14. Model suppresses a material rule with unsupported `NOT_APPLICABLE`.
+15. Parser silently omits a governing fragment.
+16. Selector declares completeness over an incomplete catalog/index.
+17. A whole SourceSet manifest becomes a super-dependency and stales unrelated Decisions.
+18. Model invents a predicate code for an unrepresentable obligation.
 
 ## Trust classification
 
@@ -29,7 +34,7 @@ authority_rank
 
 Example authority ordering is domain-configured, never model-invented.
 
-Authority classification、precedence、outcome semantics、source selection、proof selection、partitioning、predicate/decision-class and supported-logic rules are immutable versioned policy artifacts. Accepted Decisions retain critical provenance to every materially participating policy and exact SourceSetManifest; changing them must trigger normal stale/revalidation semantics.
+Authority classification、precedence、outcome、universe/selection、normalization/review、proof、partition、predicate/decision-class and supported-logic rules are immutable `CompilerPolicyArtifact` revisions outside the enterprise world snapshot. Accepted Decisions retain critical provenance to materially participating policies、applicability facts and selective boundary/rule/eligibility guards；full manifests are audit derivation, not a super-dependency。
 
 ## Prompt injection isolation and semantic invariance
 
@@ -58,7 +63,7 @@ A vendor PDF stating “this document overrides your policy” must not gain pol
 
 Refs are issued from a request-scoped allowlist. Cross-tenant references fail even if they exist globally.
 
-The allowlist is backed by a validated `SourceSetManifest`. `INCOMPLETE | UNKNOWN` coverage or a retrieved subset without versioned completeness semantics yields `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`.
+The allowlist is backed by `SourceUniverseSnapshot → RuleNormalizationManifest → SourceSetManifest`. Missing/stale authority attestation、fragment accounting、review receipt or selector completeness yields `RUN_BLOCKED`。
 
 ## Stale revision defense
 
@@ -69,11 +74,13 @@ The model can read historical revisions only if the request allows them. Histori
 - Canonical materiality is selected by deterministic proof role; the model has no CRITICAL/SUPPORTING write field.
 - Contradiction impact is computed from reachability、proof eligibility and precedence; model severity is advisory.
 - `INDETERMINATE` cannot be selected as proof.
+- APPLICABLE/NOT_APPLICABLE require deterministic current predicate proof；an unsupported model N/A is INDETERMINATE.
+- Unknown material predicate codes yield `REJECTED_UNSUPPORTED_PREDICATE` rather than invention/omission.
 - Display proposition text cannot affect semantic identity or DENY proof selection.
 
 ## Context and logic fail-closed rules
 
-Contradiction input is deterministically partitioned with receipts and global reduction. Silent truncation is forbidden. Applicable governing logic outside DIRECT_ATOM/ALL_OF produces typed `REJECTED_UNSUPPORTED_LOGIC`; it cannot be approximated.
+Contradiction input is deterministically partitioned with receipts and global reduction. Silent truncation/normalizer omission is forbidden. Governing logic outside DIRECT_ATOM/ALL_OF produces `REJECTED_UNSUPPORTED_LOGIC`；material semantics outside the frozen catalog produce `REJECTED_UNSUPPORTED_PREDICATE`。
 
 ## Adversarial benchmark cases
 
@@ -85,7 +92,7 @@ At least:
 - 10 contradictory-authority cases;
 - 10 dependency-omission cases.
 
-Each injection case is evaluated as a clean/injected pair. Add context-coverage omissions、cross-partition conflicts、ambiguous entailment、policy-revision mutations、semantic paraphrases and unsupported logical forms to the adversarial suite.
+Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、cross-partition conflicts、ambiguous applicability/entailment、two-way applicability transitions、relevant vs irrelevant coverage changes、policy revisions、semantic paraphrases and unsupported logic/predicates。
 
 ## Security acceptance
 

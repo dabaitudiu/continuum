@@ -2,7 +2,7 @@
 
 ## Status
 
-This is the provider-neutral Option B Revision-2 protocol under product-owner review. The direction is approved; the concrete specification is not. OpenAI remains the current falsification provider and live Gemini remains independently required for final acceptance. No live calls are authorized by this document.
+This is the provider-neutral Option B Revision-3 protocol under product-owner review. The direction is approved；the concrete specification is not. OpenAI remains a provider-neutral falsification lane and Gemini is the competition-provider DEV/blind acceptance lane. No live calls are authorized by this document.
 
 The implemented reasoner/critic protocol is frozen as the v1 ablation baseline. The old critic prompt must not be tuned or preserved as production fallback.
 
@@ -13,14 +13,14 @@ The implemented reasoner/critic protocol is frozen as the v1 ablation baseline. 
 - only tool-returned canonical refs may be copied;
 - output must match the stage-specific schema;
 - no stage may emit canonical IDs, mutate Runtime state, select deterministic precedence, or authorize an action;
-- no stage may declare source-universe completeness, canonical materiality, canonical contradiction impact, or final disposition;
+- no stage may declare universe/normalization/selection completeness、canonical applicability、canonical materiality、canonical contradiction impact or final disposition;
 - concise semantic propositions and summaries are stored; hidden chain-of-thought is neither requested nor persisted;
 - invalid schema receives at most one bounded repair attempt, then ends as a structural failure;
 - every invocation records provider/model/version, prompt/schema version, request configuration, response identity, usage, latency, and ledger settlement.
 
 ## Stage 0 — No model ownership
 
-Trusted code resolves the `CompilerPolicyBundle` and validates a complete `SourceSetManifest` plus deterministic partition plan. A model cannot declare a retrieved subset complete. `INCOMPLETE | UNKNOWN` coverage blocks the run before semantic inference.
+Trusted code validates `SourceUniverseSnapshot → RuleNormalizationManifest → SourceSetManifest` plus deterministic partitions and selective coverage guards. A model cannot declare catalog、normalization or retrieved subset complete. `INCOMPLETE | UNKNOWN | REVIEW_REQUIRED` coverage blocks the run before semantic inference. These derived records bind exact world/policy inputs but are not members of the input world snapshot.
 
 ## Stage 1A — Requirement Decomposition
 
@@ -42,27 +42,27 @@ Input:
 - every governing fragment in the complete manifest plus normalized-rule metadata;
 - **not** Stage-1A output and **not** the proposed outcome.
 
-Output per deterministic partition: one `RequirementCoverageObservation` per assigned normalized governing obligation、a coverage receipt and `RequirementCoverageCandidate[]` for APPLICABLE obligations.
+Output per deterministic partition: one advisory `RequirementCoverageObservation` per assigned normalized governing obligation、candidate bindings for its pre-registered applicability predicates、a coverage receipt and semantic `RequirementCoverageCandidate[]` for every representable obligation regardless of proposed applicability。
 
-The pass inventories material governing obligations applicable to the Decision. It cannot bind factual evidence、judge the outcome、assign materiality/severity、rewrite Stage 1 or invent refs. Every manifest obligation is assigned exactly once across coverage-preserving partitions and marked `APPLICABLE | NOT_APPLICABLE | INDETERMINATE`; deterministic validation checks receipt union. Reconciliation compares stable predicate keys with Stage 1A and carries valid coverage-only omissions into the effective set. INDETERMINATE applicability prevents normal acceptance；partial partitions block the run.
+The pass inventories material governing obligations without seeing Stage 1A/outcome. It may propose current-state bindings only for declared applicability predicates；it cannot judge business outcome、assign canonical materiality/severity、rewrite Stage 1 or invent refs/codes. Stage 1C validates provisional proof candidates but cannot finalize before contradiction. All supported Requirement candidates proceed through binding；Stage 3 checks independent applicability conflicts；Stage 4 finalizes APPLICABLE/N/A justifications and the effective Requirement set. INDETERMINATE fails closed。
 
 ## Stage 2 — Evidence Binding
 
 Input:
 
-- validated Requirements;
+- reconciled supported Requirement candidates, including provisionally N/A/indeterminate obligations;
 - request-scoped source inventory and selected fragment content;
 - source identity and authority metadata.
 
 Output: `EvidenceBindingCandidate[]` only.
 
-For each binding, the model states semantic role、`OBLIGATION_APPLICABILITY | PREDICATE_STATE` target、`ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE`、normalized value where applicable and concise counterfactual analysis. A policy that requires training cannot be used as proof that training is current. The model does not output canonical `CRITICAL | SUPPORTING`; deterministic proof selection owns it.
+For each binding, the model states semantic role、`NORMALIZED_OBLIGATION | REQUIREMENT_PREDICATE` target、`ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE`、normalized value where applicable and concise counterfactual analysis. Applicability predicate bindings use the Stage-1B contract. A policy that requires training proves neither applicability nor current training. The model does not output canonical `CRITICAL | SUPPORTING`；deterministic proof selection owns it.
 
 ## Stage 3 — Independent Contradiction Pass
 
 Input:
 
-- reconciled Requirements;
+- reconciled supported Requirement candidates plus all applicability predicate targets;
 - one deterministic partition of the complete current/in-scope contradiction-eligible inventory, independent of Stage-2 refs;
 - source values/claims and authority metadata.
 
@@ -90,22 +90,23 @@ For each required proof role, code selects eligible determinate evidence by vers
 - schema/enum/local-ID/cross-link failure after one repair: structural terminal;
 - unknown, unauthorized, stale, or illegal source ref: deterministic structural terminal;
 - provider/auth/transport/budget unavailable: execution `BLOCKED`, not semantic rejection.
-- incomplete/unknown SourceSet or partial contradiction receipts: `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`;
-- applicable unsupported logic: typed `REJECTED_UNSUPPORTED_LOGIC` with no canonical graph.
+- incomplete/unknown universe/SourceSet、incomplete/review-required normalization or partial contradiction receipts: `RUN_BLOCKED` with no semantic success;
+- unsupported logic/predicate: typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE` with no canonical graph.
 
 ### Semantic conditions
 
-Missing support、indeterminate entailment、contradictions and outcome mismatch do not masquerade as structural errors. Once the effective Requirement set is representable, they reach the contradiction/proof/completeness stages before the gate.
+Missing support、indeterminate applicability/entailment、contradictions and outcome mismatch do not masquerade as structural errors. Once inputs are structurally valid, they reach the contradiction/proof/completeness stages before the gate.
 
 ## Provider strategy
 
 Model adapters remain provider-neutral. Architecture acceptance follows this order:
 
-1. OpenAI bounded DEV experiments falsify the method;
-2. integrated DEV PASS permits full 120 DEV;
-3. full DEV PASS and a complete method hash freeze permit one externally owned blind-holdout reveal/run;
-4. DEV + blind holdout PASS permits live Gemini acceptance.
+1. bounded experiments and integrated 30-case DEV falsify the method;
+2. Experiment 6A runs OpenAI full DEV;
+3. Experiment 6B runs Gemini full DEV before any blind access;
+4. Experiment 7 freezes code、prompts、schemas、policy bundle、predicate catalog、normalization/selection policies、model configs、dependency lock、runner/evaluator and metrics;
+5. Experiment 8 reveals/runs the independently owned blind set once with Gemini primary and OpenAI optional secondary.
 
-The implementation agent never generates or inspects holdout bodies before methodology freeze; only schema/version/hash metadata is visible.
+The implementation agent never generates or inspects holdout bodies before methodology freeze；only schema/version/hash metadata is visible. Any post-holdout method change requires a fresh independent set。
 
 Fake transports remain valid for deterministic contract tests only and never satisfy live-provider rows.

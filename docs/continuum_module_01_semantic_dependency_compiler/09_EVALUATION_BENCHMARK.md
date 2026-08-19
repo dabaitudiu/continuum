@@ -6,16 +6,17 @@ Avoid evaluating the compiler only on the one scenario it was designed around.
 
 ## Option B evaluation amendment
 
-The current 120-case corpus remains the visible DEV set and its existing refs、outcomes、contradictions、mutations and thresholds are immutable. The product owner approved Option B's direction but rejected the first concrete specification. No individual-case tuning or full paid rerun is authorized.
+The current 120-case corpus remains the visible DEV set and its existing refs、outcomes、contradictions、mutations and thresholds are immutable. The product owner approved Option B's direction but rejected the first specification and Revision 2. No individual-case tuning or full paid rerun is authorized.
 
-Before any v2 prompt/schema/logic implementation, only DEV-facing annotation work may occur:
+Before any replacement prompt/schema/logic implementation, only method-blind DEV annotation design may occur:
 
-1. freeze a separate method-blind `requirement-ground-truth-v1` annotation for the existing cases;
-2. add labels for stable predicate identity、Stage-1 omission、coverage recovery、unsupported logic、three-state entailment、deterministic proof materiality/contradiction impact and policy/manifest mutation;
-3. prove production code and prompts cannot import DEV ground truth;
-4. preregister each bounded live experiment.
+1. freeze `DEV Requirement Annotation v1` independently of replacement output;
+2. per case include stable PredicateIdentity、expected state、DIRECT_ATOM/ALL_OF topology、applicable governing keys、applicability-condition predicates and unsupported logic/predicate labels;
+3. freeze corpus/catalog/schema refs、annotation hashes、annotator/adjudicator identities and method-blind attestation in an append-only manifest；corrections require a new version + audit diff;
+4. prove production code and prompts cannot import/read DEV ground truth;
+5. preregister each bounded live experiment.
 
-The implementation agent must **not generate or inspect blind holdout bodies**. Holdout is independently owned outside this repository; development sees only schema/version/count/hash/attestation metadata. It is revealed/run once after full DEV P0 PASS and complete methodology freeze.
+The implementation agent must **not generate or inspect blind holdout bodies**. Holdout is independently owned outside this repository；development sees only schema/version/count/hash/attestation metadata. It is revealed/run once only after OpenAI full DEV **and Gemini full DEV**, then complete methodology freeze；Gemini is primary blind lane.
 
 The exact freeze, three-arm ablation, progression, and stop rules are normative in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
 
@@ -79,7 +80,7 @@ expected_staleness_after_mutation
 
 Ground truth is manually authored and version-controlled.
 
-For Revision 2, a separate frozen DEV annotation adds method-neutral APPROVE-validity Requirements using stable `PredicateIdentity`、`DIRECT_ATOM | ALL_OF`、governing obligation identity、required proof roles、three-state entailment、unsupported-logic labels and deterministic contradiction impact. Human display text is not the matching key. This additive annotation does not change existing required/forbidden refs or expected outcomes and is never exposed to production compiler paths.
+For Revision 3, `DEV Requirement Annotation v1` is method-blind and frozen before replacement outputs. It includes stable PredicateIdentity、expected state/topology、applicable governing keys、applicability predicates and unsupported logic/predicate labels. Human display text is not the matching key. It is evaluator-only；corrections publish a new version and invalidate same-version metric claims rather than editing history。
 
 The model request receives the complete decision-type outcome vocabulary (`APPROVED`, `DENIED`, `NEEDS_HUMAN_REVIEW`) so the categorical field is well-defined. It never receives the case's ground-truth `allowed_outcomes`; exposing that singleton would leak the answer and invalidate outcome compliance.
 
@@ -123,11 +124,11 @@ Target P0: **>= 0.90**.
 
 ### Independent Requirement Coverage
 
-Report Stage-1A omission count、per-obligation receipt completion、APPLICABLE/NOT_APPLICABLE/INDETERMINATE confusion、coverage-only true recovery、coverage false candidates and reconciled Requirement recall/precision. Coverage must demonstrate material recovery without recreating old-critic false blocks.
+Report Stage-1A omission count、per-obligation receipt completion、APPLICABLE/NOT_APPLICABLE/INDETERMINATE confusion、applicability-proof completeness、coverage-only recovery/false candidates and reconciled Requirement recall/precision. Include both applicable→N/A and N/A→applicable mutation stale recall。
 
 ### Entailment Calibration
 
-Report a full `ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE` confusion matrix by `OBLIGATION_APPLICABILITY | PREDICATE_STATE` target. Ambiguous evidence forced into binary truth or governing policy counted as factual state proof is a failure.
+Report a full `ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE` matrix separately for `APPLICABILITY_PREDICATE | REQUIREMENT_PREDICATE`。Ambiguous evidence forced binary、policy used as current fact or unproved N/A is a failure。
 
 ### Deterministic Proof Materiality
 
@@ -135,11 +136,11 @@ Score model binding candidates separately from Stage-4 selected proof. Canonical
 
 ### Source and Contradiction Coverage
 
-Report manifest completeness status、eligible inventory size、partition count、receipt/union completion、hard-limit blocks and cross-partition contradiction recall. A partial inventory is never included as a completed pass.
+Report universe attestation、fragment normalization accounting、SourceSet selection、eligible inventory、partitions/receipts、hard-limit blocks and cross-partition contradiction recall. A partial inventory is never a completed pass。
 
 ### Interpretation-Policy Mutation
 
-Mutate each materially used authority/outcome/classification/source-selection/proof/partition/logic/predicate/decision-class policy and SourceSetManifest revision. Accepted Decisions must enter deterministic stale/revalidation flow.
+Mutate each materially used catalog/normalization/selection/authority/outcome/proof policy、governing rule set、applicability fact and contradiction-eligibility guard. Relevant Decisions must stale；irrelevant inventory/supporting changes must not automatically stale. Report `coverage_induced_unnecessary_invalidation_rate` with denominator。
 
 ### Stable Semantic Proof Selection
 
@@ -165,7 +166,7 @@ Recommended:
 
 The product owner or an independent evaluator owns at least 60 balanced cases outside the development repository and agent workspace. The implementation Codex cannot see case bodies、source wording、ground truth、generator seed or per-file plaintext hashes before freeze. Development receives only schema version、counts/distribution、evaluator version、aggregate/encrypted hash、ownership attestation and reveal protocol.
 
-After full 120-case DEV passes every P0 row, freeze code commit、prompts、schemas、policy bundle、dependency lock、runner/evaluator and metric hashes. The independent owner then reveals/runs the holdout once. DEV and HOLDOUT are reported separately. Any subsequent method change invalidates this holdout as blind evidence and requires a newly held set; the revealed cases cannot become tuning data for the same acceptance claim.
+After Experiment 6A OpenAI full DEV and 6B Gemini full DEV, Experiment 7 freezes code commit、prompts、schemas、policy bundle、predicate catalog、normalization/selection policies、both model configs、dependency lock、runner/evaluator and metric hashes. Experiment 8 reveals/runs once with Gemini primary and OpenAI optional secondary. Any subsequent method change requires a fresh independent set。
 
 ## Baselines
 
@@ -174,7 +175,7 @@ Primary three-arm comparison:
 1. **Document-level dependency baseline** — every document read becomes critical.
 2. **Reasoner-only (Option A)** — frozen single-pass baseline; never the final architecture.
 3. **Old critic pipeline** — frozen K3 legacy baseline; no further tuning and no Runtime eligibility.
-4. **New requirement-centred pipeline (Option B Revision 2)** — complete SourceSet/policy context、Requirement Decomposition、independent governing-obligation coverage、deterministic reconciliation、Evidence Binding、coverage-preserving Independent Contradiction、deterministic proof/completeness and Acceptance Gate.
+4. **New requirement-centred pipeline (Option B Revision 3)** — authoritative universe + complete normalization + selective SourceSet guards、Requirement Decomposition、independent obligation/applicability coverage、deterministic reconciliation、Evidence Binding、Independent Contradiction、deterministic proof/completeness and Gate.
 
 The primary Option A/B-legacy/Option B-new comparison uses the same frozen 30-case stratified subset, tasks, sources, provider/model settings, and metric implementation. Architecture-specific prompt/schema/call topology is an explicit experimental variable and must be reported with stage calls, latency, tokens, and cost.
 
@@ -182,7 +183,7 @@ Requirement/coverage/proof-role/three-state-entailment metrics apply only to the
 
 Proposal-union refs, accepted canonical refs, accepted compilation coverage, and Runtime mutation outcomes are distinct metrics. NOT_ACCEPTED cases are not counted as Runtime stale escapes; accepted-only mutation rates always disclose their denominators.
 
-For v2, report candidate binding metrics separately from deterministic selected-proof and accepted `DecisionJustification` metrics. A minimal proof slice is not allowed to erase unaccepted/unselected ground-truth dependencies from the coverage denominator.
+For the replacement, report candidate binding metrics separately from applicability proof、selected proof and accepted `DecisionJustification`. A minimal proof slice cannot erase unaccepted/unselected ground-truth dependencies from coverage denominator。
 
 ## Paired prompt-injection evaluation
 

@@ -2,33 +2,36 @@
 
 ## Status and versioning
 
-The product owner approved Option B's direction but rejected the first concrete v2 specification. These Revision-2 contracts are **design contracts under review, not implemented contracts**. Their normative definitions are in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
+The product owner approved Option B's direction but rejected the first concrete specification and Revision 2. These Revision-3 contracts are **design contracts under review, not implemented contracts**. Their normative definitions are in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
 
-Implemented `DecisionDraft`、`ClaimDraft`、`DependencyRef`、`CriticProposal` and `CriticReview` remain immutable v1 legacy types for persisted evidence and ablation replay. They are not production fallbacks and cannot be silently reinterpreted as Revision-2 objects.
+Implemented `DecisionDraft`、`ClaimDraft`、`DependencyRef`、`CriticProposal` and `CriticReview` remain immutable v1 legacy types for persisted evidence and ablation replay. They are not production fallbacks and cannot be silently reinterpreted as Revision-3 objects.
 
 ## Design goal
 
-The IR separates seven questions:
+The IR separates ten questions:
 
-1. Which source/policy universe was completely considered?
-2. Which stable semantic gates does Stage 1 propose?
-3. Which material governing obligations does an independent coverage pass find?
-4. Which exact source fragments entail, refute, or leave each gate indeterminate?
-5. Which source propositions conflict across the complete inventory?
-6. Which validated bindings are selected as proof and therefore canonical CRITICAL dependencies?
-7. Does deterministic outcome/disposition logic permit canonicalization?
+1. Which authoritative source universe was attested and completely enumerated?
+2. Did normalization account for every source fragment without silent omission?
+3. Which subset/rule/contradiction boundaries were selected?
+4. Which stable semantic gates does Stage 1 propose?
+5. Which material obligations and applicability conditions does the independent pass find?
+6. Which determinate bindings prove APPLICABLE or NOT_APPLICABLE?
+7. Which exact source fragments entail/refute/leave each gate indeterminate?
+8. Which propositions conflict across the complete inventory?
+9. Which validated bindings/guards become canonical CRITICAL dependencies?
+10. Does deterministic outcome/disposition logic permit canonicalization?
 
 ## Trusted context objects
 
 ### `CompilerPolicyBundle`
 
-Contains canonical versioned refs for authority precedence/classification、outcome semantics、source selection、decision-class contract、predicate catalog、proof selection、partitioning、supported logic and any additional configuration that can change `DecisionJustification`. All materially used refs become Runtime validity provenance.
+Contains refs into a separate `CompilerPolicySnapshot` for universe/selection、normalization/review、authority/outcome、decision class、predicate catalog、proof、partition and supported logic. All materially used refs become Runtime validity provenance.
 
 Every deterministic semantics component emits a `PolicyUsageTrace` containing the exact policy ref and rule keys it read. An unregistered config read is `UNVERSIONED_POLICY_INPUT` and prevents canonicalization.
 
-### `SourceSetManifest`
+### `SourceUniverseSnapshot` / `RuleNormalizationManifest` / `SourceSetManifest`
 
-Content-addressed manifest of the world snapshot、coverage boundary、included/excluded artifacts、retrieval versions、governing/contradiction-eligible refs、coverage status、explicit `declared_complete_for_decision_class` and partition-plan hash. Only a trusted, validated complete declaration may proceed to normal compilation.
+The authoritative registry snapshot envelope enumerates owner scope、namespaces、artifact revisions and watermarks；it is a trusted input root, not a member of the world it enumerates. Normalization and selection are compiler-derived artifacts that bind exact input snapshot/policy IDs and never join that input world。Only a complete validated chain may proceed。
 
 ### `PredicateIdentity`
 
@@ -81,19 +84,22 @@ Requirements are necessary semantic propositions, never refs. Nested ALL_OF is f
 ```text
 RequirementCoverageObservation
   governing_obligation_key
-  governing_source_refs[]
-  applicability: APPLICABLE | NOT_APPLICABLE | INDETERMINATE
+  normalized_rule_id
+  proposed_applicability: APPLICABLE | NOT_APPLICABLE | INDETERMINATE
+  applicability_binding_candidates[]
   applicability_summary
-  candidate_local_id?          required iff APPLICABLE
+  requirement_candidate_local_ids[]
 
 RequirementCoverageReceipt
   partition_id
-  manifest_hash
+  source_set_manifest_id / rule_normalization_manifest_id
   processed_obligation_keys[]
   output_hash
 ```
 
-The deterministic plan records expected partitions and obligation membership. Across receipts, every normalized governing obligation in the manifest must be accounted exactly once. Missing/duplicate/unexpected coverage is not an empty successful result；INDETERMINATE applicability cannot normally accept.
+The deterministic plan records expected partitions and obligation membership. Every representable obligation maps to typed Requirement candidates even when proposed N/A. Model applicability is advisory；Stage 1C emits only `ApplicabilityProofCandidate`。Stage 3 checks independent conflicts and Stage 4 finalizes `ApplicabilityJustification` only when APPLICABLE (all true) or NOT_APPLICABLE (stable false guard) remains determinate；otherwise it fails closed。
+
+Final `ApplicabilityJustification` records normalized rule/obligation IDs、applicability predicate semantic keys/expected states、selected current bindings、material policy refs、input world snapshot and a stable proof key. Both APPLICABLE and acceptance-participating NOT_APPLICABLE are validity-bearing；mutable selected facts can stale the Decision in either direction。
 
 ```text
 candidate_local_id
@@ -109,7 +115,7 @@ detected_logic_form
 unsupported_logic_kind?
 ```
 
-The independent coverage model receives no Stage-1 output and returns an applicability observation per governing obligation plus typed candidates for APPLICABLE obligations. Refs must already exist in the validated manifest; `UNKNOWN_SOURCE_REQUIRED` is unrepresentable.
+The independent coverage model receives no Stage-1 output and returns an applicability observation plus typed Requirement candidates for every representable governing obligation, regardless of proposed applicability. Refs must already exist in the validated manifest；`UNKNOWN_SOURCE_REQUIRED` is unrepresentable.
 
 ### `EvidenceBindingCandidate`
 
@@ -118,13 +124,13 @@ binding_local_id
 requirement_id
 source_ref
 semantic_role
-entailment_target: OBLIGATION_APPLICABILITY | PREDICATE_STATE
+entailment_target: NORMALIZED_OBLIGATION | REQUIREMENT_PREDICATE
 entailment: ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE
 normalized_value?
 counterfactual_summary
 ```
 
-There is deliberately no model-authored `materiality` field. Governing authority entails whether an obligation applies；state/authorization/satisfaction evidence entails the business predicate. A policy requirement is not factual proof that the condition is satisfied.
+There is deliberately no model-authored `materiality` field. Normalized obligation validity、applicability predicate truth and business predicate truth are separate contracts. A policy requirement proves neither that it applies to this entity nor that the required state is satisfied.
 
 ### `ContradictionObservation`
 
@@ -198,18 +204,26 @@ Deterministic completeness computes one assessment per **reconciled effective Re
 
 Contains exact governing ref、normalized rule key、unsupported logic kind、affected predicate keys and detector. Its disposition is `REJECTED_UNSUPPORTED_LOGIC`; canonical output is absent.
 
+### `UnsupportedPredicateResult`
+
+Contains the exact governing fragment、normalized rule/obligation key、frozen predicate catalog ref and unrepresentable semantic shape. Its disposition is `REJECTED_UNSUPPORTED_PREDICATE`；model code invention and compiler omission are forbidden.
+
 ## Result envelope
 
 ```text
-CompilationResultV2
+ReplacementCompilationResult
   request_id / compilation_id
   run_status: IN_PROGRESS | COMPLETED | BLOCKED | FAILED
   disposition?
   compiler_policy_bundle
+  source_universe_snapshot
+  rule_normalization_manifest
   policy_usage_trace[]
   source_set_manifest
   requirement_proposals[]
   requirement_coverage_observations[] / receipts[]
+  applicability_proof_candidates[]
+  applicability_justifications[]
   coverage_candidates[]
   effective_requirements[]
   evidence_binding_candidates[]
@@ -218,6 +232,8 @@ CompilationResultV2
   contradictions[]
   requirement_assessments[]
   unsupported_logic_findings[]
+  unsupported_predicate_findings[]
+  coverage_boundary / rule_set / contradiction_eligibility guards[]
   decision_justification?
   canonical_decision?
   canonical_claims[] / canonical_edges[]
@@ -238,17 +254,20 @@ DecisionJustification
   selected_requirement_ids[]
   selected_proof_binding_ids[]
   selected_policy_refs[]
-  source_set_manifest_ref
+  compiler_derived_artifact_ids[]
+  applicability_justification_ids[]
+  selective_coverage_dependency_keys[]
+  derivation_binding_hash
   semantic_proof_key
   selection_rule
 ```
 
 APPROVE selects all necessary root closures. DENY selects one failed proof by a stable tuple over predicate semantic key、selected source identities and normalized topology. Proposition display text、case/domain/local IDs and iteration order are excluded.
 
-Selected evidence maps Source → DIRECT Claim; ALL_OF maps Claim → Claim; roots map Claim → Decision. Selected policy and manifest artifacts map through a validity-bearing `DecisionInterpretation` Claim to the Decision. This preserves transitive support and lets revisions of enterprise evidence **or deterministic interpretation policies** stale the old Decision.
+Selected evidence maps Source → DIRECT Claim；ALL_OF maps Claim → Claim；roots map Claim → Decision。Selected applicability facts map to applicability guard Claims；material policy and selective boundary/rule/eligibility guards map through `DecisionInterpretation`。Full manifests remain audit derivation, preventing unrelated inventory changes from staling every Decision。
 
 ## Determinism requirement
 
-Given the same validated structured semantics、bindings、complete source manifest、policy bundle and world snapshot, canonical ordering、proof selection、materiality、contradiction impact、disposition、graph、hash and trace must be identical. Paraphrasing `proposition_display` alone must change none of them.
+Given the same validated structured semantics、bindings、universe/normalization/selection chain、policy bundle and input snapshots, canonical applicability、ordering、proof selection、materiality、contradiction impact、disposition、graph、hash and trace must be identical. Paraphrasing `proposition_display` alone must change none of them.
 
 No hidden chain-of-thought is persisted.

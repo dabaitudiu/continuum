@@ -28,7 +28,7 @@ The existing spike proves that a dependency graph can be invalidated determinist
 
 > How do we obtain a trustworthy dependency graph from real AI reasoning over messy enterprise inputs?
 
-P0 answers this only for gate-shaped approval decisions representable as atomic predicates plus conjunction. Arbitrary OR、threshold、exception、quantified or otherwise unsupported enterprise logic fails closed rather than being approximated.
+P0 answers this only for gate-shaped approval decision classes with pre-registered versioned predicate catalogs and trusted normalized governing-rule schemas, representable as atomic predicates plus conjunction. Arbitrary OR、threshold、exception、quantified or otherwise unsupported enterprise logic fails closed；a material obligation outside the catalog yields `REJECTED_UNSUPPORTED_PREDICATE` rather than invention/omission.
 
 ## P0 outcomes
 
@@ -40,13 +40,15 @@ The module must support:
 4. Atomic semantic Requirements rather than one free-text verdict.
 5. Independent governing-obligation coverage so Stage-1 omission is not a production single point of failure.
 6. Three-state evidence binding with deterministic proof-selected CRITICAL/SUPPORTING materiality.
-7. Deterministic reference、temporal、source-universe and interpretation-policy validation.
+7. Deterministic reference、temporal、authoritative source-universe、normalization-coverage and interpretation-policy validation.
 8. Deterministic completeness over reconciled `DIRECT_ATOM | ALL_OF` Requirements.
 9. Coverage-preserving independent contradiction detection with deterministic validity impact.
 10. Canonical graph compilation with stable semantic identity and reproducible output.
 11. Fail-closed behavior for unsupported logical forms.
-12. A benchmark with DEV ground truth、paired adversarial/mutation outcomes and an externally held blind generalization set.
-13. Live Gemini evaluation; mock-only validation is insufficient.
+12. Validity-bearing applicability proofs for both included and excluded governing obligations.
+13. Selective coverage invalidation without a whole-manifest super-dependency.
+14. A method-blind DEV Requirement Annotation、paired adversarial/mutation outcomes and an externally held blind generalization set.
+15. Live Gemini DEV before blind reveal and Gemini-primary blind evaluation；mock-only validation is insufficient.
 
 ## Non-goals
 
@@ -73,8 +75,9 @@ This module does **not** own:
 7. A decision cannot become canonically `VALID` merely because Gemini says “approved”.
 8. Demo-specific IDs such as `D42`, `ACME`, `policy-v13`, and `PEN_TEST` must not appear in compiler logic.
 9. Canonical materiality and contradiction impact are deterministic results, never model authority.
-10. Accepted Decisions depend on the exact source manifest and interpretation-policy revisions used to justify them.
-11. Incomplete source/partition coverage and unsupported logic fail closed.
+10. Accepted Decisions depend on selected proofs/applicability guards and materially used coverage/policy semantics, not the whole source inventory as one coarse dependency.
+11. Incomplete universe/normalization/selection/partition coverage and unsupported logic/predicate fail closed.
+12. Compiler-derived manifests record their input snapshots but never become members of those same snapshots.
 
 ## Why this module is competition-worthy
 

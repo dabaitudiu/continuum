@@ -106,10 +106,10 @@ Does the compiler work across multiple mission domains rather than only vendor o
 
 We prefer a **hybrid compiler** with explicit semantic stages, limited at P0 to gate-shaped decisions representable as `DIRECT_ATOM | ALL_OF`:
 
-- Model: Requirement Decomposition、an independent outcome-blind governing-obligation inventory、three-state evidence/role proposals and partitioned contradiction observations.
-- Deterministic code: complete SourceSet/policy validation、stable predicate identity、requirement reconciliation、proof selection/materiality、contradiction coverage/impact、DIRECT_ATOM/ALL_OF completeness、outcome/justification selection and graph compilation.
-- Deterministic acceptance: versioned precedence/outcome/proof policies、disposition、canonicalization and Runtime boundary. Every materially used policy/manifest revision becomes a validity dependency.
+- Model: Requirement Decomposition、an independent outcome-blind governing-obligation/applicability inventory、three-state evidence/role proposals and partitioned contradiction observations.
+- Deterministic code: authoritative universe + fragment normalization + SourceSet validation、stable pre-registered predicate identity、applicability proof、requirement reconciliation、proof selection/materiality、contradiction coverage/impact、DIRECT_ATOM/ALL_OF completeness、outcome/justification selection and graph compilation.
+- Deterministic acceptance: versioned precedence/outcome/proof/normalization/selection policies、selective coverage guards、disposition、canonicalization and Runtime derivation boundary. Every materially used policy/rule/guard revision becomes validity provenance without making the whole inventory a super-dependency.
 
-Unsupported OR、threshold、exception、quantified or unparsed governing logic fails closed; it is not approximated. Canonical `CRITICAL` and contradiction impact are never direct model fields.
+Unsupported OR、threshold、exception、quantified or unparsed governing logic and material predicates outside the frozen catalog fail closed；they are not approximated or ignored. Canonical applicability、`CRITICAL` and contradiction impact are never direct model fields.
 
-The former open-ended second-pass critic is rejected by the product owner after K3 evidence. The first concrete Option B specification was also rejected; `15_REPLACEMENT_ARCHITECTURE.md` Revision 2 is awaiting review. Reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.
+The former open-ended second-pass critic is rejected by the product owner after K3 evidence. The first concrete Option B specification and Revision 2 were also rejected；`15_REPLACEMENT_ARCHITECTURE.md` Revision 3 is awaiting review. Reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.
