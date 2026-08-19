@@ -42,7 +42,6 @@ def revision(label: str = "r7") -> Revision:
         content_hash=content_hash(payload),
         created_at=NOW,
         valid_from=NOW,
-        parser_version="json-v1",
     )
 
 
@@ -78,8 +77,11 @@ def test_source_ref_rejects_ambiguous_or_incomplete_values(raw: str) -> None:
 def test_revision_and_fragment_models_are_immutable() -> None:
     source_revision = revision()
     fragment = Fragment(
-        fragment_id="record:vendor-profile@r7#$.handles_customer_pii",
-        revision_id=source_revision.revision_id,
+        fragment_id=(
+            "record:vendor-profile@r7!representation:r7-json-v1"
+            "#$.handles_customer_pii"
+        ),
+        representation_id="representation:r7-json-v1",
         fragment_type=FragmentType.FIELD,
         logical_path="$.handles_customer_pii",
         text_hash=content_hash(True),
@@ -128,14 +130,16 @@ def test_json_field_refs_survive_unrelated_field_addition() -> None:
 
     assert first_field.logical_path == second_field.logical_path
     assert first_field.text_hash == second_field.text_hash
-    assert first_field.source_ref(first.revision.revision_label) == SourceRef(
+    assert first_field.source_ref() == SourceRef(
         artifact_id="record:vendor-profile",
         revision_label="r7",
+        representation_id=first.representation.representation_id,
         logical_path="$.handles_customer_pii",
     )
-    assert second_field.source_ref(second.revision.revision_label) == SourceRef(
+    assert second_field.source_ref() == SourceRef(
         artifact_id="record:vendor-profile",
         revision_label="r8",
+        representation_id=second.representation.representation_id,
         logical_path="$.handles_customer_pii",
     )
 
@@ -173,7 +177,24 @@ def test_json_ingestion_is_deterministic_and_includes_nested_fields() -> None:
     ).ordinal
 
 
-def test_parser_version_change_creates_a_new_parsed_revision_identity() -> None:
+def test_same_content_under_distinct_business_labels_has_distinct_revisions() -> None:
+    source_artifact = artifact()
+    arguments = {
+        "artifact": source_artifact,
+        "value": {"approved": True},
+        "created_at": NOW,
+        "valid_from": NOW,
+        "parser_version": "json-v1",
+    }
+
+    v12 = ingest_json_revision(**arguments, revision_label="v12")
+    v13 = ingest_json_revision(**arguments, revision_label="v13")
+
+    assert v12.revision.content_hash == v13.revision.content_hash
+    assert v12.revision.revision_id != v13.revision.revision_id
+
+
+def test_parser_versions_share_revision_and_have_distinct_representations() -> None:
     source_artifact = artifact()
     arguments = {
         "artifact": source_artifact,
@@ -187,4 +208,23 @@ def test_parser_version_change_creates_a_new_parsed_revision_identity() -> None:
     reparsed = ingest_json_revision(**arguments, parser_version="json-v2")
 
     assert first.revision.content_hash == reparsed.revision.content_hash
-    assert first.revision.revision_id != reparsed.revision.revision_id
+    assert first.revision.revision_id == reparsed.revision.revision_id
+    assert first.representation.representation_id != (
+        reparsed.representation.representation_id
+    )
+
+
+def test_qualified_source_ref_round_trips_representation_identity() -> None:
+    ref = SourceRef(
+        artifact_id="policy:security-policy",
+        revision_label="v13",
+        representation_id="sha256:abc123",
+        logical_path="section/7.3",
+    )
+
+    raw = str(ref)
+
+    assert raw == (
+        "policy:security-policy@v13!sha256:abc123#section/7.3"
+    )
+    assert SourceRef.parse(raw) == ref
