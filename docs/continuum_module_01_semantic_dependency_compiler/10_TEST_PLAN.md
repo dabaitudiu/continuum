@@ -103,6 +103,8 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - three-arm ablation routing and metrics are isolated correctly;
 - production packages cannot import DEV/HOLDOUT ground truth.
 
+The synthetic normative examples A–H in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify deterministic semantics only and cannot be reported as live-model or benchmark evidence.
+
 ## Mutation tests
 
 Artificially:
