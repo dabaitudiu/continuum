@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from copy import deepcopy
 from datetime import datetime
 from enum import StrEnum
 from typing import Any, Mapping
@@ -251,6 +252,7 @@ class IngestedSource(BaseModel):
     revision: Revision
     representation: ParsedRepresentation
     fragments: tuple[Fragment, ...]
+    fragment_values: dict[str, Any] = Field(default_factory=dict)
 
     def fragment_at(self, logical_path: str) -> Fragment:
         for fragment in self.fragments:
@@ -392,6 +394,10 @@ def ingest_json_revision(
         revision=revision,
         representation=representation,
         fragments=fragments,
+        fragment_values={
+            logical_path: deepcopy(field_value)
+            for logical_path, field_value in leaves
+        },
     )
 
 

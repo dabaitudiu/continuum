@@ -7,6 +7,7 @@ dependencies = [
   "google-adk>=1.0",
   "google-cloud-firestore>=2.21,<3",
   "google-cloud-pubsub>=2.31,<3",
+  "openai>=2.0,<3",
   "opentelemetry-exporter-gcp-trace>=1.9,<2",
   "opentelemetry-instrumentation-fastapi>=0.48b0,<1",
   "pydantic>=2.10",
@@ -24,3 +25,6 @@ dev = [
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
 pythonpath = ["."]
+markers = [
+  "live: authenticated external-model contract and benchmark tests",
+]

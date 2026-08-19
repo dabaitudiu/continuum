@@ -138,6 +138,9 @@ class ModelMetadata(FrozenModel):
     execution_id: str = Field(min_length=1, max_length=256)
     model_version: str | None = Field(default=None, max_length=128)
     response_id: str | None = Field(default=None, max_length=256)
+    input_tokens: int = Field(default=0, ge=0)
+    cached_input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
 
     @field_validator(
         "provider",
@@ -154,6 +157,51 @@ class ModelMetadata(FrozenModel):
         if not value.strip() or value != value.strip():
             raise ValueError("model metadata fields must be non-empty and trimmed")
         return value
+
+
+class DecisionProposal(FrozenModel):
+    """Provider-neutral structured model output before trusted metadata is attached."""
+
+    decision_type: str = Field(min_length=1, max_length=128)
+    proposed_outcome: str = Field(min_length=1, max_length=256)
+    claims: list[ClaimDraft] = Field(default_factory=list, max_length=100)
+    decision_dependencies: list[DependencyRef] = Field(
+        default_factory=list,
+        max_length=100,
+    )
+    unresolved_questions: list[UnresolvedQuestion] = Field(
+        default_factory=list,
+        max_length=50,
+    )
+    rationale_summary: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("decision_type", "proposed_outcome", "rationale_summary")
+    @classmethod
+    def _require_trimmed_text(cls, value: str) -> str:
+        if not value.strip() or value != value.strip():
+            raise ValueError("decision proposal fields must be non-empty and trimmed")
+        return value
+
+    @model_validator(mode="after")
+    def _require_unique_claim_ids(self) -> DecisionProposal:
+        seen: set[str] = set()
+        for claim in self.claims:
+            if claim.claim_local_id in seen:
+                raise ValueError(f"duplicate claim_local_id: {claim.claim_local_id}")
+            seen.add(claim.claim_local_id)
+        return self
+
+    def to_draft(
+        self,
+        *,
+        request_id: str,
+        model_metadata: ModelMetadata,
+    ) -> DecisionDraft:
+        return DecisionDraft(
+            request_id=request_id,
+            **self.model_dump(),
+            model_metadata=model_metadata,
+        )
 
 
 class DecisionDraft(FrozenModel):

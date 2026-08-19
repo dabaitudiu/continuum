@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime
 from threading import RLock
-from typing import Protocol
+from typing import Any, Mapping, Protocol
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -12,6 +13,7 @@ from app.sources.identity import (
     ParsedRepresentation,
     Revision,
     SourceRef,
+    content_hash,
     derive_representation_id,
     derive_revision_id,
 )
@@ -53,6 +55,7 @@ class ResolvedSource(BaseModel):
     is_historical_revision: bool
     is_historical_representation: bool
     is_historical: bool
+    content: Any | None = None
 
 
 class SourceRegistry(Protocol):
@@ -71,6 +74,12 @@ class SourceRegistry(Protocol):
         world_snapshot_id: str,
     ) -> list[SourceRef]: ...
 
+    def catalog(
+        self,
+        scope: str,
+        world_snapshot_id: str,
+    ) -> list[ResolvedSource]: ...
+
 
 class InMemorySourceRegistry:
     """Thread-safe local registry with immutable, non-overwriting identities."""
@@ -83,6 +92,7 @@ class InMemorySourceRegistry:
         self._revision_ids_by_label: dict[tuple[str, str], str] = {}
         self._representations: dict[str, ParsedRepresentation] = {}
         self._fragments: dict[tuple[str, str], Fragment] = {}
+        self._fragment_values: dict[tuple[str, str], Any] = {}
         self._snapshots: dict[str, WorldSnapshot] = {}
         self._lock = RLock()
 
@@ -127,6 +137,8 @@ class InMemorySourceRegistry:
         self,
         representation: ParsedRepresentation,
         fragments: tuple[Fragment, ...] | list[Fragment],
+        *,
+        fragment_values: Mapping[str, Any] | None = None,
     ) -> None:
         with self._lock:
             if representation.representation_id != derive_representation_id(
@@ -167,10 +179,27 @@ class InMemorySourceRegistry:
                     )
                 fragment_map[key] = fragment
 
+            value_map: dict[tuple[str, str], Any] = {}
+            for logical_path, value in (fragment_values or {}).items():
+                key = (representation.representation_id, logical_path)
+                fragment = fragment_map.get(key)
+                if fragment is None:
+                    raise SourceRegistryError(
+                        "FRAGMENT_CONTENT_INVALID",
+                        f"content does not identify a fragment: {logical_path}",
+                    )
+                if content_hash(value) != fragment.text_hash:
+                    raise SourceRegistryError(
+                        "FRAGMENT_CONTENT_HASH_MISMATCH",
+                        f"content hash does not match fragment: {logical_path}",
+                    )
+                value_map[key] = deepcopy(value)
+
             self._representations[representation.representation_id] = (
                 representation
             )
             self._fragments.update(fragment_map)
+            self._fragment_values.update(value_map)
 
     def add_world_snapshot(self, snapshot: WorldSnapshot) -> None:
         with self._lock:
@@ -321,6 +350,11 @@ class InMemorySourceRegistry:
                 is_historical=(
                     historical_revision or historical_representation
                 ),
+                content=deepcopy(
+                    self._fragment_values.get(
+                        (representation_id, ref.logical_path)
+                    )
+                ),
             )
 
     def allowed_refs(
@@ -344,6 +378,21 @@ class InMemorySourceRegistry:
                     if candidate_id == representation_id
                 )
             return sorted(refs, key=str)
+
+    def catalog(
+        self,
+        scope: str,
+        world_snapshot_id: str,
+    ) -> list[ResolvedSource]:
+        with self._lock:
+            return [
+                self.resolve(
+                    ref,
+                    world_snapshot_id,
+                    request_scope=scope,
+                )
+                for ref in self.allowed_refs(scope, world_snapshot_id)
+            ]
 
     def _require_snapshot(self, world_snapshot_id: str) -> WorldSnapshot:
         try:
