@@ -2,9 +2,9 @@
 
 ## Status
 
-The product owner selected **Option B's direction** and rejected concrete specifications through Revision 4. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 5 is normative for typed contracts、proposal/Requirement/Decision dependency authority、governed reads、artifact lifecycles、coverage/verification proof、scalable temporal/epoch safety、result taxonomy、migration and ablation.
+The product owner selected **Option B's direction** and rejected concrete specifications through Revision 5 while accepting P0-1～P0-33 architecturally. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 6 is normative for the four P0-34～P0-37 amendments and all preserved contracts.
 
-Revision 5 is presented for product-owner review and is not approved or implemented. Module 01 remains `REDESIGN REQUIRED`.
+Revision 6 is presented for product-owner review and is not approved、planned or implemented. Module 01 remains `REDESIGN REQUIRED`.
 
 ## Component topology
 
@@ -26,18 +26,20 @@ flowchart TD
     H --> H1[3C. Complete receipts + global join / precedence / impact]
     G1 --> P[4A. Provisional Proof Selection]
     H1 --> P
-    P --> PV[4V. Independent Selected Proof Verification]
-    PV --> I[4B. Verified Proof + Completeness + Temporal Guards]
+    P --> PV[4V. Disposition-Critical Verification]
+    PV --> PR[4R. Remove / Reselect / Re-reduce]
+    PR --> I[4B. Confirmed Proof + Contradiction + Completeness + Temporal Guards]
     I --> J[5. Deterministic Proposal Acceptance Gate]
     J -->|ACCEPTED| K[Deterministic Canonicalizer]
-    J -->|REJECT / REVIEW| L[Immutable non-accepted CompilationResult]
+    J -->|NOT ADMITTED / ADMISSION REVIEW| L[Immutable non-admitted CompilationResult]
     K --> M[Immutable accepted CompilationResult]
     M --> N[RuntimeAcceptanceService]
-    N --> B[ChangeSet Publication / Per-Decision Authorization Barrier]
-    B --> O[Continuum canonical Runtime]
+    N --> B[Ordered ChangeSet Publication / Envelope Authorization]
+    B --> S[Side Effect Ledger Final Reauthorization]
+    S --> O[Continuum canonical Runtime / External Adapter]
 ```
 
-Trusted-input rejection、execution failure and semantic non-acceptance are disjoint. A model/schema/ref/transport failure is `RUN_FAILED` with no business disposition；unknown/incomplete pre-call coverage/capacity is execution-blocking. Unsupported governing logic/predicate/absence/unregistered cross-predicate relation produces a typed semantic result. Missing evidence、applicability ambiguity、direct contradictions、stale upstream Decision and proposal-outcome mismatch reach their relevant semantic stages before deterministic disposition.
+Trusted-input rejection、execution failure and semantic proposal non-admission are disjoint. A model/schema/ref/transport failure is `RUN_FAILED` with no proposal-admission disposition；unknown/incomplete pre-call coverage/capacity is execution-blocking. Unsupported governing logic/predicate/absence/unregistered cross-predicate relation produces a typed semantic result. Missing evidence、applicability ambiguity、direct contradictions、stale upstream Decision and proposal-outcome mismatch reach their relevant semantic stages before deterministic admission disposition. Business outcome remains exclusively on the immutable proposal/accepted Decision。
 
 ## Trust boundaries
 
@@ -65,10 +67,10 @@ Trusted-input rejection、execution failure and semantic non-acceptance are disj
 - canonical IDs, ordering, deduplication, hashes, and compiler state transitions;
 - validity-bearing provenance for applicability、material policies and selective coverage/rule/eligibility guards；the whole manifest is audit-only;
 - finite temporal validity horizons for time-sensitive proofs and explicit P0 `NOT_EXISTS` non-support；
-- semantic-epoch validity envelope / complete ChangeSet-range authorization contract；irrelevance certificates are optional caches；
+- semantic-sequence validity envelope / contiguous ChangeSet-range authorization contract；irrelevance certificates are optional caches；
 - complete governed-observation closure and executable read/epoch fencing；
 - exact `UpstreamDecisionBinding` and canonical Decision→Decision reachability；
-- independent selected enterprise-proof verification and deterministic reselection；
+- independent disposition-critical verification for selected proof/applicability and both sides of critical direct conflicts；
 - executable ChangeSet log + per-envelope authorization intersection without fleet-wide writes；
 - immutable Runtime acceptance under exact proposal/entity/mission/world/universe/policy/derived-artifact binding.
 
@@ -76,7 +78,7 @@ Trusted-input rejection、execution failure and semantic non-acceptance are disj
 
 - fragment-to-evidence/applicability bounded semantic matches、role、entailment、value and asserted horizon；
 - independent fragment-to-predicate contradiction matches。
-- exact selected-fragment proof verification verdicts only。
+- exact preselected disposition-critical semantic verification verdicts only。
 
 Model output is immutable analysis IR only. It cannot author business outcome、Requirement、upstream Decision、predicate/entity identity、canonical applicability、`CRITICAL | SUPPORTING`、canonical contradiction impact、deterministic precedence、coverage completeness、final disposition、Runtime mutations、Decision staleness、epochs/certificates or side-effect authority.
 
@@ -98,9 +100,9 @@ Build a no-top-K `EvidenceCoveragePlan` over every certified eligible fragment a
 
 Independently process all contradiction-eligible fragments. Each emits only actual matches, so output is O(fragments+matches), not a negative cross-product. Complete receipts and global reduce find cross-partition conflicts、apply precedence and derive impact from reachability/proof eligibility；the schema has no severity authority.
 
-### Stage 4A/4V/4B — Selection、Independent Proof Verification、Completeness and Temporal Validity
+### Stage 4A/4V/4R/4B — Selection、Disposition-Critical Verification、Recompute、Completeness and Temporal Validity
 
-Provisional selection chooses stable enterprise candidates；the narrow independent verifier sees only exact fragment/target/entity/claimed semantics and returns `CONFIRMED | REFUTED | INDETERMINATE`. Only confirmed enterprise/applicability proof canonicalizes；code reselects otherwise. Upstream Decision proof is exact deterministic binding. Final code derives materiality、assessments、temporal guards and the envelope.
+Provisional selection chooses stable enterprise candidates and provisional critical direct conflicts. The narrow independent verifier sees only one exact preselected fragment/target/entity/claimed semantic observation and returns `CONFIRMED | REFUTED | INDETERMINATE`. Only confirmed proof/applicability canonicalizes, and both model sides must confirm before a contradiction becomes blocking. Code removes REFUTED observations、reselects/re-reduces deterministically, and represents INDETERMINATE critical-conflict observations as semantic uncertainty. Final code derives materiality、assessments、temporal guards and the sequence-bound envelope.
 
 ### Stage 5 — Deterministic Proposal Acceptance Gate
 
@@ -119,8 +121,9 @@ stateDiagram-v2
     EVIDENCE_COVERAGE_VALIDATED --> BINDINGS_VALIDATED
     BINDINGS_VALIDATED --> CONTRADICTIONS_VALIDATED
     CONTRADICTIONS_VALIDATED --> PROVISIONAL_PROOFS_SELECTED
-    PROVISIONAL_PROOFS_SELECTED --> SELECTED_PROOFS_INDEPENDENTLY_VERIFIED
-    SELECTED_PROOFS_INDEPENDENTLY_VERIFIED --> PROOFS_AND_COMPLETENESS_COMPUTED
+    PROVISIONAL_PROOFS_SELECTED --> DISPOSITION_CRITICAL_OBSERVATIONS_VERIFIED
+    DISPOSITION_CRITICAL_OBSERVATIONS_VERIFIED --> PROOFS_AND_CONTRADICTIONS_RECOMPUTED
+    PROOFS_AND_CONTRADICTIONS_RECOMPUTED --> PROOFS_AND_COMPLETENESS_COMPUTED
     PROOFS_AND_COMPLETENESS_COMPUTED --> GATE_EVALUATED
     GATE_EVALUATED --> CANONICALIZED: ACCEPTED
     GATE_EVALUATED --> COMPLETED_NOT_ACCEPTED: REJECT / REVIEW
@@ -166,8 +169,8 @@ Claim(decision interpretation)
 Decision
 
 DecisionProposal / DecisionEntityContext / GovernedObservationSet /
-SelectedProofVerificationReceipt / TemporalValidityGuard /
-DecisionValidityEnvelope
+DispositionCriticalVerificationReceipt / TemporalValidityGuard /
+DecisionValidityEnvelope(validated semantic sequence + component epoch)
   --VALIDATED_AS / BINDS_ENTITY / AUTHORIZES_WHILE_CURRENT[CRITICAL]-->
 Decision
 ```
@@ -176,6 +179,6 @@ Support and later invalidation use graph reachability. Existing Source → Claim
 
 ## Integration boundary
 
-The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate an accepted canonical result into Runtime graph mutations, after checking exact proposal/entity/observation/upstream/mission/world/universe/policy hashes、clock horizon and derived envelope. `PublishEpochTxn` atomically advances the complete ChangeSet/read fence without Decision fan-out；`AuthorizeSideEffectTxn` intersects the exact envelope with intervening ChangeSets and rechecks upstream currentness in the same conditional commit as the side effect. Runtime still owns lifecycle、stale projection、action blocking and authorization.
+The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate `proposal_admission_disposition=ACCEPTED` into Runtime graph mutations, after checking exact proposal/entity/observation/upstream/mission/world/universe/policy hashes、clock horizon and derived envelope；the canonical outcome remains the proposal's exact value. `PublishEpochTxn` assigns the next owner-scope `semantic_sequence` and advances the complete ChangeSet/read fence without Decision fan-out. The Side Effect Ledger's `ReauthorizeForExecutionTxn` checks every intervening ordered ChangeSet/upstream/horizon and atomically transitions `INTENDED→EXECUTING` before—but not atomically with—the external call. Runtime owns lifecycle、stale projection、action blocking、idempotency and reconciliation.
 
 The old critic and reasoner-only routes remain only as explicit benchmark baselines during migration. Neither is a production fallback for the replacement pipeline.

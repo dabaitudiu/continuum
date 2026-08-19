@@ -74,6 +74,10 @@ Use mission `epoch` to make major world-state changes explicit.
 
 Epoch is explanatory metadata; dependency edges, not epoch alone, determine invalidation.
 
+Module 01 Revision 6 adds a distinct owner-scope `semantic_sequence:uint64` for executable semantic publication. It is a strict total order over hash-chained ChangeSets；world/universe/policy/catalog component epochs describe which domains changed. Authorization/recovery must verify the exact contiguous sequence range, while dependency-key intersection still determines relevance。
+
+Before an external side effect begins, `ReauthorizeForExecutionTxn` atomically checks the current sequence、Decision/upstream envelopes、clock/policy and transitions the Side Effect Ledger intent to `EXECUTING` or `CANCELLED_STALE_AUTHORIZATION`. The network call is not part of this transaction. Once `EXECUTING` persists, crash/unknown outcomes use the stable idempotency key and reconciliation rather than pretending the effect never started。
+
 ## Deterministic vs agentic responsibility
 
 Deterministic runtime:

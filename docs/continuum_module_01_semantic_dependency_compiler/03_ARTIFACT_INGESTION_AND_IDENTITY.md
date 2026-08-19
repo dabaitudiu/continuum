@@ -186,16 +186,16 @@ At minimum the following are versioned `CompilerPolicyArtifact` records：
 - context-partition policy;
 - governed-read policy;
 - upstream-Decision binding policy;
-- selected-proof verification policy;
+- disposition-critical verification policy;
 - registered cross-predicate constraint policy;
 - operational limit profile;
 - temporal-validity policy;
 - semantic-epoch policy;
 - supported-logic policy;
 
-`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `DecisionProposal`/`DecisionEntityContext`/`GovernedObservationSet` are signed immutable request inputs in separate stores；they reference but are not members of the input world and do not create a fourth compiler artifact namespace. `UpstreamDecisionBinding` references a first-class Continuum Decision/envelope and never re-encodes it as an enterprise fragment. `RuleNormalizationManifest`、`SourceSetManifest`、Evidence/contradiction/selected-proof verification certificates、applicability/temporal guards、`DecisionValidityEnvelope` and `DecisionInterpretation` are compiler-derived records。
+`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `DecisionProposal`/`DecisionEntityContext`/`GovernedObservationSet` are signed immutable request inputs in separate stores；they reference but are not members of the input world and do not create a fourth compiler artifact namespace. `UpstreamDecisionBinding` references a first-class Continuum Decision/envelope and never re-encodes it as an enterprise fragment. `RuleNormalizationManifest`、`SourceSetManifest`、Evidence/contradiction/disposition-critical verification certificates、applicability/temporal guards、`DecisionValidityEnvelope` and `DecisionInterpretation` are compiler-derived records。
 
-Every material agent/tool/compiler read has a signed `GovernedObservation` with tool/source identity/version、content hash、authorization context、world snapshot and executable semantic epoch. All material proposal inputs form a complete `GovernedObservationSet` under one `GovernedReadView`. Unversioned、future、mixed or bypass reads are typed input rejection and cannot become canonical proof。
+Every material agent/tool/compiler read has a signed `GovernedObservation` with tool/source identity/version、content hash、authorization context、world snapshot and executable semantic sequence/component epoch. All material proposal inputs form a complete `GovernedObservationSet` under one `GovernedReadView`. Unversioned、future、mixed or bypass reads are typed input rejection and cannot become canonical proof。
 
 ## Source-universe coverage
 
@@ -205,9 +205,9 @@ Required chain is `GovernedReadView → SourceUniverseSnapshot → SourceSelecti
 
 ## Revision semantics
 
-A compiler request is bound to a `world_snapshot_id` and executable semantic epoch/read fence. Every referenced revision must be valid in that governed snapshot, and every current revision is bound to one active parsed representation.
+A compiler request is bound to a `world_snapshot_id` and executable semantic sequence/component epoch/read fence. Every referenced revision must be valid in that governed snapshot, and every current revision is bound to one active parsed representation.
 
-If trusted input references an older revision outside the declared snapshot it is input rejection. If a model emits any stale/forbidden ref outside its partition schema, the compiler attempt is `RUN_FAILED: MODEL_PROTOCOL_INTEGRITY_FAILURE` with no business disposition。
+If trusted input references an older revision outside the declared snapshot it is input rejection. If a model emits any stale/forbidden ref outside its partition schema, the compiler attempt is `RUN_FAILED: MODEL_PROTOCOL_INTEGRITY_FAILURE` with no proposal-admission disposition。
 
 ## Parser versioning
 

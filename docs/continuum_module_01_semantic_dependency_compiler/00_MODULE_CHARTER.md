@@ -15,7 +15,7 @@ Domain agent emits immutable Proposal + Entity/Observation/Upstream refs
         ↓
 Trusted templates + bounded Evidence/direct contradiction interpretation
         ↓
-Semantic Dependency Compiler + independent selected-proof verification
+Semantic Dependency Compiler + independent disposition-critical semantic verification
         ↓
 Compilation Result
         ↓
@@ -51,7 +51,9 @@ The module must support:
 15. Method-blind annotations、K6 generality metrics、paired adversarial/mutation outcomes and external blind set.
 16. Live Gemini DEV before blind reveal and Gemini-primary blind evaluation；mock-only validation is insufficient.
 17. First-class exact upstream Decision proof and transitive Decision→Decision invalidation.
-18. Governed material-read closure bound to one executable world/semantic epoch.
+18. Governed material-read closure bound to one executable world/semantic sequence/component epoch.
+19. Proposal-admission results never author or rewrite the immutable business outcome.
+20. Side Effect Ledger final reauthorization closes the pre-external-call TOCTOU window.
 19. Independent verification for every selected model-interpreted enterprise/applicability proof.
 20. Disjoint input rejection、execution failure and semantic business-result taxonomy.
 21. Explicit direct same-predicate contradiction scope and registered/fail-closed cross-predicate relations.
@@ -74,16 +76,16 @@ This module does **not** own:
 ## Hard invariants
 
 1. Domain agent owns the proposed business outcome；compiler/model cannot replace it.
-2. Models interpret bounded Evidence/direct contradictions and verify exact selected proof only；they cannot author Requirement、upstream Decision、predicate/entity IDs or canonical source IDs.
+2. Models interpret bounded Evidence/direct contradictions and independently verify only exact preselected disposition-critical observations（selected proof/applicability/critical-conflict sides）；they cannot discover Requirements/contradictions、author upstream Decision、predicate/entity IDs or canonical source IDs.
 3. Every dependency reference must resolve to an allowed, versioned source object.
 4. Canonicalization must be deterministic for the same validated proposal/entity/observation/upstream/snapshots、model outputs、clock/epoch.
 5. The compiler must never persist hidden chain-of-thought. Store structured claims, concise rationale, citations, and validation evidence only.
-6. Unsupported semantic shape fails closed；malformed trusted input is input rejection；model-generated schema/ref/entity violation is execution failure with no business disposition.
+6. Unsupported semantic shape fails closed；malformed trusted input is input rejection；model-generated schema/ref/entity violation is execution failure with no proposal-admission disposition.
 7. Critical dependency omissions must be measurable through method-blind evaluation, not assumed away from receipts.
 8. A decision cannot become canonically `VALID` merely because a model/domain agent says “approved”.
 9. Demo-specific IDs such as `D42`, `ACME`, `policy-v13`, and `PEN_TEST` must not appear in compiler logic/templates.
 10. Canonical materiality and contradiction impact are deterministic results, never model authority.
-11. Accepted Decisions depend on selected proofs/applicability/temporal/epoch guards and materially used selective semantics, not the whole inventory as one coarse dependency.
+11. Accepted Decisions depend on confirmed selected proofs/applicability/temporal/semantic-sequence guards and materially used selective semantics, not the whole inventory as one coarse dependency.
 12. Incomplete universe/normalization/selection/Evidence/contradiction coverage and unsupported logic/predicate/absence fail closed.
 13. Compiler-derived records never join their input snapshot；Runtime denies at expiry、invalid upstream or any relevant intervening executable ChangeSet regardless of Decision-row lag.
 14. An unversioned、future、mixed or bypass material observation can never become canonical proof.

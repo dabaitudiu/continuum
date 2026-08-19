@@ -2,9 +2,9 @@
 
 ## Status and versioning
 
-The product owner approved Option B's direction but rejected concrete specifications through Revision 4. These Revision-5 contracts are **design contracts under review, not implemented contracts**. Their normative definitions are in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
+The product owner approved Option B's direction but rejected concrete specifications through Revision 5 while accepting P0-1～P0-33 architecturally. These Revision-6 contracts are **design contracts under review, not implemented contracts**. Their normative definitions are in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
 
-Implemented `DecisionDraft`、`ClaimDraft`、`DependencyRef`、`CriticProposal` and `CriticReview` remain immutable v1 legacy types for persisted evidence and ablation replay. They are not production fallbacks and cannot be silently reinterpreted as Revision-5 objects.
+Implemented `DecisionDraft`、`ClaimDraft`、`DependencyRef`、`CriticProposal` and `CriticReview` remain immutable v1 legacy types for persisted evidence and ablation replay. They are not production fallbacks and cannot be silently reinterpreted as Revision-6 objects.
 
 ## Design goal
 
@@ -21,11 +21,12 @@ The IR separates sixteen questions:
 9. Which propositions conflict across the independent complete inventory?
 10. Which validated bindings/guards become canonical CRITICAL dependencies and when do they expire?
 11. Does deterministic proposal-validation logic permit canonicalization without outcome substitution?
-12. Which semantic epoch makes that Decision safe to authorize?
+12. Which owner-scope semantic sequence/component epoch makes that Decision safe to authorize?
 13. Which governed observations prove every material read came from one executable snapshot/epoch?
 14. Which exact upstream Continuum Decisions satisfy contract-required first-class Decision proof roles?
-15. Did an independent verifier confirm every selected model-interpreted enterprise proof/applicability guard?
-16. Is the terminal record an input rejection、execution failure or business semantic result?
+15. Did an independent verifier confirm every preselected model observation that can directly change proposal admission, including both sides of a critical direct conflict?
+16. Is the terminal record an input rejection、execution failure or semantic proposal-admission result, independently of the business outcome?
+17. Can the Side Effect Ledger reauthorize atomically at execution start and recover every external-call crash point without cross-system atomicity claims?
 
 ## Trusted context objects
 
@@ -108,7 +109,7 @@ Final `ApplicabilityJustification` records normalized rule/obligation IDs、appl
 
 ### `EvidenceCoveragePlan` / `FragmentEvidenceObservation` / `Receipt`
 
-The deterministic no-top-K plan records all Requirement/applicability targets、all certified eligible fragments、catalog eligibility matrix、bounded partitions and hashes. Each assigned ref yields exactly one `FragmentEvidenceObservation` with actual `matched_predicates[]`; an empty array means processed/no match reported. Receipts prove exact fragment processing, not model semantic correctness. Preflight over-limit/dense capacity is `RUN_BLOCKED`；post-call truncated/malformed/partial coverage is `RUN_FAILED` with no business disposition。
+The deterministic no-top-K plan records all Requirement/applicability targets、all certified eligible fragments、catalog eligibility matrix、bounded partitions and hashes. Each assigned ref yields exactly one `FragmentEvidenceObservation` with actual `matched_predicates[]`; an empty array means processed/no match reported. Receipts prove exact fragment processing, not model semantic correctness. Preflight over-limit/dense capacity is `RUN_BLOCKED`；post-call truncated/malformed/partial coverage is `RUN_FAILED` with no proposal-admission disposition。
 
 ### `EvidenceBindingCandidate`
 
@@ -160,9 +161,9 @@ canonical_materiality: CRITICAL | SUPPORTING | NONE
 
 Canonical materiality is derived after independent proof verification. A confirmed selected necessary proof is CRITICAL even if model prose called it supporting. `REFUTED | INDETERMINATE` cannot be selected；code tries the next frozen candidate。
 
-### `SelectedProofVerificationRequest` / `Receipt`
+### `DispositionCriticalVerificationRequest` / `Receipt`
 
-For every provisionally selected model-interpreted enterprise/applicability binding, the independent verifier receives only exact source fragment、target PredicateIdentity、instantiated entity、claimed entailment/value and normalized semantics. It returns only `CONFIRMED | REFUTED | INDETERMINATE`. Verifier protocol failure is execution failure, not a verdict；the model cannot discover refs/Requirements or decide materiality/outcome/disposition。
+For every preselected model-interpreted enterprise/applicability binding and each material side of a provisional `VALIDITY_CRITICAL` direct contradiction, the independent verifier receives only exact source fragment、target PredicateIdentity、instantiated entity、claimed entailment/value and normalized semantics. It returns only `CONFIRMED | REFUTED | INDETERMINATE`. Verifier protocol failure is execution failure, not a verdict；the model cannot discover refs/Requirements/contradictions or decide materiality/outcome/admission disposition. Both contradiction sides must confirm；REFUTED removes/recomputes and INDETERMINATE becomes typed semantic uncertainty rather than a confirmed contradiction。
 
 ### `Contradiction`
 
@@ -188,12 +189,14 @@ Records executable hard limits、every eligible ref、target/entity descriptors�
 
 ```text
 requirement_id
-status: SATISFIED | UNSATISFIED | CONTRADICTED | INSUFFICIENT_EVIDENCE
+status: SATISFIED | UNSATISFIED | CONTRADICTED |
+        SEMANTIC_UNCERTAINTY | INSUFFICIENT_EVIDENCE
 selected_proof_binding_ids[]
 selected_upstream_decision_binding_ids[]
-selected_proof_verification_receipt_ids[]
+disposition_critical_verification_receipt_ids[]
 supporting_binding_ids[]
 contradiction_ids[]
+semantic_uncertainty_ids[]
 support_paths[][]
 blocking_requirement_ids[]
 finding_codes[]
@@ -204,15 +207,21 @@ Deterministic completeness computes one assessment per **template-instantiated e
 
 ### `TemporalValidityGuard` / `DecisionValidityEnvelope`
 
-A finite guard binds each time-sensitive selected proof/applicability result to trusted clock policy、`evaluated_at`、`[valid_from, valid_until)` and expiry semantics. The validity envelope binds proposal/entity/observation/upstream/verification/compilation hashes、semantic epoch vector、minimum exclusive `authorization_not_after` and every selective dependency key. Runtime denies authorization at expiry、invalid upstream or any relevant intervening executable ChangeSet；a scheduler/Decision row is not the safety barrier。
+A finite guard binds each time-sensitive selected proof/applicability result to trusted clock policy、`evaluated_at`、`[valid_from, valid_until)` and expiry semantics. The validity envelope binds proposal/entity/observation/upstream/verification/compilation hashes、`validated_semantic_sequence`、component epoch vector、minimum exclusive `authorization_not_after` and every selective dependency key. Runtime denies execution start at expiry、invalid upstream or any relevant intervening executable ChangeSet；a scheduler/Decision row is not the safety barrier。
+
+### `SemanticEpoch` / `ChangeSetRangeProof` / `SideEffectIntent`
+
+`SemanticEpoch` adds one owner-scope `semantic_sequence:uint64` to the component epoch vector and predecessor hash. `PublishEpochTxn` assigns exactly `current+1`; range proofs、read views、envelopes、upstream checks and authorization receipts order by sequence, not by component-wise comparison. Replay accepts only a contiguous hash-linked prefix。
+
+`SideEffectIntent` binds idempotency/request identity、authorizing Decision/envelope、execution-start authorization receipt、authorized sequence/horizon and ledger status. `ReauthorizeForExecutionTxn` atomically checks the exact ordered ChangeSet ranges and transitions `INTENDED | RETRYABLE_FAILURE → EXECUTING` or `CANCELLED_STALE_AUTHORIZATION`. The external call follows outside the transaction；`EXECUTING` crash/unknown outcomes use idempotency and `RECONCILIATION_REQUIRED`, never blind replay。
 
 ### `UnsupportedLogicResult`
 
-Contains exact governing ref、normalized rule key、unsupported logic kind、affected predicate keys and detector. Its disposition is `REJECTED_UNSUPPORTED_LOGIC`; canonical output is absent.
+Contains exact governing ref、normalized rule key、unsupported logic kind、affected predicate keys and detector. Its proposal-admission disposition is `REJECTED_UNSUPPORTED_LOGIC`; canonical output is absent.
 
 ### `UnsupportedPredicateResult`
 
-Contains the exact governing fragment、normalized rule/obligation key、frozen predicate catalog ref and unrepresentable semantic shape. Its disposition is `REJECTED_UNSUPPORTED_PREDICATE`；model code invention and compiler omission are forbidden.
+Contains the exact governing fragment、normalized rule/obligation key、frozen predicate catalog ref and unrepresentable semantic shape. Its proposal-admission disposition is `REJECTED_UNSUPPORTED_PREDICATE`；model code invention and compiler omission are forbidden.
 
 ## Result envelope
 
@@ -223,7 +232,7 @@ ReplacementCompilationResult
   upstream_decision_bindings[]
   run_status: IN_PROGRESS | COMPLETED | BLOCKED | FAILED
   result_class: INPUT_REJECTION | EXECUTION_FAILURE | SEMANTIC_RESULT
-  business_disposition?
+  proposal_admission_disposition?
   input_rejection_code? / execution_failure_code? / retryability?
   compiler_policy_bundle
   source_universe_snapshot
@@ -236,7 +245,8 @@ ReplacementCompilationResult
   evidence_coverage_plan / receipts[] / fragment_observations[]
   evidence_binding_candidates[]
   evidence_bindings[]
-  selected_proof_verification_requests[] / receipts[]
+  disposition_critical_verification_requests[] / receipts[]
+  disposition_critical_semantic_uncertainties[]
   contradiction_coverage_plan / receipts[] / fragment_semantic_observations[]
   contradictions[]
   requirement_assessments[]
@@ -255,7 +265,7 @@ ReplacementCompilationResult
   stage_model_metadata[]
 ```
 
-`business_disposition` exists only for `SEMANTIC_RESULT`. Input rejection and `BLOCKED | FAILED` execution attempts have no business disposition or canonical output. Non-accepted semantic results have no canonical graph. Only an accepted APPROVE/DENY contains a deterministic `DecisionJustification` and Runtime-eligible graph.
+`proposal_admission_disposition` exists only for `SEMANTIC_RESULT` and never represents a newly authored business outcome. Input rejection and `BLOCKED | FAILED` execution attempts have no admission disposition or canonical output. Non-admitted semantic results have no canonical graph. Only an admitted proposal contains a deterministic `DecisionJustification` and Runtime-eligible graph, whose canonical outcome exactly equals `DecisionProposal.proposed_outcome`。
 
 ## Decision justification and canonical mapping
 
@@ -270,7 +280,7 @@ DecisionJustification
   selected_requirement_ids[]
   selected_proof_binding_ids[]
   selected_upstream_decision_binding_ids[]
-  selected_proof_verification_receipt_ids[]
+  disposition_critical_verification_receipt_ids[]
   selected_policy_refs[]
   compiler_derived_artifact_ids[]
   applicability_justification_ids[]

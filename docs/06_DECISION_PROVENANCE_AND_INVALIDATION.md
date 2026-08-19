@@ -20,6 +20,8 @@ Each agent decision must return a structured proposal containing:
 
 The control plane validates references before accepting the decision.
 
+Compiler validation decides only whether to admit/canonicalize that immutable proposal. `REJECTED_* | NEEDS_HUMAN_REVIEW` are proposal-admission dispositions, not newly authored domain outcomes. If admitted, the canonical Decision outcome is the exact unchanged proposal outcome。
+
 ## Dependency extraction strategy
 
 Prefer dependencies that correspond to concrete, versioned resources:
@@ -89,3 +91,5 @@ Expected:
 - D43 remains valid
 
 This must be deterministic and covered by automated tests before agent integration.
+
+Side-effect execution also checks provenance synchronously: before the ledger enters `EXECUTING`, Runtime validates the authorizing Decision/upstream envelopes against every ChangeSet from each envelope's validated `semantic_sequence` through current. A relevant pre-execution change cancels the intent without issuing the external call；after `EXECUTING`, idempotency/reconciliation owns the external outcome。

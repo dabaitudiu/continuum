@@ -3,8 +3,8 @@
 ## 文档状态
 
 - Product owner 决策：**Option B 的方向已批准**。
-- Product owner 评审：第一版及 Revision 2～4 的具体规范均 **REJECTED**；Option B 方向仍获批准。
-- 本文状态：**REVISION 5 — FOR PRODUCT-OWNER REVIEW，尚未批准实施**。
+- Product owner 评审：第一版及 Revision 2～5 的具体规范均 **REJECTED**；Option B 方向仍获批准。Revision 5 的 P0-1～P0-33 已获架构层认可，必须保持。
+- 本文状态：**REVISION 6 — FOR PRODUCT-OWNER REVIEW，尚未批准实施或实施规划**。
 - Module 01：**REDESIGN REQUIRED**。
 - 当前 vague critic：已被 K3 与产品决策否决，不得成为生产 fallback。
 - Option A（reasoner-only）只保留为 ablation baseline；Option C 不执行。
@@ -36,6 +36,8 @@ Revision 4 保留 P0-1～P0-19，并作出以下单一权威选择：domain agen
 
 Revision 5 保留 P0-1～P0-27，并补齐六个边界：upstream Continuum Decision 是一等 proof/dependency；所有 material reads 都绑定 executable snapshot/epoch；epoch publication 以 `SemanticChangeSet` 为真相且不 fan-out 写所有 Decision；execution failure 与 business non-acceptance 分离；selected enterprise proof 经过窄化独立复核；P0 contradiction 只保证同一 normalized predicate/entity/target 的直接冲突，cross-predicate invariants 必须预注册。Operational gate 同时衡量安全、成功执行率、context block、调用、Token、延迟与成本。
 
+Revision 6 不重写上述设计，只修正四个剩余边界：semantic result 表达 **proposal admission** 而不是 Continuum 自创的业务处置；Side Effect Ledger 在 `INTENDED → EXECUTING` 的原子转换中执行最终重授权，外部调用不被伪称为数据库事务的一部分；所有可直接改变 admission disposition 的预选 model semantic claim（selected proof、applicability guard、critical direct-contradiction 两侧）进入统一窄化复核；每个 owner scope 增加严格单调 `semantic_sequence`，作为 ChangeSet range、重放和授权的全序。
+
 ## 架构不变量
 
 1. `Requirement` 是结构化 semantic proposition，不是 source ref；显示文本不是 identity。
@@ -62,13 +64,17 @@ Revision 5 保留 P0-1～P0-27，并补齐六个边界：upstream Continuum Deci
 22. Evidence/applicability discovery 与 contradiction observation 都必须有 fragment-complete bounded plan/partition/receipt；receipt 证明 processing coverage，不虚称 model semantic correctness。
 23. Temporal proof 必须输出 finite validity horizon 或被明确判定 timeless；Runtime authorization 必须同步检查 expiry，不得只依赖异步 stale event。
 24. P0 不支持 `NOT_EXISTS` 或 retrieval-derived absence。无结果不是 proof；遇到 material absence obligation 必须 typed fail closed。
-25. Every accepted Decision carries a semantic-epoch validity envelope；after a newer epoch becomes executable, side effects require a complete ChangeSet/range check proving no relevant intersection. Irrelevance certificates are optional caches, never publication prerequisites。
+25. Every accepted Decision carries a semantic-sequence/component-epoch validity envelope；after a newer sequence becomes executable, side effects require a complete ChangeSet/range check proving no relevant intersection. Irrelevance certificates are optional caches, never publication prerequisites。
 26. Contract-required upstream Continuum Decisions are first-class proof objects and canonical `Decision → Decision` CRITICAL edges；它们不得被降级成 enterprise fragment，supersession 也不得静默改写旧 binding。
 27. Every material observation used by a proposal or compiler proof is traceable to one executable governed world/semantic epoch；unversioned、future-epoch、mixed-epoch or bypass reads cannot canonicalize。
 28. Epoch publication never requires fleet-wide Decision-row fan-out。Durable truth is an executable hash-chained `SemanticChangeSet` log；authorization checks the specific envelope against every intervening change before the side effect commits。
 29. Trusted-input rejection、compiler/model execution failure and semantic non-acceptance are disjoint result classes。Model/transport/protocol failure never becomes a durable business DENY。
 30. Every model-interpreted enterprise binding selected for canonical proof or applicability is independently verified as `CONFIRMED` before use；the verifier cannot discover refs/Requirements or decide materiality、outcome or disposition。
 31. P0 contradiction detection guarantees only direct conflicts over the same normalized predicate、entity、target and overlapping scope/time。Unregistered cross-predicate relations fail closed；不得宣称 generic contradiction reasoning。
+32. `SEMANTIC_RESULT` 的 disposition 只描述 proposal 是否被 Continuum admission/canonicalization；业务 outcome 只存在于 immutable `DecisionProposal.proposed_outcome`，accepted Decision 必须原样复制该值。
+33. Semantic authorization 与 Side Effect Ledger 的 `INTENDED → EXECUTING` 转换在同一 conditional transaction 内线性化；外部网络调用不属于该事务。进入 `EXECUTING` 前的相关变化取消 intent，进入后使用 idempotency/reconciliation 处理不确定结果。
+34. Any preselected model semantic observation that can directly change final proposal admission is independently verified through the same minimal three-valued contract；unconfirmed contradiction observations cannot become confirmed contradictions。
+35. Every executable semantic publication in one owner scope has exactly one contiguous monotonic `semantic_sequence`。Epoch component counters explain **what** changed；the sequence defines **when** and is the only ChangeSet range-order key。
 
 ## Artifact namespaces and trust boundary
 
@@ -86,7 +92,7 @@ CompilerPolicyArtifact
 CompilerDerivedArtifact
   ProposalOutcomeBinding、SourceSetManifest、RuleNormalizationManifest、
   RequirementInstantiationReceipt、Evidence/contradiction plans/receipts、
-  UpstreamDecisionBinding、SelectedProofVerification records、
+  UpstreamDecisionBinding、DispositionCriticalVerification records、
   ConstraintEvaluationReceipt、
   ApplicabilityJustification set、TemporalValidityGuard set、
   DecisionValidityEnvelope、DecisionInterpretation
@@ -125,6 +131,7 @@ DecisionProposal                              # signed immutable request input; 
   upstream_decision_refs[]:
     dependency_role / upstream_decision_id
   input_world_snapshot_id: string
+  observed_semantic_sequence: uint64
   observed_semantic_epoch: SemanticEpochVector
   produced_at: trusted timestamp
   proposal_hash: SHA-256
@@ -160,7 +167,7 @@ DecisionEntityContext                         # signed immutable request input; 
   context_hash: SHA-256
 ```
 
-Each predicate/template catalog entry declares legal `subject_role`、optional `object_role`、entity types and allowed context-value paths. Deterministic instantiation resolves those roles from `DecisionEntityContext` and computes `PredicateIdentity`；model stages receive only already-instantiated target semantic keys. A model-emitted unknown target/entity ID is `MODEL_PROTOCOL_INTEGRITY_FAILURE` with no business disposition. A faithfully observed source proposition about another entity is `ENTITY_BINDING_MISMATCH`、proof-ineligible and cannot canonicalize；the semantic pipeline still performs the independent contradiction pass before Gate rejects for incomplete evidence. Changing an entity binding creates a new context/proposal, never mutates an accepted Decision in place。
+Each predicate/template catalog entry declares legal `subject_role`、optional `object_role`、entity types and allowed context-value paths. Deterministic instantiation resolves those roles from `DecisionEntityContext` and computes `PredicateIdentity`；model stages receive only already-instantiated target semantic keys. A model-emitted unknown target/entity ID is `MODEL_PROTOCOL_INTEGRITY_FAILURE` with no proposal-admission disposition. A faithfully observed source proposition about another entity is `ENTITY_BINDING_MISMATCH`、proof-ineligible and cannot canonicalize；the semantic pipeline still performs the independent contradiction pass before Gate rejects admission for incomplete evidence. Changing an entity binding creates a new context/proposal, never mutates an accepted Decision in place。
 
 ### `GovernedObservation` and executable snapshot isolation
 
@@ -172,6 +179,7 @@ GovernedObservation                         # signed immutable observation envel
   source_or_tool_identity: stable registered identity
   source_or_tool_version: immutable version
   world_snapshot_id: string
+  semantic_sequence: uint64
   semantic_epoch: SemanticEpochVector
   observed_at: trusted timestamp
   content_hash: SHA-256
@@ -187,6 +195,7 @@ GovernedObservationSet                      # signed request input; not world me
   proposal_id
   observation_ids[]
   world_snapshot_id
+  semantic_sequence
   semantic_epoch
   material_input_path_to_observation_id[]
   closure_status: COMPLETE | INCOMPLETE
@@ -194,6 +203,7 @@ GovernedObservationSet                      # signed request input; not world me
 
 GovernedReadView                            # Runtime/tool-gateway read fence
   owner_scope
+  executable_semantic_sequence: uint64
   executable_epoch
   executable_world_snapshot_id
   executable_universe_snapshot_id
@@ -229,6 +239,7 @@ UpstreamDecisionBinding                    # deterministic CompilerDerivedArtifa
   required_outcome_class / required_semantic_condition_ref
   observed_outcome_class
   observed_status: VALID | STALE | SUPERSEDED | INVALID
+  validated_semantic_sequence: uint64
   validated_epoch: SemanticEpochVector
   governed_observation_id
   binding_hash: SHA-256
@@ -327,7 +338,7 @@ CompilerPolicyBundle
   semantic_epoch_policy_ref: CompilerPolicyRef
   governed_read_policy_ref: CompilerPolicyRef
   upstream_decision_binding_policy_ref: CompilerPolicyRef
-  selected_proof_verification_policy_ref: CompilerPolicyRef
+  disposition_critical_verification_policy_ref: CompilerPolicyRef
   registered_cross_predicate_constraint_policy_ref: CompilerPolicyRef
   operational_limit_profile_ref: CompilerPolicyRef
   supported_logic_policy_ref: CompilerPolicyRef
@@ -534,10 +545,13 @@ flowchart TD
     CR -->|post-call partial / malformed coverage| RF
     EV --> PS[4A. Provisional Applicability / Proof Selection]
     CR --> PS
-    PS --> PV[4V. Independent SelectedProofVerification]
-    PV -->|REFUTED / INDETERMINATE| PS
-    PV -->|execution failure| RF[RUN_FAILED: no business disposition]
-    PV --> H[4B. Verified Proof + Completeness + Temporal Guards]
+    PS --> PV[4V. DispositionCriticalVerification]
+    PV -->|REFUTED| PR[4R. Remove Observation + Deterministic Reselect / Re-reduce]
+    PR --> PS
+    PV -->|INDETERMINATE| SU[Typed Semantic Uncertainty]
+    PV -->|execution failure| RF[RUN_FAILED: no proposal-admission disposition]
+    PV --> H[4B. Confirmed Proof / Contradiction + Completeness + Temporal Guards]
+    SU --> H
     H --> I[5. Deterministic Proposal Acceptance Gate]
     I -->|ACCEPTED| J[Deterministic Canonicalizer]
     I -->|REJECT / REVIEW| K[Immutable non-accepted CompilationResult]
@@ -575,21 +589,23 @@ Stage 2A builds `EvidenceCoveragePlan` from the complete eligible source invento
 
 Stage 3 uses a separate prompt/schema/model call path and does not receive Stage-2 matches、selected refs or bindings. Each disjoint partition sees its assigned complete fragment subset and the deterministic target-predicate descriptor set allowed for those fragments. It emits one `FragmentSemanticObservation` per fragment with only actual semantic matches；an empty array is the coverage marker. Deterministic reduce validates fragment-complete receipts, joins determinate opposing matches globally by stable predicate/entity/target key, and applies versioned authority precedence。
 
-The output shape is `O(fragments + actual semantic matches)`, not a ref×predicate negative cross-product. A preflight hard-cap overflow is `RUN_BLOCKED`; missing/truncated/malformed receipts after invocation are `RUN_FAILED` with no business disposition. Neither can be reported as zero contradictions. As in Stage 2, processing receipts do not certify model semantic correctness。
+The output shape is `O(fragments + actual semantic matches)`, not a ref×predicate negative cross-product. A preflight hard-cap overflow is `RUN_BLOCKED`; missing/truncated/malformed receipts after invocation are `RUN_FAILED` with no proposal-admission disposition. Neither can be reported as zero contradictions. As in Stage 2, processing receipts do not certify model semantic correctness。
 
-### Stage 4A / 4V / 4B — Deterministic selection、independent verification、completeness and temporal validity
+### Stage 4A / 4V / 4R / 4B — Deterministic selection、disposition-critical verification、reduction、completeness and temporal validity
 
-Stage 4A resolves applicability observations/contradictions and produces a deterministic ordered candidate list for every enterprise-evidence proof role/guard. Before any model-interpreted binding becomes canonical, Stage 4V independently re-reads only the exact selected fragment/target/entity/claimed value and returns `CONFIRMED | REFUTED | INDETERMINATE`. A non-confirmed candidate is permanently ineligible for this run；4A deterministically tries the next candidate. Upstream Decision、governing-template and other wholly deterministic bindings do not require model semantic re-interpretation, but their exact hashes/currentness are rechecked。
+Stage 4A resolves provisional applicability/direct-conflict observations and produces a deterministic ordered candidate list for every enterprise-evidence proof role/guard. It also identifies each provisional `VALIDITY_CRITICAL` direct contradiction whose two model-interpreted observations could change final proposal admission. Stage 4V independently receives one isolated, exact preselected observation at a time—selected enterprise proof、selected applicability guard、or one side of such a contradiction—and returns only `CONFIRMED | REFUTED | INDETERMINATE`。
 
-Only independently `CONFIRMED` enterprise bindings may finalize `ApplicabilityJustification` or Requirement proof. Stage 4B also executes any registered cross-predicate constraint over exact verified typed inputs and stores `ConstraintEvaluationReceipt`; unregistered relations never execute. APPLICABLE obligations enter the effective Requirement set；NOT_APPLICABLE obligations retain a verified validity-bearing determinate false guard；exhausted/INDETERMINATE/conflicted candidates prevent acceptance. Stage 4B derives canonical materiality/direct-contradiction impact、assesses every effective Requirement and constructs `TemporalValidityGuard`s for every time-bounded selected proof/guard/policy attestation。
+Stage 4R permanently removes a `REFUTED` observation for this immutable run, then deterministically reselects proof/applicability candidates and recomputes the direct-conflict join/impact over the frozen primary-output inventory. Newly disposition-critical observations enter the same verifier. Each observation is verified at most once, so this bounded fixed point terminates. An `INDETERMINATE` selected proof/guard triggers deterministic reselection；an `INDETERMINATE` material side of an otherwise critical direct conflict becomes typed semantic uncertainty, not a confirmed contradiction, and fails closed to admission review。
 
-Any selected time-sensitive semantic fact must yield a trusted `[valid_from, valid_until)` horizon. `valid_until` is exclusive；at `now >= valid_until` the Decision cannot authorize continuation. Missing horizon for a predicate whose catalog contract is time-sensitive produces insufficient evidence, never an unbounded proof. Stage 4V is the only Stage-4 model interface and cannot mutate selection policy、materiality、outcome or disposition。
+Only independently `CONFIRMED` enterprise bindings may finalize `ApplicabilityJustification` or Requirement proof, and a direct contradiction becomes confirmed/blocking only when both model-interpreted material sides are `CONFIRMED`. Stage 4B also executes any registered cross-predicate constraint over exact verified typed inputs and stores `ConstraintEvaluationReceipt`; unregistered relations never execute. APPLICABLE obligations enter the effective Requirement set；NOT_APPLICABLE obligations retain a verified validity-bearing determinate false guard；exhausted/INDETERMINATE/conflicted candidates prevent acceptance. Stage 4B derives canonical materiality/confirmed direct-contradiction impact、assesses every effective Requirement and constructs `TemporalValidityGuard`s for every time-bounded selected proof/guard/policy attestation。
+
+Any selected time-sensitive semantic fact must yield a trusted `[valid_from, valid_until)` horizon. `valid_until` is exclusive；at `now >= valid_until` the Decision cannot authorize continuation. Missing horizon for a predicate whose catalog contract is time-sensitive produces insufficient evidence, never an unbounded proof. Stage 4V is the only Stage-4 model interface and cannot discover refs/Requirements/contradictions、mutate selection policy、choose materiality/outcome/admission disposition or touch Runtime。
 
 ### Stage 5 — Deterministic proposal acceptance
 
-Code computes the evidence-supported validation class (`APPROVE | DENY | REVIEW`) and compares it with deterministic `ProposalOutcomeBinding.normalized_outcome_class`, which remains hash-bound to the immutable source outcome. Matching APPROVE/DENY may be accepted if all preconditions hold. Any mismatch returns rejection/review against the supplied proposal；no replacement outcome/proposal is emitted. Canonicalization consumes only an accepted proof slice plus `DecisionValidityEnvelope`。
+Code computes the evidence-supported validation class (`APPROVE | DENY | REVIEW`) and compares it with deterministic `ProposalOutcomeBinding.normalized_outcome_class`, which remains hash-bound to the immutable source outcome. Matching APPROVE/DENY may be admitted if all preconditions hold. Any mismatch returns a **proposal-admission** rejection/review against the supplied proposal；no replacement outcome/proposal is emitted. Canonicalization consumes only an admitted proof slice plus `DecisionValidityEnvelope`，whose canonical Decision outcome exactly equals `DecisionProposal.proposed_outcome`。
 
-Runtime acceptance revalidates exact proposal/entity/snapshot/policy/derived hashes、current clock and semantic epoch. It publishes the graph through the epoch barrier；the compiler/model cannot directly mutate Runtime。
+Runtime acceptance revalidates exact proposal/entity/snapshot/policy/derived hashes、current clock and semantic sequence/component epoch. It publishes the graph through the sequence barrier；the compiler/model cannot directly mutate Runtime。
 
 ## Typed contracts
 
@@ -761,34 +777,46 @@ GoverningAuthorityBinding                    # deterministic; never model-author
 ```
 
 ```text
-SelectedProofVerificationRequest            # deterministic, exact and minimal
+DispositionCriticalVerificationRequest      # deterministic, exact and minimal
   verification_id / verification_round
-  evidence_binding_candidate_id
+  purpose: SELECTED_ENTERPRISE_PROOF | SELECTED_APPLICABILITY_GUARD |
+           DIRECT_CONTRADICTION_LHS | DIRECT_CONTRADICTION_RHS
+  preselected_observation_id
+  evidence_binding_candidate_id? / contradiction_candidate_id?
   exact_source_fragment_ref / content_hash / exact_fragment_text
   target_predicate_identity
   instantiated_subject / instantiated_object
   claimed_entailment / claimed_normalized_value
-  expected_state
+  expected_state?                           # proof/guard only
   relevant_normalized_semantics              # catalog/template semantics only
-  governed_read_view_hash / semantic_epoch
+  governed_read_view_hash / semantic_sequence / semantic_epoch
   request_hash: SHA-256
 
-SelectedProofVerificationObservation        # independent model output
+DispositionCriticalVerificationObservation  # independent model output
   verification_id
   verdict: CONFIRMED | REFUTED | INDETERMINATE
 
-SelectedProofVerificationReceipt            # deterministic validation
+DispositionCriticalVerificationReceipt      # deterministic validation
   verification_id / request_hash / output_hash
   verifier_prompt_version / model_config_hash
   primary_interpreter_invocation_ids[]
   independence_status: INDEPENDENT | INVALID
   validated_verdict
   receipt_hash: SHA-256
+
+DispositionCriticalSemanticUncertainty      # not a confirmed contradiction
+  uncertainty_id
+  preselected_observation_id / contradiction_candidate_id?
+  verification_receipt_id
+  affected_requirement_ids[] / affected_applicability_guard_keys[]
+  reason: INDETERMINATE_DISPOSITION_CRITICAL_OBSERVATION
+  admission_effect: NEEDS_HUMAN_REVIEW
+  uncertainty_hash: SHA-256
 ```
 
-The verifier uses a separate invocation/context and cannot see proposal outcome、other candidates、Stage-2 rationale、contradiction findings or final disposition. Its schema contains no ref discovery、Requirement、materiality、impact or mutation fields. Deterministic code checks that it is not the same invocation as the primary interpretation. Verifier malformed output、fabricated fields/ref or transport failure is an execution failure with no business disposition；it is never converted to `REFUTED`。
+The verifier uses a separate invocation/context with **exactly one request item** and sees neither proposal outcome、other candidates、the opposing contradiction side、Stage-2 rationale nor final admission disposition. It does not search for a contradiction；deterministic code has already preselected the exact causal observation and supplies its normalized target semantics. Its schema contains no ref discovery、Requirement、materiality、impact、outcome、disposition or mutation fields. Deterministic code checks that it is not the same invocation as the primary interpreter/contradiction observer. Verifier malformed output、fabricated fields/ref or transport failure is an execution failure with no proposal-admission disposition；it is never converted to a semantic verdict。
 
-Each candidate is verified at most once. For each proof role/guard, deterministic Stage 4A walks the frozen selection order: `CONFIRMED` becomes `SELECTED_PROOF/CRITICAL`; `REFUTED | INDETERMINATE` remains analysis-only and the next candidate is tried. If the finite candidate set or configured verification capacity is exhausted, the semantic result is insufficient evidence or an operational block respectively；the verifier never selects a lower-ranked candidate itself. Applicability selected guards follow the identical rule。
+Each preselected observation is verified at most once. For each proof role/guard, deterministic Stage 4A walks the frozen selection order: `CONFIRMED` becomes eligible to finalize；`REFUTED | INDETERMINATE` remains analysis-only and the next candidate is tried. For a provisional validity-critical direct contradiction, both model-interpreted sides require independent `CONFIRMED` receipts before `Contradiction` exists as a confirmed blocking object. `REFUTED` removes that observation and recomputes the join；`INDETERMINATE` emits `DispositionCriticalSemanticUncertainty` and cannot be counted as a confirmed contradiction. If the finite candidate set or configured verification capacity is exhausted, the semantic result is insufficient evidence or an operational block respectively；the verifier never chooses a candidate or conflict itself。
 
 Rules：
 
@@ -838,6 +866,8 @@ Contradiction                                # deterministic validated record
   affected_applicability_guard_keys[]
   lhs_proof_eligibility: ELIGIBLE | INELIGIBLE
   rhs_proof_eligibility: ELIGIBLE | INELIGIBLE
+  disposition_critical_verification_receipt_ids[]
+  confirmation_status: CONFIRMED             # object does not exist until both model sides confirm
   deterministic_impact: VALIDITY_CRITICAL | NON_BLOCKING
   impact_finding_codes[]
 ```
@@ -884,12 +914,14 @@ Partitioning is deterministic over stable refs、token counts and the same catal
 ```text
 RequirementAssessment
   requirement_id: string
-  status: SATISFIED | UNSATISFIED | CONTRADICTED | INSUFFICIENT_EVIDENCE
+  status: SATISFIED | UNSATISFIED | CONTRADICTED |
+          SEMANTIC_UNCERTAINTY | INSUFFICIENT_EVIDENCE
   selected_proof_binding_ids[]
   selected_upstream_decision_binding_ids[]
-  selected_proof_verification_receipt_ids[]
+  disposition_critical_verification_receipt_ids[]
   supporting_binding_ids[]
   contradiction_ids[]
+  semantic_uncertainty_ids[]
   support_paths[][]
   blocking_requirement_ids[]
   finding_codes[]
@@ -903,12 +935,13 @@ DIRECT truth table after precedence/proof selection：
 |---|---|
 | every applicable obligation has a validated APPLICABLE justification、every selected enterprise proof is independently `CONFIRMED`、every state role matches `expected_state` and every required upstream Decision is current/VALID | `SATISFIED` |
 | every applicable obligation has a validated APPLICABLE justification and all state roles are covered but at least one selected state is opposite, with no unresolved critical conflict | `UNSATISFIED` |
-| unresolved validity-critical contradiction | `CONTRADICTED` |
+| unresolved validity-critical contradiction whose two material model observations are independently CONFIRMED | `CONTRADICTED` |
+| a material side of an otherwise validity-critical direct conflict verifies INDETERMINATE | `SEMANTIC_UNCERTAINTY`；not a confirmed contradiction |
 | any required role absent、only `INDETERMINATE`/unconfirmed，or required upstream Decision is stale/superseded/invalid | `INSUFFICIENT_EVIDENCE` |
 
 An applicability predicate conflict against an `APPLICABLE` or `NOT_APPLICABLE` justification is validity-critical and fails closed after the independent contradiction pass；it is not evidence that the business Requirement itself is true or false。
 
-ALL_OF uses: any `CONTRADICTED` → `CONTRADICTED`; else any `UNSATISFIED` → `UNSATISFIED`; else all `SATISFIED` → `SATISFIED`; else `INSUFFICIENT_EVIDENCE`。
+ALL_OF uses: any `CONTRADICTED` → `CONTRADICTED`; else any `SEMANTIC_UNCERTAINTY` → `SEMANTIC_UNCERTAINTY`; else any `UNSATISFIED` → `UNSATISFIED`; else all `SATISFIED` → `SATISFIED`; else `INSUFFICIENT_EVIDENCE`。
 
 Completeness evaluates the full template-instantiated effective Requirement set. It cannot invent requirements、refs、bindings or placeholder refs。
 
@@ -935,6 +968,13 @@ SemanticEpochVector
   catalog_epoch: monotonic integer
   epoch_vector_hash: SHA-256
 
+SemanticEpoch                              # executable owner-scope publication point
+  owner_scope
+  semantic_sequence: uint64                # strict total order; no gaps or duplicates
+  component_epoch: SemanticEpochVector     # which semantic domains advanced
+  predecessor_change_hash: SHA-256
+  epoch_hash: SHA-256
+
 DecisionValidityEnvelope                     # emitted by Module 01; enforced by Runtime
   envelope_id: content-addressed ID
   proposal_id / proposal_hash
@@ -942,10 +982,11 @@ DecisionValidityEnvelope                     # emitted by Module 01; enforced by
   entity_context_id / context_hash
   governed_observation_set_id / set_hash
   compilation_hash
+  validated_semantic_sequence: uint64
   validated_epoch: SemanticEpochVector
   upstream_decision_binding_ids[]
   upstream_validity_envelope_hashes[]
-  selected_proof_verification_receipt_ids[]
+  disposition_critical_verification_receipt_ids[]
   temporal_guard_ids[]
   authorization_not_after: trusted instant   # min finite horizon; exclusive
   coverage_boundary_dependency_keys[]
@@ -956,7 +997,7 @@ DecisionValidityEnvelope                     # emitted by Module 01; enforced by
   envelope_hash: SHA-256
 ```
 
-`authorization_not_after` is the minimum of all selected proof/applicability horizons、completeness-attestation validity and policy validity that can expire. Runtime side-effect authorization reads a trusted clock in the same atomic check as Decision state；`now >= authorization_not_after` denies authorization immediately and emits/queues expiry stale transition. The scheduler is an optimization, never the safety mechanism. A timeless predicate may omit a finite guard only when its frozen catalog/proof contract explicitly declares `TIMELESS`。
+`authorization_not_after` is the minimum of all selected proof/applicability horizons、completeness-attestation validity and policy validity that can expire. Runtime final execution reauthorization reads a trusted clock in the same atomic transition to `EXECUTING`；`now >= authorization_not_after` cancels stale authorization immediately and emits/queues expiry stale transition. The scheduler is an optimization, never the safety mechanism. A timeless predicate may omit a finite guard only when its frozen catalog/proof contract explicitly declares `TIMELESS`。
 
 ### Semantic epoch / invalidation barrier interface
 
@@ -965,6 +1006,8 @@ Module 01 does not implement the Module-02 coordinator, but its output is unusab
 ```text
 SemanticChangeSet
   change_set_id / owner_scope
+  from_exclusive_semantic_sequence: uint64
+  semantic_sequence: uint64                  # exactly from + 1
   from_epoch / executable_epoch: SemanticEpochVector
   predecessor_change_hash
   changed_enterprise_refs[] / universe_deltas[] / policy_deltas[] /
@@ -977,7 +1020,8 @@ SemanticChangeSet
 DecisionIrrelevanceCertificate
   certificate_id
   decision_id / validity_envelope_hash
-  change_set_ids_or_range_root / from_epoch / through_epoch
+  change_set_ids_or_range_root
+  from_exclusive_semantic_sequence / through_inclusive_semantic_sequence
   evaluated_dependency_keys[]
   affected_dependency_key_summary_hashes[]
   deterministic_rule_ids[]
@@ -985,31 +1029,53 @@ DecisionIrrelevanceCertificate
   certificate_hash
 
 ChangeSetRangeProof
-  owner_scope / from_exclusive_epoch / through_inclusive_epoch
+  owner_scope
+  from_exclusive_semantic_sequence / through_inclusive_semantic_sequence
   ordered_change_set_ids[] | append-only Merkle range root
   union_affected_dependency_key_summary          # complete, no false negatives
   first_predecessor_hash / last_change_hash
   impact_index_version / proof_hash
 
 AuthorizationReceipt
+  authorization_purpose: INTENT_ADMISSION | EXECUTION_START
   decision_id / validity_envelope_hash
-  checked_from_epoch / checked_through_epoch
+  checked_from_semantic_sequence / checked_through_semantic_sequence
   checked_change_set_range_root
   upstream_decision_envelope_hashes[]
   clock_instant / authorization_not_after
   result: AUTHORIZED | DENIED_RELEVANT_CHANGE | DENIED_UPSTREAM_INVALID |
           DENIED_EXPIRED | DENIED_EPOCH_RACE
   receipt_hash
+
+SideEffectIntent                            # Runtime Side Effect Ledger record
+  side_effect_id / mission_id / effect_type
+  normalized_request_hash
+  idempotency_key
+  authorizing_decision_id
+  decision_validity_envelope_hash
+  intent_admission_receipt_hash
+  authorization_receipt_hash?                # EXECUTION_START receipt once EXECUTING
+  authorized_semantic_sequence
+  authorization_not_after
+  execution_attempt / executor_fence_token?
+  status: INTENDED | EXECUTING | COMMITTED |
+          CANCELLED_STALE_AUTHORIZATION | RETRYABLE_FAILURE |
+          FAILED_FINAL | RECONCILIATION_REQUIRED
+  external_operation_ref? / result_hash? / last_failure_code?
+  intent_hash
 ```
+
+A `ChangeSetRangeProof` from sequence 187 exclusive through 194 inclusive covers exactly seven indexed records 188…194. Its leaf count must equal `through - from`；every included ChangeSet's owner scope/sequence/predecessor chain must match its position. A Merkle form must prove those indexed leaves、range completeness and ordered endpoints, not merely membership of an unordered set. Empty range is valid only when both endpoints are equal。
 
 Publication/authorization invariant：
 
 1. Before a semantic change is visible to governed readers, the coordinator builds and seals the next `SemanticChangeSet` with a complete deterministic affected-key summary、boundary proof、exact successor snapshots and predecessor hash. Unknown impact is represented as an affected boundary, never omitted。
-2. **Publication transaction boundary (`PublishEpochTxn`)**: under serializable/conditional transaction, verify the current executable epoch and predecessor hash have not changed；write the sealed change set as `EXECUTABLE`、advance the owner-scope executable-epoch pointer and publish the new `GovernedReadView`/snapshot fence atomically. If world storage is external, its bytes may exist earlier but cannot be read through a governed adapter until the fence advances. No Decision-row update or per-Decision certificate is a publication prerequisite。
-3. The durable safety truth is the executable hash-chained ChangeSet log plus its complete summaries. Decision `VALID/STALE` rows、reverse indexes and irrelevance certificates are lazy/materialized projections. Drift workers may update them for UX/performance, but a stale-looking `VALID` row cannot authorize by itself。
-4. **Authorization transaction boundary (`AuthorizeSideEffectTxn`)**: read the exact `DecisionValidityEnvelope`、current executable epoch、trusted clock、every bound upstream Decision and either every intervening executable ChangeSet or a verified `ChangeSetRangeProof`. The range proof's ordered hash chain/Merkle root and complete union summary must cover every epoch with no false negatives. Empty intersection proves irrelevance；a union intersection must expand to exact ChangeSets or conservatively deny. Any exact relevant intersection、uncovered range、invalid upstream or expiry denies authorization；no pre-existing stale row is required。Runtime may cache a deterministic irrelevance certificate only for a fully verified empty-intersection range。
-5. The authorization check and business side effect/idempotency/audit/outbox commit under one serializable transaction or a conditional commit whose predicate includes the unchanged executable-epoch pointer and upstream envelope hashes. If the epoch advances between read and commit, the attempt returns `DENIED_EPOCH_RACE`/retries the check；it cannot commit under the old observation。
-6. Compiler output/model calls cannot mint certificates、publish epochs or authorize effects；only deterministic Runtime/Drift code using exact envelope/change-set keys can。
+2. **Publication transaction boundary (`PublishEpochTxn`)**: under one owner-scope serializable/CAS transaction, read current sequence `s` and predecessor hash, require the new ChangeSet to be `semantic_sequence=s+1`, write it as `EXECUTABLE`, advance the executable pointer to `s+1`, and expose the matching `GovernedReadView`/snapshot fence atomically. Concurrent publications serialize on that pointer. If world storage is external, bytes may exist earlier but cannot be read through a governed adapter until the fence advances. No Decision-row update or per-Decision certificate is a publication prerequisite。
+3. The owner-scope genesis pointer is sequence `0` with a fixed domain-separated genesis hash；the first ChangeSet is sequence `1`. The durable safety truth is the contiguous executable hash-chained ChangeSet log. Component epochs state **which** semantic domains changed；`semantic_sequence` alone defines **when** and range order. Replay/recovery accepts only `1..pointer.semantic_sequence` with exact owner scope、contiguous numbers、predecessor hashes and snapshot/component transitions. A gap、duplicate、reorder、hash mismatch or pointer-without-record blocks the governed fence and all authorization for that owner scope. Decision `VALID/STALE` rows、reverse indexes and irrelevance certificates remain lazy projections。
+4. **Intent admission (`AuthorizeSideEffectIntentTxn`)** may persist `INTENDED` with a preliminary `AuthorizationReceipt`, exact envelope hash、sequence and idempotency identity. This proves the intent was admissible then；it is not permission to issue the external call。
+5. **Execution linearization (`ReauthorizeForExecutionTxn`)**: immediately before execution, read the `INTENDED | RETRYABLE_FAILURE` intent、exact `DecisionValidityEnvelope`、current owner-scope sequence、trusted clock、side-effect policy and every bound upstream Decision. Check the complete ordered ChangeSet range `(envelope.validated_semantic_sequence, current]` for the Decision and each upstream envelope, using exact records or a verified no-false-negative `ChangeSetRangeProof`. A union-summary intersection expands to exact ChangeSets or denies conservatively. Under an unchanged sequence pointer/upstream hashes, atomically write an `EXECUTION_START` receipt and transition exactly once to `EXECUTING` with an executor fence. Relevant change、range gap、invalid upstream、expired horizon or policy denial instead atomically writes `CANCELLED_STALE_AUTHORIZATION`; no external call is issued。
+6. The external network call occurs **after and outside** that database transaction and always carries the persisted idempotency key/executor fence where supported. Persisted `EXECUTING` is the authorization linearization point: later world changes cannot retroactively cancel or deny that already-started logical attempt. They affect future intents/retries, while this attempt completes through idempotency and reconciliation. Continuum does not claim atomic commit with an external system or exactly-once network delivery。
+7. A side-effect type is eligible for automatic execution only when the external adapter provides a stable idempotency contract and authoritative lookup/reconciliation, or an equivalent transactional outbox/receiver protocol. Otherwise unknown outcomes remain `RECONCILIATION_REQUIRED` for human resolution；they are never blindly replayed. Compiler output/model calls cannot mint receipts、publish epochs、transition the ledger or authorize effects。
 
 Race coverage：
 
@@ -1021,7 +1087,19 @@ Race coverage：
 | predicate catalog / selector change | publish affected representability、entity-role、selection/eligibility keys before the new read fence is executable |
 | temporal expiry | synchronous `authorization_not_after` check denies at expiry even before queued transition；expiry change set later records STALE and advances the temporal event stream |
 
-This closes the T1–T5 stale window without a fleet-wide atomic fan-out: a newer fact cannot both be executable and leave an intersecting older Decision able to authorize a side effect, regardless of projection lag。
+Execution/crash semantics：
+
+| Crash or race point | Required recovery behavior |
+|---|---|
+| before final reauthorization | intent remains `INTENDED | RETRYABLE_FAILURE`; retry performs the entire current-sequence check |
+| after checks but before `EXECUTING` persistence | transaction has no effect; retry rereads the pointer/range and cannot reuse an uncommitted receipt |
+| after `EXECUTING` persistence but before network call | never reset/re-authorize blindly；reconcile by idempotency key. Issue the same logical request only if authoritative external lookup proves absence and the adapter contract makes same-key execution safe；otherwise `RECONCILIATION_REQUIRED` |
+| after external call but before `COMMITTED` | treat outcome as unknown；lookup/reconcile by idempotency key/external operation ref, never create another logical operation |
+| timeout/unknown external outcome | persist `RECONCILIATION_REQUIRED`; only authoritative reconciliation may produce `COMMITTED` or `RETRYABLE_FAILURE`. The latter must pass a fresh `ReauthorizeForExecutionTxn` before any call |
+| relevant sequence advance before `INTENDED → EXECUTING` | persist `CANCELLED_STALE_AUTHORIZATION`; external adapter is not invoked |
+| relevant sequence advance after `EXECUTING` | do not pretend the call did not occur；finish/reconcile the in-flight idempotent attempt and block future stale authorizations |
+
+This closes both stale-row lag and authorization-to-execution TOCTOU without fleet-wide fan-out. The safety claim is exact: no relevant publication completed **before the `EXECUTING` linearization point** can be skipped；after that point, external uncertainty is handled by the Side Effect Ledger rather than by fictitious cross-system atomicity。
 
 ### `UnsupportedLogicResult` and `UnsupportedPredicateResult`
 
@@ -1038,7 +1116,7 @@ UnsupportedLogicFinding
 UnsupportedLogicResult
   run_status: COMPLETED
   result_class: SEMANTIC_RESULT
-  business_disposition: REJECTED_UNSUPPORTED_LOGIC
+  proposal_admission_disposition: REJECTED_UNSUPPORTED_LOGIC
   findings[]
   canonical_output: none
 ```
@@ -1060,7 +1138,7 @@ UnsupportedPredicateFinding
 UnsupportedPredicateResult
   run_status: COMPLETED
   result_class: SEMANTIC_RESULT
-  business_disposition: REJECTED_UNSUPPORTED_PREDICATE
+  proposal_admission_disposition: REJECTED_UNSUPPORTED_PREDICATE
   findings[]
   canonical_output: none
 ```
@@ -1071,9 +1149,9 @@ This result is not an invitation to add a case-specific code. Catalog changes fo
 
 | Stage | Model owns | Deterministic code owns | Explicitly forbidden |
 |---|---|---|---|
-| 0G Governed Read | nothing | observation closure、gateway/read-fence signature、single executable world/epoch binding | unversioned/future/mixed/bypass reads |
+| 0G Governed Read | nothing | observation closure、gateway/read-fence signature、single executable world/semantic-sequence/component-epoch binding | unversioned/future/mixed/bypass reads |
 | 0I Proposal/Entity | nothing | producer/signature/version、proposal outcome mapping、entity roles、snapshot/policy/hash binding | compiler-authored outcome、model-authored entity IDs |
-| 0D Upstream Decision | nothing | exact Decision/compilation/envelope/current status/epoch/outcome binding | degrading Decision to source fragment、auto-latest、silent supersession rewrite |
+| 0D Upstream Decision | nothing | exact Decision/compilation/envelope/current status/sequence/epoch/outcome binding | degrading Decision to source fragment、auto-latest、silent supersession rewrite |
 | 0U Universe | nothing | authoritative catalog binding、namespace enumeration、watermark/attestation/hash validation | self-declared completeness、semantic requirement discovery |
 | 0N Normalization | nothing in acceptance path | fragment accounting、trusted parser/reviewer receipts、normalized rule/schema validation | silent omission、unreviewed model normalization |
 | 0S Selection | nothing | SourceSet、selective guards、evidence/contradiction inventories、hard-limit preflight | whole-manifest super-dependency、top-K semantic narrowing |
@@ -1082,11 +1160,12 @@ This result is not an invitation to add a case-specific code. Catalog changes fo
 | 2 Evidence | per-fragment bounded semantic matches、role/entailment/value/horizon extraction | complete plan/partitions/receipts、target/entity/ref/time/role validation、binding derivation | free prose、predicates/entities、canonical CRITICAL/SUPPORTING、silent top-K/truncation |
 | 3 Contradiction | independent per-fragment actual same-predicate matches | complete receipts、global join、precedence、direct-conflict scope、reachability impact | generic cross-predicate inference、ref×predicate negative cross-product、severity、binding promotion、disposition |
 | 4A Selection | nothing | frozen candidate order、provisional applicability/proof selection | canonicalizing an unverified model interpretation |
-| 4V Selected Proof Verification | exact fragment/target/entity/claim → `CONFIRMED | REFUTED | INDETERMINATE` | minimal request、independence/receipt validation、candidate exclusion/reselection | ref/Requirement discovery、materiality、contradiction、outcome、disposition、state mutation |
-| 4B Proof/Completeness | nothing | verified final applicability、upstream proof、effective set、materiality、assessments、temporal guards | semantic invention、proposal outcome rewrite |
-| 5 Proposal Gate | nothing | validation class、proposal comparison、disposition、stable justification/envelope | replacement proposal/outcome、model retry as semantic repair |
+| 4V Disposition-Critical Verification | exact preselected proof/guard/one contradiction-side observation → `CONFIRMED | REFUTED | INDETERMINATE` | minimal request、purpose/independence/receipt validation | ref/Requirement/contradiction discovery、materiality、outcome、admission disposition、state mutation |
+| 4R Recompute | nothing | remove REFUTED observations、frozen-order reselection、direct-conflict re-reduction、typed uncertainty | accepting unverified claims、model-directed search/retry |
+| 4B Proof/Completeness | nothing | verified final applicability/upstream proof、confirmed contradiction set、effective set、materiality、assessments、temporal guards | semantic invention、proposal outcome rewrite |
+| 5 Proposal Gate | nothing | validation class、proposal comparison、proposal-admission disposition、stable justification/envelope | replacement proposal/outcome、model retry as semantic repair |
 | Canonicalizer | nothing | IDs、proof/guard graph、proposal/entity/temporal/epoch/selective provenance、hash、dedupe | adding omitted evidence/requirements、embedding whole inventory as CRITICAL |
-| RuntimeAcceptanceService / Epoch barrier | nothing | derivation/currentness/upstream/clock recheck、ChangeSet intersection、governed-read fence、conditional atomic mutation/authorization | fleet-wide publication fan-out、Decision row as sole authority、async invalidation window、compiler/model state mutation |
+| RuntimeAcceptance / Sequence barrier / Side Effect Ledger | nothing | derivation/currentness/upstream/clock recheck、contiguous sequence/range proof、governed-read fence、atomic `INTENDED→EXECUTING` reauthorization、idempotency/reconciliation | fleet-wide publication fan-out、Decision row as sole authority、cross-system atomicity claim、compiler/model state mutation |
 
 ## Terminal and non-terminal semantics
 
@@ -1095,31 +1174,31 @@ Every terminal record carries exactly one `result_class`：
 ```text
 result_class: INPUT_REJECTION | EXECUTION_FAILURE | SEMANTIC_RESULT
 run_status: COMPLETED | BLOCKED | FAILED
-business_disposition?: ACCEPTED | REJECTED_* | NEEDS_HUMAN_REVIEW
+proposal_admission_disposition?: ACCEPTED | REJECTED_* | NEEDS_HUMAN_REVIEW
 input_rejection_code?: string
 execution_failure_code?: string
 retryability?: RETRYABLE | NON_RETRYABLE
 ```
 
-`business_disposition` exists only for `SEMANTIC_RESULT`. API/UI/audit must never render an input rejection or failed compiler attempt as a business DENY。
+`proposal_admission_disposition` exists only for `SEMANTIC_RESULT` and answers only whether Continuum admitted/canonicalized the immutable proposal. It never authors a domain business outcome. `DecisionProposal.proposed_outcome` is the sole proposed business value；on `ACCEPTED`, canonical `Decision.outcome` is its exact unchanged value. API/UI/audit must render these as separate fields and labels, and must never translate `REJECTED_* | NEEDS_HUMAN_REVIEW` into a newly authored business `DENY`。
 
 ### 1. Trusted input invalid
 
-Malformed/unauthorized signed proposal、entity/upstream/observation envelope、invalid material-read closure、mixed/future/bypass epoch、world/policy/hash mismatch or illegal producer/role is `run_status=COMPLETED`、`result_class=INPUT_REJECTION`、typed `input_rejection_code` and no business disposition. Semantic/model stages are `SKIPPED_INPUT_REJECTION`。This says the supplied request is not admissible；it does not judge the proposed business outcome。
+Malformed/unauthorized signed proposal、entity/upstream/observation envelope、invalid material-read closure、mixed/future/bypass epoch、world/policy/hash mismatch or illegal producer/role is `run_status=COMPLETED`、`result_class=INPUT_REJECTION`、typed `input_rejection_code` and no proposal-admission disposition. Semantic/model stages are `SKIPPED_INPUT_REJECTION`。This says the supplied request envelope is invalid；it does not judge the proposed business outcome。
 
 ### 2. Compiler / model execution failure
 
-Model schema/enum/local-ID/target violation、model-fabricated or cross-scope ref、protocol/receipt corruption、transport timeout after invocation、truncation caused by provider execution、selected-proof verifier failure、internal invariant or persistence fault is `run_status=FAILED`、`result_class=EXECUTION_FAILURE`、no business disposition/canonical output. Transient/model protocol failures are `RETRYABLE` within the configured attempt/budget policy；each retry is a new immutable attempt and discards all partial semantic outputs. Zero schema-repair calls means no in-call semantic repair, not permission to convert failure into rejection。
+Model schema/enum/local-ID/target violation、model-fabricated or cross-scope ref、protocol/receipt corruption、transport timeout after invocation、truncation caused by provider execution、disposition-critical verifier failure、internal invariant or persistence fault is `run_status=FAILED`、`result_class=EXECUTION_FAILURE`、no proposal-admission disposition/canonical output. Transient/model protocol failures are `RETRYABLE` within the configured attempt/budget policy；each retry is a new immutable attempt and discards all partial semantic outputs. Zero schema-repair calls means no in-call semantic repair, not permission to convert failure into rejection。
 
 Pre-call unavailability or representability limits—credentials/budget unavailable、universe/normalization coverage unavailable、or a complete plan exceeding declared hard capacity—remain `run_status=BLOCKED` with `result_class=EXECUTION_FAILURE` and explicit retryability. Partial analysis is audit-only。
 
 ### 3. Semantic non-acceptance
 
-Only after trusted inputs and every required model pass execute correctly may the Gate emit a business disposition：unsupported logic/predicate/absence/unregistered cross-predicate relation、real insufficient or unverified evidence、real contradiction、stale/invalid required upstream Decision、or proof/proposal outcome mismatch. Missing evidence、applicability `INDETERMINATE` and direct contradiction are non-terminal until Stage 3、4A/4V/4B run. Cross-entity content is a semantic ineligible candidate when the model faithfully reported the source entity；a model that emits a target/entity/ref outside its schema is instead execution failure。
+Only after trusted inputs and every required model pass execute correctly may the Gate emit a proposal-admission disposition：unsupported logic/predicate/absence/unregistered cross-predicate relation、real insufficient or unverified evidence、confirmed contradiction or typed semantic uncertainty、stale/invalid required upstream Decision、or proof/proposal outcome mismatch. Missing evidence、applicability `INDETERMINATE` and provisional direct contradiction are non-terminal until Stage 3、4A/4V/4R/4B run. Cross-entity content is a semantic ineligible candidate when the model faithfully reported the source entity；a model that emits a target/entity/ref outside its schema is instead execution failure。
 
 ### Exact result matrix
 
-| Condition | `run_status` | `result_class` | Business disposition / behavior |
+| Condition | `run_status` | `result_class` | Proposal-admission disposition / behavior |
 |---|---|---|---|
 | unauthorized/malformed signed proposal/entity/upstream/observation input | `COMPLETED` | `INPUT_REJECTION` | none；typed input code；semantic stages skipped |
 | unversioned/future/mixed/bypass governed observation | `COMPLETED` | `INPUT_REJECTION` | none；`INPUT_REJECTED_OBSERVATION_PROVENANCE` |
@@ -1133,9 +1212,11 @@ Only after trusted inputs and every required model pass execute correctly may th
 | valid upstream binding resolves STALE/SUPERSEDED/INVALID | continues | none yet | Stage 3/4 still run；Gate returns incomplete/non-acceptance |
 | primary or verifier entailment `INDETERMINATE` / selected candidate REFUTED | continues | none yet | deterministic reselection；then incomplete if no confirmed proof |
 | missing proof binding / unresolved direct validity-critical contradiction | continues | none yet | 4B/Gate decides incomplete or review |
+| a disposition-critical contradiction side verifies `INDETERMINATE` | `COMPLETED` | `SEMANTIC_RESULT` | typed semantic uncertainty + `NEEDS_HUMAN_REVIEW`；not a confirmed contradiction |
 | proposal valid but computed class differs | `COMPLETED` | `SEMANTIC_RESULT` | `REJECTED_OUTCOME_CONSTRAINT` / `REJECTED_CONTRADICTION` |
 | matching valid proposal with all preconditions | `COMPLETED` | `SEMANTIC_RESULT` | `ACCEPTED` + canonical output |
 | accepted envelope intersects newer ChangeSet、upstream invalid or expired | authorization denied | Runtime authorization result | no side effect；lazy stale projection may follow |
+| final execution reauthorization detects relevant change/range gap/expiry/upstream invalid | ledger transition | Runtime authorization result | `CANCELLED_STALE_AUTHORIZATION`；external call not issued |
 | internal persistence/invariant defect | `FAILED` | `EXECUTION_FAILURE` | none；retryability is typed |
 
 ## Deterministic acceptance gate
@@ -1149,22 +1230,25 @@ Preconditions for any normal gate evaluation：
 5. all Evidence and contradiction plans/partitions/receipts validate complete for applicability and Requirement predicates；
 6. no unsupported logic/predicate/absence proof、entity mismatch affecting required proof or template conflict exists；
 7. every effective Requirement has exactly one deterministic assessment and every required `UPSTREAM_DECISION` binding is exact、current、VALID and outcome-compatible；
-8. every selected model-interpreted enterprise proof/applicability guard is independently `CONFIRMED`；canonical materiality is derived from verified proof selection, not accepted from a model field；
-9. every time-sensitive selected proof has a valid `TemporalValidityGuard`, `now < authorization_not_after` and the accepted `DecisionValidityEnvelope` binds the current semantic epoch、governed observation set、upstream envelopes and verification receipts。
+8. every selected model-interpreted enterprise proof/applicability guard is independently `CONFIRMED`；every blocking direct contradiction has `CONFIRMED` receipts for both model-interpreted material sides；canonical materiality/impact is derived after verification, not accepted from a model field；
+9. every time-sensitive selected proof has a valid `TemporalValidityGuard`, `now < authorization_not_after` and the accepted `DecisionValidityEnvelope` binds the current `semantic_sequence`、component epoch、governed observation set、upstream envelopes and disposition-critical verification receipts。
 
 Evidence-supported validation class（not a replacement business outcome）：
 
 - root closure contains unresolved `VALIDITY_CRITICAL` contradiction → `REVIEW`；
+- root closure contains `SEMANTIC_UNCERTAINTY` from disposition-critical verification → `REVIEW`；
 - else all roots `SATISFIED` → `APPROVE`；
 - else any root `UNSATISFIED` → `DENY`；
 - else → `REVIEW`。
 
-Disposition：
+Proposal-admission disposition：
 
 - expected REVIEW from contradiction → `NEEDS_HUMAN_REVIEW` for the supplied proposal；
 - expected REVIEW from insufficient evidence: REVIEW proposal → `NEEDS_HUMAN_REVIEW`; APPROVE/DENY proposal → `REJECTED_INCOMPLETE_REQUIREMENTS`；
 - expected APPROVE/DENY but `ProposalOutcomeBinding.normalized_outcome_class` differs → `REJECTED_OUTCOME_CONSTRAINT`，或 precedence winner directly causes mismatch 时 `REJECTED_CONTRADICTION`；
 - only matching APPROVE/DENY with all preconditions can be `ACCEPTED`。
+
+These values never mean that Continuum made a new business decision. Example: `DecisionProposal.proposed_outcome=APPROVED` plus insufficient evidence yields `proposal_admission_disposition=REJECTED_INCOMPLETE_REQUIREMENTS` and no canonical Decision；the business proposal remains APPROVED but **not admitted**. It must never be rendered or audited as `business outcome=DENIED`。
 
 ```text
 DecisionJustification
@@ -1178,7 +1262,7 @@ DecisionJustification
   selected_requirement_ids[]
   selected_proof_binding_ids[]
   selected_upstream_decision_binding_ids[]
-  selected_proof_verification_receipt_ids[]
+  disposition_critical_verification_receipt_ids[]
   applicability_justification_ids[]
   selected_policy_refs[]
   compiler_derived_artifact_ids[]
@@ -1246,7 +1330,7 @@ Claim(DecisionInterpretation)
 Decision
 
 TemporalValidityGuard(valid_until exclusive) /
-DecisionValidityEnvelope(validated semantic epoch)
+DecisionValidityEnvelope(validated semantic sequence + component epoch)
     --AUTHORIZES_WHILE_CURRENT[CRITICAL]-->
 Decision
 
@@ -1281,7 +1365,7 @@ Rules：
 | selected governing、state、authorization or applicability source content/revision | Existing critical source/guard reachability applies. | reachable Decision `STALE` |
 | upstream Decision becomes STALE/SUPERSEDED/INVALID or its exact envelope is replaced | Follow canonical Decision→Decision critical reachability；never rewrite the old binding to a successor. | downstream Decision and its transitive dependents cannot authorize；lazy projections become `STALE` |
 | selected proof/applicability/attestation reaches `valid_until` | Trusted-clock authorization checks the guard synchronously；scheduler emits expiry event. | authorization denied at expiry；Decision becomes `STALE` without source-byte change |
-| world/universe/policy/catalog semantic epoch advances | Side-effect check intersects exact envelope keys with every intervening executable ChangeSet/range proof. | relevant older Decision cannot authorize even before async stale row update；irrelevant range may be cached |
+| world/universe/policy/catalog semantic sequence advances | Final execution check intersects exact envelope keys with every intervening executable ChangeSet/range proof. | relevant older Decision cannot enter EXECUTING even before async stale row update；irrelevant range may be cached |
 | unselected supporting or analysis-only source content | No critical proof/guard edge and no governing/eligibility membership effect. | no automatic stale |
 | irrelevant inventory artifact content | Inventory manifest hash may change, but no coverage/proof semantic guard changes. | no automatic stale merely due to manifest membership |
 
@@ -1294,7 +1378,7 @@ When relevance cannot be decided safely—for example a selector policy changes 
 Exact example：
 
 1. `EnterpriseWorldSnapshot W17` and `CompilerPolicySnapshot P9` already exist and never change. `RequestInputStore` holds signed immutable proposal `DP-7` and entity context `EC-7`；`GovernedObservationStore` holds `GO-7` bound to executable read view/epoch E17. None is a W17 member. Registry attestation produces `SourceUniverseSnapshot U17` over the same governed view。
-2. Compilation reads `(DP-7, EC-7, GO-7, W17, U17, P9)` plus any exact upstream Decision envelopes；normalization writes derived `RN-41`，selection writes `SS-52`，semantic stages write upstream bindings、requirement-instantiation receipts、Evidence/contradiction plans/receipts、selected-proof verification receipts、`AJ-*`、`TG-*`、`DVE-88` and `DI-88` into `CompilerProvenanceStore`。None is inserted into W17/P9。
+2. Compilation reads `(DP-7, EC-7, GO-7, W17, U17, P9)` plus any exact upstream Decision envelopes；normalization writes derived `RN-41`，selection writes `SS-52`，semantic stages write upstream bindings、requirement-instantiation receipts、Evidence/contradiction plans/receipts、disposition-critical verification receipts、`AJ-*`、`TG-*`、`DVE-88` and `DI-88` into `CompilerProvenanceStore`。None is inserted into W17/P9。
 3. `RuntimeAcceptanceService` recomputes the derivation envelope and verifies proposal/entity/observation/upstream bindings、every enterprise/policy revision、trusted clock and current executable epoch. It atomically commits only the proof/guard graph plus immutable derived IDs/hashes for audit；an older epoch is checked against the executable ChangeSet range at authorization time。
 4. Later `handles_pii` changes and creates enterprise revision in `W18`。W17 and its derived artifacts remain immutable。The enterprise change event hits the applicability predicate key in `CoverageImpactIndex`, follows the selected applicability guard and marks the old Decision `STALE`。
 5. A new unrelated cafeteria document also appears in W18。It changes U18/SS audit hashes, but matches no decision boundary、governing-rule or contradiction-eligibility guard, so the Decision is not staled。
@@ -1336,13 +1420,13 @@ Worst-case executable envelope per pass：
 - input: fragment payload ≤750,000 tokens plus ≤64×(3,072+1,024) descriptor/envelope tokens = **1,012,144 tokens**；each call ≤16,384 input tokens；
 - output: ≤64×(512+8,192+1,024) = **622,592 tokens**；each call ≤10,240 output tokens；
 - records: exactly 1,024 or fewer fragment wrappers plus at most 8,192 actual semantic matches；no 65,536/131,072 negative cross-product records；
-- Evidence + independent contradiction combined: at most **128 calls、2,024,288 input tokens and 1,245,184 output tokens**；fragment-map partitions permit zero schema-repair calls, so this is the protocol maximum before selected-proof verification。
+- Evidence + independent contradiction combined: at most **128 calls、2,024,288 input tokens and 1,245,184 output tokens**；fragment-map partitions permit zero schema-repair calls, so this is the protocol maximum before disposition-critical verification。
 
-`selected-proof-verification-policy-v5-p0` additionally declares：
+`disposition-critical-verification-policy-v6-p0` additionally declares one shared envelope for selected proof/applicability and critical direct-conflict observations：
 
 ```text
 max_verification_candidates_per_target = 8
-max_verification_items_per_call = 8
+max_verification_items_per_call = 1
 max_verification_calls_per_compilation = 64
 max_source_fragment_tokens_per_item = 2_048
 max_input_tokens_per_verification_call = 16_384
@@ -1350,7 +1434,7 @@ max_output_tokens_per_verification_call = 512
 max_schema_repair_calls_per_verification = 0
 ```
 
-The cap never changes truth to CONFIRMED: Stage 4 follows the frozen candidate order until one confirms、the candidate set ends，or verification capacity is reached. Capacity exhaustion is `RUN_BLOCKED: SELECTED_PROOF_VERIFICATION_LIMIT`；it cannot silently skip verification or accept the ninth candidate. The 64-call ceiling adds at most 1,048,576 input and 32,768 output tokens. Therefore the Revision-5 worst-case combined protocol capacity is **192 model calls、3,072,864 input tokens and 1,277,952 output tokens**. Actual verification request/output tokens are reported separately；the runner reserves each hashed request before dispatch。
+The cap never changes truth to `CONFIRMED`: Stage 4 follows frozen proof/guard order and verifies both sides of every provisional validity-critical direct conflict until the bounded fixed point closes、the candidate set ends，or shared verification capacity is reached. One item per invocation prevents another candidate or opposing side from leaking into verifier context. Capacity exhaustion is `RUN_BLOCKED: DISPOSITION_CRITICAL_VERIFICATION_LIMIT`；it cannot silently skip proof or contradiction verification. The unchanged 64-call ceiling adds at most 1,048,576 input and 32,768 output tokens. Therefore the Revision-6 worst-case combined protocol capacity remains **192 model calls、3,072,864 input tokens and 1,277,952 output tokens**. Requests/cost are reported separately by purpose；the runner reserves each hashed request before dispatch。
 
 These are protocol maxima, not a claim that cost/latency P0 already passes. Before a paid run, the runner computes provider/model-specific worst-case reservation from these maxima and the preregistered caching policy；if budget or latency envelope cannot admit it, the run blocks before calling. Any raised/lowered limit changes the hashed policy/methodology version。Safety limits must not be lowered merely to make operational metrics look better。
 
@@ -1377,7 +1461,7 @@ OperationalLimitProfile
   profile_hash / approved_by / frozen_at
 ```
 
-These are the Revision-5 P0 prototype defaults for each provider/model lane；changing them requires a new product-owner-approved methodology version before the first affected live run. The OpenAI 120-case DEV lane additionally retains its already approved **$10 total hard cap**，which is stricter than multiplying the per-case p95 ceiling。
+These Revision-5 operational ceilings remain the Revision-6 P0 prototype defaults for each provider/model lane；changing them requires a new product-owner-approved methodology version before the first affected live run. The OpenAI 120-case DEV lane additionally retains its already approved **$10 total hard cap**，which is stricter than multiplying the per-case p95 ceiling。
 
 ```text
 registered_mission_count
@@ -1438,7 +1522,8 @@ DevRequirementAnnotation
   expected_direct_contradiction_pairs[]
   expected_registered_cross_predicate_constraints[]
   expected_unsupported_cross_predicate_relations[]
-  expected_selected_proof_verification_verdicts[]
+  expected_disposition_critical_verification_verdicts[]
+  expected_semantic_uncertainty_results[]
 
 DevRequirementAnnotationManifest
   annotation_version
@@ -1496,16 +1581,16 @@ Metrics include requirement-suppression rate、critical-coverage delta、contrad
 |---|---|---|
 | A — reasoner-only | frozen single-pass baseline | never |
 | B — old critic | frozen K3 pipeline | never |
-| N0 — Revision-5 single interpreter | full Revision-5 pipeline but selected enterprise proof trusts primary interpreter without Stage 4V | ablation only；never Runtime-eligible |
-| N1 — Revision-5 verified selected proof | full Revision-5 pipeline + narrow independent Stage 4V | only candidate |
+| N0 — Revision-6 unverified disposition-critical semantics | full Revision-6 primary outputs/reducers but no Stage 4V verification for proof、applicability or contradiction observations | ablation only；never Runtime-eligible |
+| N1 — Revision-6 verified disposition-critical semantics | same frozen primary outputs + narrow independent Stage 4V for every disposition-critical observation | only candidate |
 
-A/B reuse immutable Experiment-1 evidence; no new legacy calls. N0/N1 use the same frozen primary interpretation outputs and differ only in selected-proof verification/reselection，so the safety delta is attributable. “N” denotes the new Option-B architecture and must not be confused with rejected product Option C. The 30-case DEV subset keeps tasks/sources/provider settings comparable。
+A/B reuse immutable Experiment-1 evidence; no new legacy calls. N0/N1 use the same frozen Evidence and contradiction primary outputs and differ only in disposition-critical verification/removal/reselection/re-reduction，so the safety delta is attributable. “N” denotes the new Option-B architecture and must not be confused with rejected product Option C. The 30-case DEV subset keeps tasks/sources/provider settings comparable。
 
 ### Bounded progression
 
 1. **Experiment 2A — Trusted Requirement instantiation + K6 audit**：measure obligation/template accounting、entity-role binding、unsupported logic/predicate/absence handling、case-specific schema indicators and schema reuse on unseen DEV cases；no live model required。
 2. **Experiment 2B — Complete Evidence/applicability binding + deterministic materiality**：measure fragment receipt completion、semantic match recall/precision、entity confusion、entailment including INDETERMINATE、selected-proof critical recall/precision、supporting confusion and Runtime proof coverage。
-3. **Experiment 2C — Selected-proof verification paired ablation**：N0 vs N1 on identical primary outputs；measure selected-proof precision、false proof acceptance、stale escape、outcome safety、reselection success、calls、tokens、latency and settled cost. Preserve Stage 4V only if it adds material safety value。
+3. **Experiment 2C — Disposition-critical verification paired ablation**：N0 vs N1 on identical Evidence/contradiction primary outputs；measure selected-proof precision、false proof acceptance、false contradiction block rate、confirmed contradiction precision、human-review false-positive rate、stale/outcome safety、reselection/re-reduction success、calls、tokens、latency and settled cost. Preserve Stage 4V only if it adds material safety value。
 4. **Experiment 3 — Partitioned direct contradiction**：same-predicate contradiction pair recall、deterministic impact recall、partition coverage、cross-partition recall、must-block；registered cross-predicate constraint and unsupported relation are separate categories。
 5. **Experiment 4 — Proposal Gate + governed provenance + Decision dependencies + temporal/epoch mutation**：proposal validation、observation isolation、D42→D50 transitive invalidation、zero outcome substitution、selective invalidation、temporal expiry、ChangeSet authorization race and stable proof selection。
 6. **Experiment 5 — Integrated A/B/N0/N1 30-case DEV subset**：N1 must meet every safety and operational P0 threshold before full DEV。
@@ -1522,7 +1607,7 @@ Every paid experiment requires preregistered hypothesis、hashes、case-selectio
 - deterministic template-instantiation obligation coverage / duplicate/conflict rate；
 - effective Requirement recall / precision against method-blind annotations；
 - `outcome_substitution_count` target **0**；`outcome_substitution_attempt_rate = differing canonical outcome ÷ canonicalized Decisions` target **0** only when denominator >0, with accepted coverage always disclosed so an empty canonical set cannot pass；
-- proposal validation-class/disposition confusion and producer/version provenance completeness；
+- proposal validation-class/admission-disposition confusion、business-outcome/admission-rendering confusion and producer/version provenance completeness；
 - input-rejection vs execution-failure vs semantic-result classification confusion（target zero cross-classification）；
 - governed-observation closure、mixed/future/bypass read rejection and executable-epoch isolation；
 - upstream Decision binding accuracy、D→D critical reachability、supersession non-rewrite and transitive stale/authorization escape（target 0）；
@@ -1536,9 +1621,10 @@ Every paid experiment requires preregistered hypothesis、hashes、case-selectio
 - unsupported-predicate detection recall / false-ignore rate；
 - entailment confusion matrix including `INDETERMINATE`；
 - selected-proof canonical critical recall / precision；
-- selected-proof verification verdict confusion、false-proof acceptance、reselection success and N0→N1 safety/cost/latency delta；
+- disposition-critical verification verdict confusion by purpose、false-proof acceptance、reselection/re-reduction success and N0→N1 safety/cost/latency delta；
 - canonical materiality confusion and proof-role completeness；
 - same-predicate direct contradiction pair recall；
+- false contradiction block rate、confirmed contradiction precision、semantic-uncertainty rate and human-review false-positive rate；
 - registered cross-predicate constraint accuracy and unsupported-cross-predicate fail-closed recall；
 - deterministic contradiction-impact recall（不再以 model severity 当 canonical truth）；
 - source-universe / normalization / selection / partition coverage completion rate；
@@ -1548,7 +1634,8 @@ Every paid experiment requires preregistered hypothesis、hashes、case-selectio
 - prompt-injection paired semantic invariance metrics；
 - policy、catalog、rule-set、applicability and selective coverage-guard stale propagation；
 - temporal-expiry authorization escape rate target **0**、expiry stale-transition recall、validity-horizon completeness；
-- semantic-epoch authorization escape rate target **0**、intervening ChangeSet/range-proof completeness and publication/authorization race coverage；
+- semantic-sequence authorization escape rate target **0**、contiguous intervening ChangeSet/range-proof completeness、replay recovery and publication/authorization race coverage；
+- authorization-to-execution stale escape target **0**、`CANCELLED_STALE_AUTHORIZATION` correctness、unknown-outcome/reconciliation correctness and duplicate external logical-effect count target **0**；
 - epoch publication Decision-row write fan-out（target 0 required writes）、ChangeSet range-check completeness and stale-projection lag；
 - accepted-only stale escape / unnecessary invalidation with denominators；
 - `coverage_induced_unnecessary_invalidation_rate = proven-unrelated Decision × coverage-change pairs that nevertheless stale the Decision ÷ all proven-unrelated eligible Decision × coverage-change pairs`；P0 target `< 8%` and every conservative boundary-wide invalidation remains in the numerator when post-analysis shows the Decision semantics unchanged；
@@ -1626,7 +1713,7 @@ Repository contains only blind manifest metadata and evaluator attestation。A l
 
 ### P0-10 — Cross-partition contradiction
 
-Authority A TRUE is in partition 01 and equal-authority B FALSE in partition 07。Receipts prove both partitions complete；global join creates one unresolved contradiction。If partition 07 times out after invocation, result is retryable `RUN_FAILED` with no business disposition, never “no contradiction”。
+Authority A TRUE is in partition 01 and equal-authority B FALSE in partition 07。Receipts prove both partitions complete；global join creates one unresolved contradiction。If partition 07 times out after invocation, result is retryable `RUN_FAILED` with no proposal-admission disposition, never “no contradiction”。
 
 ### P0-11 — OR is not coerced into ALL_OF
 
@@ -1700,7 +1787,7 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 
 - **Failure**：domain agent proposes DENY, compiler concludes APPROVE and silently canonicalizes an APPROVE Decision under the original proposal identity。
 - **Corrected flow**：immutable `DecisionProposal P` owns producer/version/type/source outcome/entity/world binding. Deterministic `ProposalOutcomeBinding` maps that exact value to the gate vocabulary；Stage 5 compares a validation class and rejects/reviews mismatch rather than emitting Q。
-- **Fail closed**：unauthorized/malformed P is completed `INPUT_REJECTION` with no business disposition；valid P with mismatched proof becomes semantic `REJECTED_OUTCOME_CONSTRAINT | REJECTED_CONTRADICTION` and has no canonical Decision。
+- **Fail closed**：unauthorized/malformed P is completed `INPUT_REJECTION` with no proposal-admission disposition；valid P with mismatched proof becomes semantic `REJECTED_OUTCOME_CONSTRAINT | REJECTED_CONTRADICTION` and has no canonical Decision。
 - **Canonical provenance**：accepted justification/envelope includes proposal ID/hash、producer identity/version and the exact unchanged outcome class；`outcome_substitution_attempt_rate` must be zero。
 - **Runtime invalidation**：proposal is immutable；a changed business outcome is a new proposal/new compilation. Runtime never mutates the accepted Decision into the compiler's preferred outcome。
 
@@ -1716,7 +1803,7 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 
 - **Failure**：top-K retrieval omits the only current training record or applicability fact, and compiler reports “no evidence” as though all sources were searched。
 - **Corrected flow**：`EvidenceCoveragePlan` enumerates every certified eligible fragment and every Requirement/applicability target；deterministic partitions emit one `FragmentEvidenceObservation` per ref and exact receipts, including empty match arrays。
-- **Fail closed**：best-effort retrieval/over-limit preflight produces `RUN_BLOCKED`；timeout/truncation/malformed or missing/duplicate/unexpected ref/target/receipt after invocation produces `RUN_FAILED` with null business disposition；complete no-match yields semantic insufficient evidence。
+- **Fail closed**：best-effort retrieval/over-limit preflight produces `RUN_BLOCKED`；timeout/truncation/malformed or missing/duplicate/unexpected ref/target/receipt after invocation produces `RUN_FAILED` with null proposal-admission disposition；complete no-match yields semantic insufficient evidence。
 - **Canonical provenance**：plan/policy/eligibility/search boundary hashes and receipts stay immutable derivation evidence；only selected bindings plus selective `EvidenceEligibilityGuard` become validity-critical。
 - **Runtime invalidation**：new/removed evidence-eligible membership or eligibility-policy changes stale only indexed Decisions whose proof candidate inventory may change；unrelated inventory does not ride the full manifest hash。
 
@@ -1732,7 +1819,7 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 
 - **Failure**：proposal concerns `REQUESTER=employee:alice`, but model binds Bob's training record and satisfies Alice's Requirement；or it invents `employee:alice-verified`。
 - **Corrected flow**：signed `DecisionEntityContext` maps semantic roles to stable entities；catalog templates constrain subject/object roles and allowed types；Stage 1 instantiates keys before model calls, and fragment matches must reproduce the same normalized entities。
-- **Fail closed**：model-emitted unknown target/entity key is execution failure with null business disposition；a faithfully observed Bob-for-Alice proposition is `ENTITY_BINDING_MISMATCH`, proof-ineligible and cannot canonicalize. Independent contradiction still runs before Gate rejects incomplete proof。
+- **Fail closed**：model-emitted unknown target/entity key is execution failure with null proposal-admission disposition；a faithfully observed Bob-for-Alice proposition is `ENTITY_BINDING_MISMATCH`, proof-ineligible and cannot canonicalize. Independent contradiction still runs before Gate rejects incomplete proof。
 - **Canonical provenance**：proposal、entity-context ID/hash、template role bindings and instantiation receipt are in justification/envelope；model prose cannot rewrite them。
 - **Runtime invalidation**：entity context is immutable for a proposal. Entity/world fact revisions route by stable entity+predicate keys；a new role mapping requires a new proposal rather than retargeting an old Decision。
 
@@ -1755,8 +1842,8 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 ### P0-27 — Semantic epoch barrier closes the invalidation race
 
 - **Failure**：new relevant fact/policy becomes executable, old Decision row is still VALID while impact event waits, and a side effect executes before invalidator marks it STALE。
-- **Corrected flow**：`PublishEpochTxn` atomically publishes the sealed complete `SemanticChangeSet`、new governed read fence and executable epoch pointer；it does not wait for Decision-row writes. `AuthorizeSideEffectTxn` checks the exact envelope against all intervening executable ChangeSets before committing the effect。
-- **Fail closed**：unknown/partial impact summary、ChangeSet range gap、relevant key intersection、epoch-pointer race or expired envelope denies authorization；no stale projection/certificate must pre-exist for safety。
+- **Corrected flow**：`PublishEpochTxn` atomically publishes the sealed complete `SemanticChangeSet`、new governed read fence and executable sequence pointer；it does not wait for Decision-row writes. Final `ReauthorizeForExecutionTxn` checks the exact envelope against all intervening executable ChangeSets while atomically transitioning the ledger intent to `EXECUTING`；the later external call is not inside that transaction。
+- **Fail closed**：unknown/partial impact summary、ChangeSet range gap、relevant key intersection、sequence-pointer race or expired envelope denies authorization；no stale projection/certificate must pre-exist for safety。
 - **Canonical provenance**：`DecisionValidityEnvelope` binds proposal/entity/observation/compilation hashes、validated epoch vector、temporal horizon and every selective dependency key；authorization receipt binds exact ChangeSet range root。
 - **Runtime invalidation**：enterprise revision、new governing membership、policy/catalog/selector revision and temporal expiry each follow the documented barrier behavior. Models/compiler cannot advance epochs or mint irrelevance。
 
@@ -1772,22 +1859,22 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 
 - **Failure**：Continuum still exposes W17/E17 as executable, but an agent bypasses the gateway and reads a W18 fact, then combines it with W17 policy into one proposal。
 - **Corrected flow**：every material proposal field and compiler fragment maps through a signed `GovernedObservationSet` to one `GovernedReadView(W17,E17)`；gateway/tool identity、content hash、authorization and read fence are verified before semantic work。
-- **Fail closed**：unversioned、future-epoch、mixed-epoch、bypass or incomplete observation closure is `INPUT_REJECTED_OBSERVATION_PROVENANCE` with no business disposition. Test fixtures require a signed fake gateway rather than a bypass flag。
-- **Canonical provenance**：accepted envelope contains observation-set/read-view hashes and the exact executable epoch/snapshot bindings used by proposal、source universe and every proof partition。
-- **Runtime invalidation**：W18 becomes observable only when its ChangeSet/read fence is executable. An authorization transaction conditions commit on the same current epoch, preventing observe-at-W18/authorize-as-W17 mixes。
+- **Fail closed**：unversioned、future-sequence/epoch、mixed-sequence/epoch、bypass or incomplete observation closure is `INPUT_REJECTED_OBSERVATION_PROVENANCE` with no proposal-admission disposition. Test fixtures require a signed fake gateway rather than a bypass flag。
+- **Canonical provenance**：accepted envelope contains observation-set/read-view hashes and the exact executable semantic sequence/component epoch/snapshot bindings used by proposal、source universe and every proof partition。
+- **Runtime invalidation**：W18 becomes observable only when its ChangeSet/read fence is executable. Authorization and execution-start transactions condition on the same current sequence pointer, preventing observe-at-W18/authorize-as-W17 mixes。
 
 ### P0-30 — Epoch publication has zero required Decision-row fan-out
 
 - **Failure**：publishing one fleet-wide policy revision requires a distributed transaction across 100,000 affected Decision rows/certificates, so epoch publication cannot complete reliably。
-- **Corrected flow**：a serializable `PublishEpochTxn` writes one complete hash-chained ChangeSet、advances one owner-scope executable pointer and exposes one governed read fence. Decision rows/indexes/certificates are projections, not publication dependencies。
-- **Fail closed**：an incomplete summary/boundary proof cannot publish. On authorization, any relevant intersection、range gap or concurrent epoch advance denies/retries before the side effect commits。
-- **Canonical provenance**：publication receipt binds predecessor/new epoch、snapshot IDs、complete affected-key summary and boundary proof；authorization receipt binds the checked range root and decision envelope。
+- **Corrected flow**：a serializable `PublishEpochTxn` writes one complete hash-chained ChangeSet at exactly `semantic_sequence=s+1`、advances one owner-scope executable pointer and exposes one governed read fence. Decision rows/indexes/certificates are projections, not publication dependencies。
+- **Fail closed**：an incomplete summary/boundary proof cannot publish. On execution reauthorization, any relevant intersection、range gap or concurrent sequence advance cancels/retries before `EXECUTING`；it never claims to atomically commit the external call。
+- **Canonical provenance**：publication receipt binds predecessor/new sequence/component epoch、snapshot IDs、complete affected-key summary and boundary proof；authorization receipt binds the checked sequence range root and decision envelope。
 - **Runtime invalidation**：background workers may lazily materialize STALE/irrelevance. Safety is already enforced by the per-Decision ChangeSet intersection；required publication fan-out is exactly zero Decision writes。
 
-### P0-31 — Flaky compiler execution never becomes business DENY
+### P0-31 — Flaky compiler execution never becomes a proposal-admission or business verdict
 
 - **Failure**：primary interpreter emits a malformed schema/fabricated ref and the system records `REJECTED_SCHEMA` or `REJECTED_INVALID_REFERENCE` as a durable rejection of the business proposal。
-- **Corrected flow**：terminal records carry disjoint `INPUT_REJECTION | EXECUTION_FAILURE | SEMANTIC_RESULT`. Model/transport/protocol/invariant failures use `RUN_FAILED`/typed retryability and null business disposition；only a correctly executed Gate emits business acceptance/non-acceptance。
+- **Corrected flow**：terminal records carry disjoint `INPUT_REJECTION | EXECUTION_FAILURE | SEMANTIC_RESULT`. Model/transport/protocol/invariant failures use `RUN_FAILED`/typed retryability and null proposal-admission disposition；only a correctly executed Gate emits proposal admission/non-admission。
 - **Fail closed**：a retry is a new immutable attempt with fresh budget reservation and no partial-output reuse. Repeated failure may remain failed/blocked, but cannot synthesize DENY/REVIEW。
 - **Canonical provenance**：audit preserves attempt lineage、failure code、retryability、model invocation/usage/settlement and null disposition. UI/API never infer disposition from a failed stage。
 - **Runtime invalidation**：failed/input-rejected runs create no Decision or canonical graph and therefore cannot authorize or invalidate business state。
@@ -1797,8 +1884,8 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 - **Failure**：source says “training expired,” primary interpreter reports `ENTAILED_TRUE`, deterministic selector picks it, and all structural checks pass—creating a false APPROVE proof。
 - **Corrected flow**：Stage 4V receives only that exact fragment、predicate/entity、claimed entailment/value and normalized semantics. `REFUTED | INDETERMINATE` excludes the candidate；Stage 4A tries the next frozen candidate. Applicability guards use the same verification。
 - **Fail closed**：only `CONFIRMED` can become canonical. Verifier protocol/transport failure is execution failure—not semantic refutation；candidate/call capacity exhaustion blocks rather than bypasses verification。
-- **Canonical provenance**：selected proof edge records the independent verification request/receipt/prompt/model hashes. Verifier cannot add refs/Requirements、change materiality/outcome/disposition or mutate Runtime。
-- **Runtime invalidation**：only a confirmed selected proof gets a critical edge. N0 single-interpreter versus N1 verified-proof ablation reports precision、stale escape、outcome safety、calls、cost and latency; no safety value means remove/redesign the stage rather than preserve complexity。
+- **Canonical provenance**：selected proof edge records the independent purpose-typed verification request/receipt/prompt/model hashes. Verifier cannot add refs/Requirements、change materiality/outcome/admission disposition or mutate Runtime。
+- **Runtime invalidation**：only a confirmed selected proof gets a critical edge. N0 unverified semantics versus N1 disposition-critical verification reports precision、stale escape、outcome safety、calls、cost and latency; no safety value means remove/redesign the stage rather than preserve complexity。
 
 ### P0-33 — Contradiction scope is direct and explicit
 
@@ -1808,11 +1895,43 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 - **Canonical provenance**：direct contradiction stores same-predicate match IDs/precedence/impact. Registered constraints store evaluator/policy/template/input/output receipts on the resulting Requirement, not a fabricated contradiction pair。
 - **Runtime invalidation**：mutations route through the exact predicate or registered constraint dependency keys. Benchmark reports direct contradiction、registered constraint and unsupported relation separately；only direct cases enter contradiction recall。
 
+### P0-34 — Proposal admission is not a business outcome
+
+- **Failure**：domain agent submits immutable `DecisionProposal.proposed_outcome=APPROVED`, evidence is insufficient, and API/UI renders `REJECTED_INCOMPLETE_REQUIREMENTS` as a new business `DENIED` outcome。
+- **Corrected flow**：the semantic result records `proposal_admission_disposition=REJECTED_INCOMPLETE_REQUIREMENTS` while preserving `proposed_outcome=APPROVED` unchanged. There is no canonical Decision because the proposal was not admitted；Continuum authors no substitute outcome。
+- **Fail closed**：input rejection/execution failure has no admission disposition；non-admitted semantic results have no canonical graph/Decision. Any serializer、UI mapper or audit projection that maps admission rejection to business DENY fails its contract test。
+- **Canonical provenance**：result and audit store separate `DecisionProposal.proposed_outcome`、`ProposalOutcomeBinding` and `proposal_admission_disposition` fields. Accepted canonical outcome must byte/typed-value match the proposal value。
+- **Runtime invalidation**：only `proposal_admission_disposition=ACCEPTED` may reach Runtime acceptance. A not-admitted APPROVED proposal cannot authorize, but its historical business proposal is never rewritten to DENIED。
+
+### P0-35 — Final reauthorization closes external-effect TOCTOU
+
+- **Failure**：intent is authorized at sequence 187；a relevant ChangeSet publishes at 188 before `activate_vendor` is called；the old design still issues the external call because authorization and network execution were incorrectly described as one transaction。
+- **Corrected flow**：`ReauthorizeForExecutionTxn` checks the exact envelope、all upstream envelopes、clock/policy and contiguous ChangeSets through the current sequence, then atomically writes an `EXECUTION_START` receipt and `INTENDED → EXECUTING` under unchanged pointer/hashes. A sequence-188 relevant change instead writes `CANCELLED_STALE_AUTHORIZATION` and makes zero external calls。
+- **Fail closed**：range gap、relevant intersection、invalid upstream、expiry、policy denial or CAS race cannot enter `EXECUTING`. After `EXECUTING`, crash/timeout never blindly reissues；idempotency/reconciliation governs the already-started logical attempt。
+- **Canonical provenance**：Side Effect Ledger binds side-effect/request/idempotency identity、authorizing Decision/envelope、execution-start receipt、authorized sequence/horizon、executor fence and external reconciliation result。
+- **Runtime invalidation**：changes before the execution linearization point cancel stale authorization；changes after it cannot erase an in-flight external effect and instead block later intents/retries. No cross-system atomicity is claimed。
+
+### P0-36 — Every disposition-critical model claim is independently verified
+
+- **Failure**：the contradiction observer hallucinates one side of a direct critical conflict；deterministic impact marks it critical and a never-verified observation forces `NEEDS_HUMAN_REVIEW`。
+- **Corrected flow**：Stage 4V receives each exact preselected proof/applicability observation and both sides of every provisional `VALIDITY_CRITICAL` direct contradiction in isolated minimal requests. Only `CONFIRMED` selected proof/guards finalize, and only two confirmed material sides create a blocking `Contradiction`。
+- **Fail closed**：`REFUTED` removes the observation and deterministically recomputes selection/conflict；`INDETERMINATE` creates typed `DispositionCriticalSemanticUncertainty` and admission review, not a confirmed contradiction. Verifier failure is execution failure；capacity exhaustion blocks without bypass。
+- **Canonical provenance**：each causal observation links to a purpose-typed request/receipt, independent invocation IDs and verdict. Semantic uncertainty and confirmed contradictions are stored/scored separately；verifier cannot discover anything or choose disposition。
+- **Runtime invalidation**：only confirmed selected proof/guards and confirmed contradiction resolutions enter canonical validity edges. N0/N1 reports false contradiction blocks、confirmed precision、human-review false positives and safety/cost/latency delta on identical primary outputs。
+
+### P0-37 — Owner-scope semantic publication has an explicit total order
+
+- **Failure**：component epoch vector changes concurrently and an authorization says it checked “from epoch 187 to 194” without a unique ordered ChangeSet range；gap/reorder/duplicate publication can be missed。
+- **Corrected flow**：the owner-scope pointer holds `semantic_sequence`; every `PublishEpochTxn` assigns exactly `s+1`. An envelope validated at 187 and checked at 194 must verify exactly ordered ChangeSets 188…194, while component counters state which semantic domains advanced。
+- **Fail closed**：a missing、duplicate、reordered or wrong-predecessor ChangeSet、pointer/log mismatch or non-contiguous range proof blocks governed reads and authorization. Concurrent publishers serialize on the same pointer/CAS。
+- **Canonical provenance**：`GovernedReadView`、observations/proposal、upstream bindings、`DecisionValidityEnvelope`、ChangeSet/range proof、authorization/execution receipt all record the exact sequence plus component epoch/hash。
+- **Runtime invalidation**：replay/recovery rebuilds only a contiguous verified prefix and never skips to the pointer. Each Decision/upstream envelope is checked from its own validated sequence through current before execution begins。
+
 ## Regression matrix
 
 Implementation must eventually add method-level tests for：
 
-- every P0-1…P0-33 counterexample above；
+- every P0-1…P0-37 counterexample above；
 - APPLICABLE requires all current predicate proofs；NOT_APPLICABLE requires a stable determinate false guard；unsupported model N/A becomes INDETERMINATE；
 - both `handles_pii true→false` and `false→true` stale the prior accepted applicability guard；
 - normalization manifest accounts for every in-boundary fragment exactly once；silent empty parser output and missing reviewer receipt fail closed；
@@ -1828,15 +1947,19 @@ Implementation must eventually add method-level tests for：
 - every reusable governing/decision-class template instantiates deterministically from trusted entity roles and is accounted exactly once；
 - domain rationale/model output cannot add、replace or suppress a Requirement；
 - Evidence/applicability plans cover every eligible fragment exactly once with no top-K/truncation；empty match output is not an absence proof；
-- both Evidence and contradiction output stay within v5 fragment/match/token/call caps；selected-proof verification stays inside its separate capacity；dense/partial/capacity exhaustion blocks；
+- both Evidence and contradiction output stay within v5 fragment/match/token/call caps；shared disposition-critical verification stays inside its v6 capacity；dense/partial/capacity exhaustion blocks；
 - Alice/Bob and Vendor-A/Vendor-B adversarial matches cannot satisfy/canonicalize across entities；
 - time-sensitive selected proof emits a finite guard；authorization at exact expiry and after expiry is denied with no byte change；
 - `NOT_EXISTS` and retrieval-derived false EXISTS obligations return typed unsupported result；
 - exact upstream Decision binding、D42→D50→activation transitive stale、supersession non-rewrite and authorization denial；
 - unversioned/future/mixed/bypass governed observations are input rejection, and compiler/model reads share the executable fence；
 - epoch publication requires zero Decision-row writes；enterprise、membership、policy、catalog/selector and temporal races cannot authorize across a relevant ChangeSet；
-- model/schema/ref/transport/verifier execution failures never emit a business disposition and retries never reuse partial outputs；
+- model/schema/ref/transport/verifier execution failures never emit a proposal-admission disposition and retries never reuse partial outputs；
 - only independently CONFIRMED enterprise proof/applicability bindings canonicalize；REFUTED/INDETERMINATE deterministically reselect or fail closed；
+- domain APPROVED + insufficient evidence is NOT ADMITTED and never rendered as business DENIED；accepted canonical outcome exactly equals the immutable proposal outcome；
+- a relevant sequence advance before `INTENDED → EXECUTING` produces `CANCELLED_STALE_AUTHORIZATION` and no external call；every declared crash point preserves idempotency/reconciliation；
+- both model-interpreted sides of a provisional critical direct contradiction require confirmation；REFUTED recomputes, INDETERMINATE is semantic uncertainty, and false contradiction/human-review metrics remain separate；
+- semantic sequences publish contiguously under CAS；range 188…194 has no gap/reorder/duplicate and replay rejects any broken prefix；
 - same-predicate contradiction recall、registered cross-predicate constraint correctness and unsupported cross-predicate fail-closed are separate categories；
 - operational gate reports all denominators/blocked missions and per-domain/class median/p95 calls、tokens、latency and settled cost；
 - K6 report has zero case-specific predicates/templates/dependency graphs and reports schema reuse/new-case success；
@@ -1861,16 +1984,18 @@ Implementation must eventually add method-level tests for：
 - K3 permanently kills current critic configuration。
 - If trusted template instantiation cannot completely represent method-blind in-scope Requirements without per-case semantics, trigger K6 and narrow/kill before model integration。
 - If complete Evidence/applicability coverage cannot meet semantic match recall/precision under executable hard limits, architecture remains `REDESIGN REQUIRED`。
-- If deterministic selection plus independent selected-proof verification cannot meet proof precision/recall/outcome safety simultaneously, or verification adds no material safety value relative to N0, redesign/remove it before integrated paid run。
+- If deterministic selection plus disposition-critical verification cannot meet proof/confirmed-contradiction precision、recall、human-review false-positive and outcome safety simultaneously, or verification adds no material safety value relative to N0, redesign/remove it before integrated paid run。
 - If complete same-predicate contradiction coverage cannot reach pair/impact recall ≥ 0.90 under hard limits, stop before integrated paid run；do not rescue the claim with registered/unsupported cross-predicate cases。
 - If outcome or must-block is not 100%，stop。
 - If canonical output ever differs from the supplied `DecisionProposal` outcome、or compiler emits a replacement business Decision, reject the architecture。
 - If full DEV passes but blind holdout fails any P0，do not tune against revealed cases；redesign or acquire a newly independent holdout after method changes。
 - If applicability proof cannot prevent unsupported NOT_APPLICABLE suppression or cannot stale on fact transition, stop before integrated paid run。
-- If temporal expiry or a newer uncovered semantic epoch can authorize even one side effect, stop Module 01/02 progression；the Continuum safety thesis is falsified for that Runtime contract。
+- If temporal expiry、a newer uncovered semantic sequence，or a relevant change before `INTENDED → EXECUTING` can authorize even one side effect, stop Module 01/02 progression；the Continuum safety thesis is falsified for that Runtime contract。
 - If a STALE/SUPERSEDED/INVALID upstream Decision can satisfy D→D proof、supersession silently rebinds a downstream Decision，or D42→D50→activation can escape transitive invalidation, stop progression。
 - If an unversioned/future/mixed/bypass observation can enter canonical proof，or epoch publication depends on fleet-wide Decision-row atomic fan-out, reject the Runtime contract。
-- If any compiler/model/protocol failure is persisted or rendered as business DENY/REVIEW, reject the result contract before model integration。
+- If any compiler/model/protocol failure is persisted as proposal non-admission，or any proposal-admission rejection/review is rendered as a new business DENY/REVIEW outcome, reject the result contract before model integration。
+- If a broken/gapped/reordered owner-scope ChangeSet sequence can become executable or replay/authorization can skip it, reject the Runtime contract。
+- If a false model contradiction can become a confirmed block without verification of both material sides, reject N1 before integrated paid run。
 - If the 30-case integrated subset misses the operational success/block thresholds or its numeric p95 limit profile, optimize/narrow/redesign before any 120-case paid run；blocked missions remain in denominators。
 - If normalization or authoritative universe completeness relies on silent omission/self-attestation, architecture remains `REDESIGN REQUIRED`。
 - If safe coverage invalidation requires routinely staling unrelated Decisions and cannot satisfy the preregistered coverage-induced unnecessary-invalidation threshold, the design contradicts selective revalidation and must be narrowed/redesigned。
@@ -1880,7 +2005,7 @@ Implementation must eventually add method-level tests for：
 
 ## Product-owner blocker resolution matrix
 
-| Blocker | Revision-5 mechanism | Fail-closed condition | Normative fixture |
+| Blocker | Revision-6 mechanism | Fail-closed condition | Normative fixture |
 |---|---|---|---|
 | P0-1 requirement omission | complete trusted template inventory + deterministic instantiation | missing/accounting conflict cannot fall back to proposal rationale | P0-1 |
 | P0-2 model materiality | model emits no canonical materiality; Stage 4 proof role derives it | no selected proof for required role → insufficient | P0-2 |
@@ -1908,28 +2033,28 @@ Implementation must eventually add method-level tests for：
 | P0-24 entity binding | signed `DecisionEntityContext` + catalog role constraints | unknown/cross-entity target cannot canonicalize | P0-24 |
 | P0-25 temporal expiry | finite `TemporalValidityGuard` + synchronous authorization horizon | missing horizon insufficient；expiry denies inline | P0-25 |
 | P0-26 absence | P0 removes NOT_EXISTS/retrieval-derived absence | typed `ABSENCE_PROOF_NOT_SUPPORTED_P0` | P0-26 |
-| P0-27 epoch race | executable ChangeSet log + governed read fence + per-authorization intersection | relevant/gapped newer epoch denies authorization | P0-27 |
+| P0-27 sequence/epoch race | executable ChangeSet log + governed read fence + per-authorization intersection | relevant/gapped newer sequence denies authorization | P0-27 |
 | P0-28 Decision dependencies | exact `UpstreamDecisionBinding` + canonical D→D edge | stale/superseded/invalid/mismatched upstream cannot prove；no auto-rebind | P0-28 |
 | P0-29 governed reads | `GovernedObservationSet` + executable read fence | unversioned/future/mixed/bypass observations are input rejection | P0-29 |
 | P0-30 scalable publication | ChangeSet/pointer/fence publication; Decision rows are projections | incomplete summary cannot publish；relevant intersection denies | P0-30 |
-| P0-31 result taxonomy | input rejection / execution failure / semantic result are disjoint | model/transport/protocol failure has null business disposition | P0-31 |
+| P0-31 result taxonomy | input rejection / execution failure / semantic result are disjoint | model/transport/protocol failure has null admission disposition | P0-31 |
 | P0-32 proof verification | narrow independent Stage 4V + deterministic reselection | only CONFIRMED canonicalizes；failure/cap never bypasses | P0-32 |
 | P0-33 contradiction scope | direct same-predicate guarantee + registered constraint path | unregistered cross-predicate relation typed unsupported | P0-33 |
+| P0-34 admission terminology | immutable proposal outcome + separate `proposal_admission_disposition` | non-admission never authors/renders business DENY | P0-34 |
+| P0-35 effect TOCTOU | Side Effect Ledger + atomic final reauthorization/`EXECUTING` transition | stale pre-execution authorization cancels without external call；post-start reconciles | P0-35 |
+| P0-36 critical verification | purpose-typed minimal verifier for proof/guard/both contradiction sides | unconfirmed observation cannot become proof or confirmed contradiction | P0-36 |
+| P0-37 total order | contiguous owner-scope `semantic_sequence` + exact range/replay proof | gap/duplicate/reorder/hash mismatch blocks fence and authorization | P0-37 |
 
 ## Product-owner review checklist
 
 本 revision 请求确认：
 
-1. `UpstreamDecisionBinding` 是否恢复 D42→D50→activation 的一等 D→D proof、exact envelope 与 supersession non-rewrite；
-2. `GovernedObservationSet` / `GovernedReadView` 是否阻止 future/mixed/bypass observation 进入 proposal/proof；
-3. `PublishEpochTxn` 零 Decision-row fan-out + `AuthorizeSideEffectTxn` per-envelope ChangeSet intersection 是否既 scalable 又无 stale window；
-4. `INPUT_REJECTION | EXECUTION_FAILURE | SEMANTIC_RESULT` 是否彻底排除 flaky model→business DENY；
-5. Stage 4V 最小输入/三值输出/独立调用/重选与 N0/N1 ablation 是否足以检验 single-interpreter false proof；
-6. P0 direct same-predicate contradiction boundary、registered cross-predicate constraint 和 unsupported relation 是否表述准确；
-7. operational success/block denominator与 per-domain/class median/p95 calls、tokens、latency、cost gate 是否足以排除 safety-by-blocking；
-8. immutable proposal、trusted template/entity authority、complete Evidence/applicability coverage and deterministic outcome Gate 是否无回归；
-9. O(F+actual matches) contradiction、temporal guard、absence non-support、selective provenance and three namespaces 是否无回归；
-10. method-blind DEV、Gemini-before-blind、K6/zero case-specific semantics and unsupported fail-closed 是否无回归；
-11. P0-1～P0-27 guarantees 是否全部 preserved，且 P0-28～P0-33 fixtures 是否可直接转成 method tests。
+1. `proposal_admission_disposition` 是否与 immutable business outcome 完全分离，APPROVED+insufficient 是否只显示 NOT ADMITTED；
+2. `ReauthorizeForExecutionTxn` + Side Effect Ledger 是否在 `EXECUTING` 前关闭 TOCTOU，并准确覆盖全部 crash/unknown-outcome 状态；
+3. Stage 4V 是否只验证 exact preselected disposition-critical claims，且 contradiction 两侧、REFUTED recompute、INDETERMINATE uncertainty 均有确定语义；
+4. owner-scope `semantic_sequence` 是否为 publication/range/replay/authorization 提供无 gap/duplicate/reorder 的全序；
+5. N0/N1 是否共享完全相同 primary outputs，且 false contradiction block、confirmed precision、human-review false-positive 和 safety/cost/latency delta 可归因；
+6. P0-1～P0-33 guarantees 是否全部 preserved，且 P0-34～P0-37 fixtures/tests/metrics 是否完整；
+7. 本 Revision 是否仍严格禁止 implementation plan、live model、blind access、full 120 paid run 和 Module 02，直到 Product Owner 批准架构。
 
 批准本文只允许下一步编写 implementation plan；不代表 Module 01 P0 PASS。

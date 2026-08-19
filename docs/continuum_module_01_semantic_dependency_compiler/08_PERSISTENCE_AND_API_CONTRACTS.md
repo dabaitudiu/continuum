@@ -2,7 +2,7 @@
 
 ## Status
 
-The persistence/API replacement below is Revision-5 design-only and awaits product-owner review after Revision 4 was rejected. Existing v1 records remain readable and immutable. Any replacement uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as new stage outputs.
+The persistence/API replacement below is Revision-6 design-only and awaits product-owner review after Revision 5 was rejected. P0-1～P0-33 remain fixed. Existing v1 records remain readable and immutable. Any replacement uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as new stage outputs.
 
 ## Persistence entities
 
@@ -33,7 +33,7 @@ The replacement stores immutable records across enterprise-world、compiler-poli
 - `EvidenceCoveragePlanRecord` / `EvidenceCoverageReceiptRecord` / `FragmentEvidenceObservationRecord`
 - `EvidenceBindingCandidateSetRecord`
 - `ProofSelectedEvidenceBindingSetRecord`
-- `SelectedProofVerificationRequestRecord` / `SelectedProofVerificationReceiptRecord`
+- `DispositionCriticalVerificationRequestRecord` / `DispositionCriticalVerificationReceiptRecord` / `DispositionCriticalSemanticUncertaintyRecord`
 - `ContradictionCoveragePlanRecord` / `ContradictionCoverageReceiptRecord` / `FragmentSemanticObservationRecord`
 - `ContradictionSetRecord`
 - `RequirementAssessmentSetRecord`
@@ -41,7 +41,8 @@ The replacement stores immutable records across enterprise-world、compiler-poli
 - `UnsupportedPredicateFindingRecord`
 - `TemporalValidityGuardRecord`
 - `DecisionValidityEnvelopeRecord`
-- `SemanticChangeSetRecord` / `ChangeSetRangeProofRecord` / `DecisionIrrelevanceCertificateRecord` / `AuthorizationReceiptRecord`（Runtime/Drift-owned interface records）
+- `SemanticEpochRecord` / `SemanticChangeSetRecord` / `ChangeSetRangeProofRecord` / `DecisionIrrelevanceCertificateRecord` / `AuthorizationReceiptRecord`（Runtime/Drift-owned interface records）
+- `SideEffectIntentRecord` / external reconciliation records（Runtime Side Effect Ledger-owned）
 - `DecisionJustificationRecord` for accepted APPROVE/DENY only;
 - `CompilerFindingRecord`
 - `CompilationResultRecord`
@@ -65,7 +66,25 @@ CompilationAttemptRecord
   attempt_hash
 ```
 
-A retry always creates a new attempt ID、fresh budget reservation and full stage execution from immutable trusted inputs. It cannot import partial semantic/model output from the failed attempt. Request-level business disposition remains null until one correctly executed semantic attempt completes；exhausted retries leave the request FAILED/BLOCKED, never DENY/REVIEW。
+A retry always creates a new attempt ID、fresh budget reservation and full stage execution from immutable trusted inputs. It cannot import partial semantic/model output from the failed attempt. Request-level proposal-admission disposition remains null until one correctly executed semantic attempt completes；exhausted retries leave the request FAILED/BLOCKED, never admission rejection/review or business DENY/REVIEW。
+
+```text
+SideEffectIntentRecord
+  side_effect_id / mission_id / effect_type / normalized_request_hash
+  idempotency_key
+  authorizing_decision_id / decision_validity_envelope_hash
+  intent_admission_receipt_hash / authorization_receipt_hash?
+  authorized_semantic_sequence
+  authorization_not_after
+  execution_attempt / executor_fence_token?
+  status: INTENDED | EXECUTING | COMMITTED |
+          CANCELLED_STALE_AUTHORIZATION | RETRYABLE_FAILURE |
+          FAILED_FINAL | RECONCILIATION_REQUIRED
+  external_operation_ref? / result_hash? / last_failure_code?
+  record_hash
+```
+
+Historical v1 `FAILED_RETRYABLE` records remain immutable and are exposed through a versioned reader mapping to Revision-6 `RETRYABLE_FAILURE`; no stored history is rewritten. `CANCELLED_STALE_AUTHORIZATION` proves the external adapter was not invoked. Once `EXECUTING` commits, later semantic changes do not rewrite the attempt；idempotency/reconciliation determines the external outcome。
 
 ## Result and stage trace
 
@@ -74,7 +93,7 @@ A retry always creates a new attempt ID、fresh budget reservation and full stag
 ```text
 run_status: IN_PROGRESS | COMPLETED | BLOCKED | FAILED
 result_class: INPUT_REJECTION | EXECUTION_FAILURE | SEMANTIC_RESULT
-business_disposition?
+proposal_admission_disposition?
 input_rejection_code? / execution_failure_code? / retryability?
 pipeline_version
 compiler_version
@@ -82,7 +101,7 @@ validation_policy_version
 decision_proposal_ref / hash / producer_id / producer_version / unchanged outcome
 proposal_outcome_binding_ref / hash / policy_ref
 decision_entity_context_ref / hash
-governed_observation_set_ref / hash / executable_read_view_hash
+governed_observation_set_ref / hash / executable_read_view_hash / executable_semantic_sequence
 upstream_decision_bindings[] / exact upstream envelope hashes[]
 compiler_policy_bundle_ref / hash
 input_world_snapshot_id / source_universe_snapshot_id / compiler_policy_snapshot_id
@@ -97,7 +116,7 @@ effective_requirements[]
 evidence_coverage_plan / receipts[] / fragment_observations[]
 evidence_binding_candidates[]
 proof_selected_evidence_bindings[]
-selected_proof_verification_requests[] / receipts[]
+disposition_critical_verification_requests[] / receipts[] / semantic_uncertainties[]
 contradiction_coverage_plan / receipts[] / fragment_semantic_observations[]
 contradictions[]
 requirement_assessments[]
@@ -130,16 +149,17 @@ EVIDENCE_COVERAGE_VALIDATED
 BINDINGS_VALIDATED
 CONTRADICTION_PARTITIONS_COMPLETED
 CONTRADICTION_COVERAGE_VALIDATED
-CONTRADICTIONS_REDUCED
+CONTRADICTIONS_PROVISIONALLY_REDUCED
 PROOFS_SELECTED
-SELECTED_PROOFS_INDEPENDENTLY_VERIFIED
+DISPOSITION_CRITICAL_OBSERVATIONS_VERIFIED
+PROOFS_AND_CONTRADICTIONS_RECOMPUTED
 COMPLETENESS_COMPUTED
 TEMPORAL_VALIDITY_ENVELOPE_COMPUTED
 GATE_EVALUATED
 CANONICALIZED
 ```
 
-Each expected stage is surfaced as `DONE`, `SKIPPED_INPUT_REJECTION`, `FAILED_EXECUTION`, `BLOCKED`, or `NOT_REACHED`. Consumers must not infer execution or business disposition from a missing findings list。
+Each expected stage is surfaced as `DONE`, `SKIPPED_INPUT_REJECTION`, `FAILED_EXECUTION`, `BLOCKED`, or `NOT_REACHED`. Consumers must not infer execution、proposal admission or business outcome from a missing findings list。
 
 ## API boundary
 
@@ -155,7 +175,7 @@ Run the selected versioned pipeline. Product wiring may select only the approved
 
 ### `GET /api/compiler/{request_id}`
 
-Return immutable proposal/request、governed observation/upstream bindings、policy/manifest provenance、Evidence/contradiction/selected-proof verification receipts、stage outputs/findings、temporal/epoch envelope、exact trace、run status、result class、business disposition if any，and canonical output only if accepted. UI/API must never render input rejection/execution failure as business DENY。
+Return immutable proposal/request、governed observation/upstream bindings、policy/manifest provenance、Evidence/contradiction/disposition-critical verification receipts、semantic uncertainties、temporal sequence/epoch envelope、exact trace、run status、result class、proposal-admission disposition if any，and canonical output only if admitted. UI/API must show immutable `proposed_outcome` independently and never render input/execution failure or proposal non-admission as a newly authored business DENY。
 
 ### `POST /api/compiler/{request_id}/accept`
 
@@ -183,20 +203,23 @@ FragmentEvidenceInterpreter.observe(partition, target_descriptors)
 EvidenceCoverageReducer.validate_and_bind(plan, receipts, fragment_observations)
 ContradictionCoveragePlanner.plan(manifest, target_descriptors, limits)
 FragmentContradictionObserver.observe(partition, target_descriptors)
-ContradictionReducer.validate_and_reduce(plan, receipts, fragment_observations)
+ContradictionReducer.validate_and_provisionally_reduce(plan, receipts, fragment_observations)
 DeterministicProofSelector.provisionally_select(requirements, bindings, upstream_bindings, contradictions, policies)
-SelectedProofVerifier.verify(exact_selected_fragment_target_entity_claim)
-DeterministicProofSelector.reselect_and_finalize(verification_receipts)
+DispositionCriticalVerifier.verify(exact_preselected_fragment_target_entity_claim)
+DispositionCriticalReducer.remove_reselect_rereduce(verification_receipts)
 DeterministicRequirementCompleteness.compute(requirements, selected_proofs, contradictions)
 TemporalValidityCompiler.compile(selected_proofs, applicability, policies, trusted_clock)
-DeterministicProposalGate.evaluate(proposal, ...) -> disposition + DecisionJustification? + DecisionValidityEnvelope?
+DeterministicProposalGate.evaluate(proposal, ...) -> proposal_admission_disposition + DecisionJustification? + DecisionValidityEnvelope?
 Canonicalizer.compile(...)
 RuntimeAcceptanceService.accept(...)
 SemanticEpochPublisher.publish(change_set, successor_snapshots, read_fence)
 SemanticEpochAuthorizationBarrier.authorize(decision, envelope, intervening_change_sets, upstream_decisions, trusted_clock)
+SideEffectLedger.authorize_intent(...)
+SideEffectLedger.reauthorize_for_execution(intent, envelope, ordered_change_sets, upstream_decisions, trusted_clock)
+SideEffectLedger.reconcile(intent, idempotency_key, external_observation)
 ```
 
-`FragmentEvidenceInterpreter`、independent `FragmentContradictionObserver` and narrow `SelectedProofVerifier` are the only replacement model interfaces. The verifier receives one isolated exact selected proof tuple and returns only a three-valued verdict. Validators/reducers return immutable objects；deterministic selectors/Gate own upstream binding、applicability/materiality/impact/disposition；only Runtime acceptance/barrier mutates or authorizes canonical state.
+`FragmentEvidenceInterpreter`、independent `FragmentContradictionObserver` and narrow `DispositionCriticalVerifier` are the only replacement model interfaces. The verifier receives one isolated exact preselected proof/guard/contradiction-side tuple and returns only a three-valued verdict. Validators/reducers return immutable objects；deterministic selectors/Gate own upstream binding、applicability/materiality/impact/admission disposition；only Runtime acceptance/sequence barrier/Side Effect Ledger mutates or authorizes canonical state.
 
 ## Transaction boundary
 
@@ -205,14 +228,16 @@ Compiler stage persistence and Runtime Decision commit remain separate transacti
 Runtime acceptance revalidates:
 
 - `pipeline_version` is the approved active production pipeline;
-- disposition is `ACCEPTED`;
+- proposal-admission disposition is `ACCEPTED` and canonical outcome exactly equals immutable `DecisionProposal.proposed_outcome`;
 - canonical graph/hash are present and immutable;
 - proposal/producer/outcome/entity/observation context、exact upstream Decision envelopes、expected mission revision、governed enterprise world/universe/policy snapshots and derived envelope exactly match;
 - universe/normalization/selection/Evidence/contradiction coverage was complete and all selected applicability/policy/coverage guards exist as validity-bearing provenance;
-- trusted time is before exclusive `authorization_not_after`; upstream Decisions remain current/VALID；every intervening executable ChangeSet is hash-chain complete and non-intersecting；
-- executable epoch pointer/upstream hashes remain unchanged through the same conditional commit as inbox/idempotency、business side effect and audit/outbox。
+- trusted time is before exclusive `authorization_not_after`; upstream Decisions remain current/VALID；every intervening executable semantic sequence/ChangeSet is contiguous、hash-chain complete and non-intersecting；
+- executable sequence pointer/upstream hashes remain unchanged through Runtime Decision acceptance. This transaction does not contain an external side effect。
 
-`PublishEpochTxn` is a separate serializable transaction: verify predecessor、seal/publish one complete ChangeSet、advance one owner-scope executable pointer and expose one governed read fence. It requires **zero Decision-row writes**. Decision status/index/certificate records are lazy projections. `AuthorizeSideEffectTxn` reads/checks the exact envelope and ChangeSet range；relevant intersection or a concurrent pointer change denies/retries before side-effect commit。
+`PublishEpochTxn` is a separate serializable transaction: verify predecessor/current sequence、assign exactly `s+1`、seal/publish one complete ChangeSet、advance one owner-scope executable pointer and expose one governed read fence. It requires **zero Decision-row writes**. Decision status/index/certificate records are lazy projections。
+
+Side-effect intent admission may persist `INTENDED`, but `ReauthorizeForExecutionTxn` performs the final sequence/range/upstream/clock/policy check and atomically writes an execution-start receipt plus `INTENDED | RETRYABLE_FAILURE → EXECUTING` under unchanged pointer/hashes. Stale authorization becomes `CANCELLED_STALE_AUTHORIZATION` with no network call. The external adapter is invoked only after that transaction with the persisted idempotency key；crash/unknown outcome follows `RECONCILIATION_REQUIRED`, never a claim of cross-system atomicity。
 
 ## Events
 
@@ -232,9 +257,11 @@ compiler.evidence_partition.completed
 compiler.evidence_coverage.validated
 compiler.bindings.validated
 compiler.contradiction_partition.completed
-compiler.contradictions.reduced
+compiler.contradictions.provisionally_reduced
 compiler.proofs.selected
-compiler.selected_proofs.verified
+compiler.disposition_critical_observations.verified
+compiler.proofs_and_contradictions.recomputed
+compiler.semantic_uncertainty.recorded
 compiler.completeness.assessed
 compiler.temporal_validity.compiled
 compiler.unsupported_logic.detected
@@ -246,14 +273,18 @@ compiler.run.blocked
 compiler.review.required
 compiler.compilation.accepted
 compiler.compilation.rejected
-runtime.semantic_epoch.reserved
+runtime.semantic_sequence.reserved
 runtime.semantic_changeset.sealed
-runtime.semantic_epoch.published
+runtime.semantic_sequence.published
 runtime.decision.irrelevance_certified
 runtime.decision.authorization_denied_upstream
 runtime.decision.authorization_denied_relevant_change
 runtime.decision.authorization_denied_expired
-runtime.decision.authorization_denied_epoch_gap
+runtime.decision.authorization_denied_sequence_gap
+runtime.side_effect.intent_authorized
+runtime.side_effect.execution_reauthorized
+runtime.side_effect.cancelled_stale_authorization
+runtime.side_effect.reconciliation_required
 ```
 
 These are compiler events. Only successful Runtime acceptance emits final `decision.created` and graph mutation events.
