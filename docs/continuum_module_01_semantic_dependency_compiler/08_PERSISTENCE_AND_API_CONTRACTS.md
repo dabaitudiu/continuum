@@ -2,7 +2,7 @@
 
 ## Status
 
-The persistence/API replacement below is design-only. Existing v1 records remain readable and immutable. V2 uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as the new stage outputs.
+The persistence/API replacement below is Revision-2 design-only and awaits product-owner review after the first concrete specification was rejected. Existing v1 records remain readable and immutable. V2 uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as the new stage outputs.
 
 ## Persistence entities
 
@@ -16,10 +16,20 @@ Source identity entities remain unchanged:
 Compiler v2 adds immutable records:
 
 - `CompilationRequest`
-- `RequirementSetRecord`
-- `EvidenceBindingSetRecord`
+- `CompilerPolicyBundleRecord`
+- `PolicyUsageTraceRecord`
+- `SourceSetManifestRecord`
+- `RequirementProposalSetRecord`
+- `RequirementCoverageObservationSetRecord` / per-partition `RequirementCoverageReceiptRecord`
+- `RequirementCoverageCandidateSetRecord`
+- `RequirementReconciliationRecord`
+- `EffectiveRequirementSetRecord`
+- `EvidenceBindingCandidateSetRecord`
+- `ProofSelectedEvidenceBindingSetRecord`
+- `ContradictionCoveragePlanRecord` / `ContradictionCoverageReceiptRecord`
 - `ContradictionSetRecord`
 - `RequirementAssessmentSetRecord`
+- `UnsupportedLogicFindingRecord`
 - `DecisionJustificationRecord` for accepted APPROVE/DENY only;
 - `CompilerFindingRecord`
 - `CompilationResultRecord`
@@ -37,12 +47,20 @@ disposition?
 pipeline_version
 compiler_version
 validation_policy_version
-precedence_policy_version
+compiler_policy_bundle_ref / hash
+policy_usage_trace[]
+source_set_manifest_ref / hash / coverage_status
 executed_stages[]
-requirements[]
-evidence_bindings[]
+requirement_proposals[]
+requirement_coverage_observations[] / receipts[]
+requirement_coverage_candidates[]
+effective_requirements[]
+evidence_binding_candidates[]
+proof_selected_evidence_bindings[]
+contradiction_coverage_plan / receipts[]
 contradictions[]
 requirement_assessments[]
+unsupported_logic_findings[]
 decision_justification? only when ACCEPTED
 findings[]
 canonical graph fields only when ACCEPTED
@@ -52,10 +70,16 @@ compilation_hash only when ACCEPTED
 Executed stages use the v2 vocabulary:
 
 ```text
-CONTEXT_ASSEMBLED
-REQUIREMENTS_VALIDATED
+POLICY_BUNDLE_VALIDATED
+SOURCE_SET_COVERAGE_VALIDATED
+REQUIREMENTS_DECOMPOSED
+GOVERNING_OBLIGATIONS_INVENTORIED
+REQUIREMENTS_RECONCILED
 BINDINGS_VALIDATED
-CONTRADICTIONS_VALIDATED
+CONTRADICTION_PARTITIONS_COMPLETED
+CONTRADICTION_COVERAGE_VALIDATED
+CONTRADICTIONS_REDUCED
+PROOFS_SELECTED
 COMPLETENESS_COMPUTED
 GATE_EVALUATED
 CANONICALIZED
@@ -69,7 +93,7 @@ The generic compiler surface remains internal and capability-protected. Runtime 
 
 ### `POST /api/compiler/requests`
 
-Create a request bound to mission/work item, exact world snapshot, expected mission revision, decision type, risk class, outcome vocabulary, and trusted `APPROVE | DENY | REVIEW` mapping.
+Create a request bound to mission/work item、exact world snapshot、expected mission revision、decision type/risk class、outcome vocabulary、active CompilerPolicyBundle and source-coverage decision class. Domain outcome mapping is resolved from the versioned policy ref, not accepted as an unproven audit string.
 
 ### `POST /api/compiler/{request_id}/run`
 
@@ -77,7 +101,7 @@ Run the selected versioned pipeline. Product wiring may select only v2 after cut
 
 ### `GET /api/compiler/{request_id}`
 
-Return immutable request, stage outputs/findings, exact stage trace, run status, semantic disposition, provenance, and canonical output if accepted.
+Return immutable request、policy/manifest provenance、coverage/partition receipts、stage outputs/findings、exact trace、run status、semantic disposition and canonical output if accepted. Partial contradiction output must be visibly incomplete and can never appear under a completed coverage state.
 
 ### `POST /api/compiler/{request_id}/accept`
 
@@ -89,19 +113,25 @@ The current draft/compile routes may remain as versioned v1 readers during migra
 
 ```text
 ContextAssembler.assemble(request)
+PolicyBundleValidator.validate(bundle, world_snapshot)
+SourceSetAssembler.assemble(request, policy_bundle) -> SourceSetManifest
+SourceCoverageValidator.validate(manifest, world_snapshot)
 RequirementDecomposer.decompose(context) -> DecisionAnalysisProposal
-RequirementStructureValidator.validate(requirements, request)
-EvidenceBinder.bind(requirements, context)
-EvidenceBindingValidator.validate(bindings, requirements, context)
-ContradictionDetector.detect(requirements, bindings, context)
-ContradictionValidator.resolve(contradictions, requirements, bindings, context)
-DeterministicRequirementCompleteness.compute(requirements, bindings, contradictions)
+RequirementCoverageAnalyzer.inventory(context_without_decomposition)
+RequirementReconciler.reconcile(proposal, coverage_candidates, contracts)
+EvidenceBinder.bind(effective_requirements, context)
+EvidenceBindingValidator.validate(candidates, requirements, context)
+ContradictionPartitioner.plan(manifest, requirements, limits)
+ContradictionObserver.observe(partition, requirements)
+ContradictionReducer.validate_and_reduce(plan, receipts, observations)
+DeterministicProofSelector.select(requirements, bindings, contradictions, policies)
+DeterministicRequirementCompleteness.compute(requirements, selected_proofs, contradictions)
 DeterministicAcceptanceGate.evaluate(...) -> disposition + DecisionJustification?
 Canonicalizer.compile(...)
 RuntimeAcceptanceService.accept(...)
 ```
 
-RequirementDecomposer, EvidenceBinder, and ContradictionDetector are the only model interfaces and return typed proposals. Validators return immutable validated objects/findings; deterministic completeness computes RequirementAssessments. Only the gate returns a semantic disposition; only the canonicalizer returns canonical graph objects; only Runtime acceptance mutates canonical Runtime state.
+RequirementDecomposer、RequirementCoverageAnalyzer、EvidenceBinder and partitioned ContradictionObserver are the only model interfaces. Coverage does not receive decomposition output. Validators/reducers return immutable objects; proof selector owns canonical materiality and contradiction impact; completeness owns assessments. Only the gate returns semantic disposition; only canonicalizer returns graph objects; only Runtime acceptance mutates canonical Runtime state.
 
 ## Transaction boundary
 
@@ -112,7 +142,8 @@ Runtime acceptance revalidates:
 - `pipeline_version` is the active v2 production pipeline;
 - disposition is `ACCEPTED`;
 - canonical graph/hash are present and immutable;
-- expected mission revision and world snapshot exactly match;
+- expected mission revision、world snapshot、CompilerPolicyBundle and SourceSetManifest exactly match;
+- source/partition coverage was complete and all selected policy/manifest refs exist as validity-bearing provenance;
 - inbox/idempotency and atomic audit/outbox requirements hold.
 
 ## Events
@@ -121,10 +152,16 @@ Suggested versioned events:
 
 ```text
 compiler.requested
-compiler.requirements.proposed
+compiler.source_set.validated
+compiler.requirements.decomposed
+compiler.requirement_coverage.proposed
+compiler.requirements.reconciled
 compiler.bindings.proposed
-compiler.contradictions.proposed
+compiler.contradiction_partition.completed
+compiler.contradictions.reduced
+compiler.proofs.selected
 compiler.completeness.assessed
+compiler.unsupported_logic.detected
 compiler.structural.failed
 compiler.run.blocked
 compiler.review.required

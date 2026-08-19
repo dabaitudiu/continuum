@@ -1,104 +1,138 @@
-# 07 — Independent Contradiction and Requirement Completeness
+# 07 — Requirement Coverage, Contradiction, and Completeness
 
 ## Architecture decision
 
-The former Completeness Critic is rejected. It mixed missing dependencies, unsupported claims, irrelevant refs, contradiction candidates, severity, and disposition; allowed `UNKNOWN_SOURCE_REQUIRED`; and often never ran because semantic conditions terminated validation first.
+The old Completeness Critic remains rejected. Revision 2 replaces it with four disjoint contracts:
 
-The replacement has two separate passes with disjoint write contracts:
+1. independent governing-obligation coverage proposes typed semantic Requirements omitted by decomposition;
+2. deterministic reconciliation creates the effective Requirement set;
+3. partitioned independent contradiction observation covers the complete source inventory;
+4. deterministic proof selection/completeness derives materiality、contradiction impact and RequirementAssessments.
 
-1. Independent Contradiction Pass writes `Contradiction` proposals only.
-2. Deterministic Requirement Completeness computes `RequirementAssessment` records only.
+No pass emits `UNKNOWN_SOURCE_REQUIRED`, edits canonical state, or decides final disposition.
 
-Neither pass edits Requirements, EvidenceBindings, the proposed outcome, or canonical state.
+## Independent Requirement Coverage
+
+### Question
+
+> Given this request、decision class and the complete current governing-source universe, which material governing obligations apply?
+
+### Independence boundary
+
+The pass does not receive Stage-1 decomposition or proposed outcome. It cannot be biased toward confirming the initial requirement set. It sees every governing obligation declared by the validated SourceSetManifest plus normalized rule identity/logic metadata. Large inventories use deterministic disjoint partitions and complete receipt aggregation；partial coverage blocks rather than silently sampling.
+
+### Output and reconciliation
+
+It outputs one `RequirementCoverageObservation` per normalized governing obligation、a receipt covering the exact manifest inventory, and `RequirementCoverageCandidate[]` for APPLICABLE obligations. Observations use `APPLICABLE | NOT_APPLICABLE | INDETERMINATE`; INDETERMINATE cannot normally accept and incomplete receipts cannot masquerade as no omission.
+
+Deterministic reconciliation compares Stage 1A and coverage by semantic key:
+
+- match → origin `BOTH`;
+- valid coverage-only omission → add to effective set as `COVERAGE_PASS` and run downstream binding/contradiction/completeness;
+- incompatible expected states/topology → fail-closed coverage conflict;
+- unsupported logic → typed `REJECTED_UNSUPPORTED_LOGIC`;
+- unknown/fabricated ref → structural failure.
+
+This catches a Stage-1 omission in production without asking a vague critic to find arbitrary problems.
 
 ## Independent Contradiction Pass
 
-### Question
-
-> For each explicit Requirement, do two current, in-scope authoritative source propositions conflict in a way that can affect validity?
-
 ### Input
 
-- explicit Requirements;
-- validated EvidenceBindings;
-- complete request-scoped bounded current/in-scope candidate fragments, including unbound refs;
-- source values/claims, trust class, authority rank, scope, and temporal metadata.
+- reconciled effective Requirements;
+- complete contradiction-eligible ref inventory from the manifest;
+- deterministic coverage plan and hard limits;
+- source content、authority/scope/time metadata and stable predicate contracts.
 
-### Output
+The pass is independent of Stage-2 bindings.
 
-Typed ref pairs, proposition/topic, contradiction type, severity, and non-authoritative model recommendation. Deterministic code validates the refs and computes precedence/resolution.
+### Coverage-preserving map/reduce
 
-Each side also records truth relative to the Requirement proposition. A precedence winner may affect deterministic completeness only when it has a matching validated CRITICAL EvidenceBinding. The contradiction pass never promotes an unbound ref into canonical dependency state; an unbound winner leaves the compilation incomplete.
+Deterministic partitioning assigns every eligible ref exactly once. Each map call emits typed observations and a receipt. Reducer verifies every expected partition、input hash and processed-ref union before semantic reduction.
 
-### Deterministic precedence
+Determinate opposing observations are globally joined by stable predicate identity **and entailment target**, so sources in different partitions can conflict without mixing obligation applicability with factual state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction.
 
-Only configured rules may resolve a conflict, such as current over historical revision, signed over draft approval, canonical record over cached snapshot, or an explicit mission override. Equal-authority unresolved CRITICAL conflict cannot silently accept.
+If hard limits、timeout、truncation、missing receipt or union mismatch prevent complete coverage, the result is `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. It is never reported as a zero-contradiction success.
 
-The pass is executed even when Stage 2 produced incomplete evidence. Otherwise a missing binding can hide the very conflict needed to explain why approval is unsafe.
+Observations are not binding candidates. An unbound precedence winner may make the conflict/omission visible but cannot be promoted to proof or Runtime provenance by the contradiction pass；without a matching validated Stage-2 binding, completeness remains insufficient.
 
-P0 passes the complete bounded candidate inventory to contradiction detection. It does not introduce an unevaluated semantic retrieval step whose omissions could recreate zero contradiction recall upstream.
+### Deterministic precedence and impact
+
+Only versioned policy may resolve authority. The model's severity and resolution recommendation are advisory.
+
+Conflict impact is `VALIDITY_CRITICAL` iff:
+
+1. the affected effective Requirement reaches a Decision root;
+2. at least one side is eligible for a required proof role; and
+3. authority/preference state is unresolved or changes the truth available to deterministic proof selection.
+
+Otherwise it is `NON_BLOCKING`. Thus a model cannot downgrade a blocking conflict to SUPPORTING.
+
+## Deterministic Proof Selection
+
+The model never supplies canonical CRITICAL/SUPPORTING. For each contract-derived proof role, code filters bindings by ref/scope/time/authority/role/predicate eligibility and determinate entailment, applies precedence, then orders by versioned proof policy and stable source identity.
+
+- selected necessary proof → `CRITICAL`;
+- unselected explanatory candidate → `SUPPORTING`;
+- indeterminate/ineligible/irrelevant candidate → analysis-only;
+- absent determinate candidate for a required role → `INSUFFICIENT_EVIDENCE`.
+
+An incorrect model label therefore cannot suppress invalidation on a proof actually selected by code.
 
 ## Deterministic Requirement Completeness
 
-### Question
+### DIRECT_ATOM
 
-> Is each Stage 1 Requirement sufficiently evidenced by a direct or transitive validated path, after contradiction results are known?
+| Condition | Assessment |
+|---|---|
+| every applicability role is TRUE and every state role matches expected state | `SATISFIED` |
+| every applicability role is TRUE and covered state evidence proves the opposite, no unresolved critical conflict | `UNSATISFIED` |
+| unresolved validity-critical contradiction | `CONTRADICTED` |
+| missing role or only indeterminate evidence | `INSUFFICIENT_EVIDENCE` |
 
-### Input
+Applicable governing evidence and factual state are not interchangeable. Governing applicability FALSE against an APPLICABLE reconciled obligation is a reconciliation conflict, not an ordinary business-condition DENY.
 
-- explicit Requirements with DIRECT/DERIVED_ALL proof mode and conjunction DAG;
-- validated CRITICAL/SUPPORTING bindings;
-- validated contradiction results;
+### ALL_OF
 
-### Output
+Priority is: any CONTRADICTED → CONTRADICTED; else any UNSATISFIED → UNSATISFIED; else all SATISFIED → SATISFIED; else INSUFFICIENT_EVIDENCE.
 
-Exactly one code-computed `RequirementAssessment` per explicit Requirement:
+Every effective Requirement receives exactly one code-computed assessment. Coverage pass—not completeness—may introduce a missing semantic Requirement. Completeness itself cannot invent Requirements、refs、bindings or placeholder evidence.
 
-- `SATISFIED`
-- `UNSATISFIED`
-- `CONTRADICTED`
-- `INSUFFICIENT_EVIDENCE`
+## Reachability
 
-### Hard boundaries
+Selected proof uses:
 
-Completeness cannot:
+```text
+Source → DIRECT Claim → zero or more ALL_OF Claims → Decision
+```
 
-- invent a requirement omitted by Stage 1;
-- invent or suggest a canonical source ref;
-- emit `UNKNOWN_SOURCE_REQUIRED`;
-- add or rewrite a binding;
-- require a redundant direct source edge when transitive support exists;
-- decide final disposition.
+A valid transitive path is sufficient. No duplicate Source → derived Claim or intermediate Claim → Decision edge is required. Policy/manifest provenance uses a parallel critical path through `DecisionInterpretation` Claim.
 
-For DIRECT Requirements, the fixed truth table compares precedence-filtered CRITICAL bindings' `entailed_truth` with `expected_truth`; same-truth alternatives are ordered by authority rank/canonical ref to select one proof binding, while opposite truths remain a conflict. For DERIVED_ALL, all prerequisite assessments are conjoined. Joint evidence must be decomposed into DIRECT prerequisites rather than hidden in a multi-ref leaf. If evidence is insufficient, `missing_evidence_proposition` is deterministic text copied/formatted from the existing Requirement. Requirement omission quality is measured separately against frozen requirement ground truth.
+## Gate effects
 
-## Reachability rule
+- applicable unsupported logic → `REJECTED_UNSUPPORTED_LOGIC`;
+- source/partition coverage incomplete → execution `RUN_BLOCKED`;
+- unresolved requirement coverage conflict → `REJECTED_REQUIREMENT_COVERAGE`;
+- insufficient determinate evidence → `REJECTED_INCOMPLETE_REQUIREMENTS` or `NEEDS_HUMAN_REVIEW`;
+- unresolved validity-critical contradiction → `NEEDS_HUMAN_REVIEW`;
+- outcome mismatch → `REJECTED_OUTCOME_CONSTRAINT` / `REJECTED_CONTRADICTION`;
+- only fully compatible APPROVE/DENY can be `ACCEPTED`.
 
-For a DIRECT Requirement to count as evidenced, deterministic code must find current, authorized, validity-bearing CRITICAL support or counterevidence bindings after precedence. A DERIVED_ALL Requirement is evidenced only through all prerequisite assessments. Only DAG roots connect to the Decision; support paths therefore have the exact form Source → DIRECT assessment Claim → zero or more DERIVED_ALL assessment Claims → Decision.
-
-`SUPPORTING`, `CONTEXTUAL`, `CONTRADICTED_BY`, stale, unauthorized, or rootless derived paths do not satisfy this rule. Conversely, a valid Source → Claim → Claim → Decision path is sufficient without a duplicate Source → derived Claim or intermediate Claim → Decision edge.
-
-## Final gate effects
-
-- missing/insufficient Requirement → `REJECTED_INCOMPLETE_REQUIREMENTS`;
-- unresolved equal-authority CRITICAL contradiction → `NEEDS_HUMAN_REVIEW`;
-- deterministically winning authority contradicts the proposed outcome → `REJECTED_CONTRADICTION`;
-- semantic result inconsistent with trusted outcome class → `REJECTED_OUTCOME_CONSTRAINT`;
-- only a fully compatible result can be `ACCEPTED` and canonicalized.
-
-These are deterministic gate decisions over typed validated inputs, not direct model decisions.
-
-For an accepted APPROVE, the gate selects every satisfied root closure. For an accepted DENY, it selects one failed root path by normalized canonical requirement key. Other analyzed siblings remain in the compiler record but do not become Runtime critical dependencies, preventing unrelated sibling mutations from invalidating the chosen denial rationale.
+DENY proof selection uses stable predicate/source/topology identity; lexical proposition text is forbidden.
 
 ## Evaluation
 
-Contradiction and completeness are scored separately:
+Report separately:
 
-- contradiction pair recall and critical-severity recall;
-- requirement proposition recall;
-- requirement assessment accuracy;
-- critical dependency recall/precision;
-- explicit stage-execution coverage;
-- disposition and accepted-case coverage.
+- Stage-1 decomposition recall;
+- coverage-only omission recovery and false-candidate rate;
+- reconciled Requirement recall/precision;
+- entailment confusion including INDETERMINATE;
+- proof-selected CRITICAL recall/precision;
+- contradiction pair and deterministic-impact recall;
+- source/partition coverage completion;
+- RequirementAssessment accuracy;
+- disposition and accepted-case coverage;
+- policy/manifest invalidation behavior.
 
-The benchmark must expose safe-by-rejection behavior. A zero stale-escape rate over one accepted case is not proof of compiler usefulness.
+Safe rejection over almost every case is not proof of compiler usefulness.

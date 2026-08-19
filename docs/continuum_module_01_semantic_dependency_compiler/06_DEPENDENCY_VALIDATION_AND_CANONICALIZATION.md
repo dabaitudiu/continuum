@@ -1,98 +1,139 @@
 # 06 — Validation, Acceptance, and Canonicalization
 
-## Fixed validator order
+## Fixed validation order
 
-Validation follows the replacement pipeline, and each stage records its own trace. Structural integrity is checked immediately after the stage that introduces the data; semantic validity is accumulated until the final gate.
+Structural integrity is checked immediately after the stage that introduces a typed object. Semantic uncertainty is preserved until the relevant semantic stage; source/context incompleteness blocks execution rather than being mistaken for semantic rejection.
 
-### S1 Requirement structure
+### S0 Policy and source coverage
 
-Check schema, trimmed/bounded text, enum values, expected truth, proof mode, duplicate/unknown local IDs, and acyclic `depends_on_requirement_ids`. `DIRECT` has no prerequisites; `DERIVED_ALL` has at least one and the DAG is conjunction-only. Requirements cannot contain source refs or CRITICAL/SUPPORTING materiality; every Requirement is an APPROVE-validity prerequisite.
+Validate every `CompilerPolicyBundle` ref against the exact world snapshot. Recompute bundle、manifest、included artifact/fragment、excluded reason and partition-plan hashes. Verify source selection policy、retrieval/index/query versions、coverage boundary and trusted completeness declaration. Every deterministic semantic component emits `PolicyUsageTrace`; an interpretation-affecting config read outside the bundle is `UNVERSIONED_POLICY_INPUT` and prevents canonicalization.
 
-### S2 Evidence binding integrity
+Anything other than `DECLARED_COMPLETE`, or any incomplete partition plan, yields `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. A model cannot override this.
 
-Check canonical ref existence, request allowlist, owner scope, world-snapshot temporal validity, source type, authority-role legality, binding cross-links, entailed-truth vocabulary, and CRITICAL/materiality field consistency. CRITICAL bindings may target only DIRECT Requirements.
+Validate normalized governing-rule forms. Applicable OR、threshold、exception、quantified、unparsed or other unsupported logic yields `REJECTED_UNSUPPORTED_LOGIC` and no canonical output.
 
-Unknown refs are fatal. Fuzzy repair is forbidden. A historical source may be read only when explicitly allowed and cannot become a current CRITICAL validity-bearing authority.
+### S1 Requirement identity and reconciliation
 
-### S3 Contradiction integrity and precedence
+Validate `PredicateIdentity` against the versioned catalog、typed subject/object/qualifiers and decision-class contract. Normalize DIRECT_ATOM/ALL_OF, recursively flatten conjunctions, dedupe and sort child semantic IDs, and reject cycles.
 
-Check both refs, each side's entailed truth, optional binding/ref/truth identity, requirement linkage, source classes, authority rank, and configured precedence. The model's claim that a conflict is resolvable never changes deterministic precedence. A resolved winner without a matching validated CRITICAL binding remains incomplete and cannot be canonicalized.
+Validate Stage-1B independently of Stage-1A. Its receipt must account exactly once for every normalized governing obligation in the manifest using `APPLICABLE | NOT_APPLICABLE | INDETERMINATE`. Missing/duplicate/unexpected keys are not an empty success；INDETERMINATE cannot normally accept. Reconcile candidates by semantic key, not display text. Valid coverage-only omissions enter the effective Requirement set; conflicts become typed coverage findings. `UNKNOWN_SOURCE_REQUIRED` is not a schema member.
 
-### S4 Deterministic completeness and reachability
+### S2 Evidence candidate integrity
 
-Compute one assessment per explicit Requirement from a fixed truth table. DIRECT Requirements compare precedence-filtered CRITICAL `entailed_truth` with `expected_truth` and select one same-truth proof binding by authority rank/canonical ref; opposite truths still conflict. DERIVED_ALL Requirements conjoin prerequisite assessments. Code emits support paths, blocking IDs, missing-proposition text, and finding codes. Do not demand direct evidence on a derived Requirement if a valid leaf-to-root path already exists.
+Check canonical ref existence、manifest membership、owner scope、world-snapshot temporal validity、source type、authority-role legality、requirement cross-link、predicate compatibility、`OBLIGATION_APPLICABILITY | PREDICATE_STATE` target and three-state entailment vocabulary. Governing authority cannot masquerade as factual state proof.
 
-### S5 Deterministic outcome/acceptance policy
+The model supplies no canonical materiality. `INDETERMINATE` is valid analysis but proof-ineligible. Historical、unauthorized or fabricated refs remain structural failures; fuzzy repair is forbidden.
 
-Compute expected `APPROVE | DENY | REVIEW` from root assessments, compare it with the model proposal through the trusted outcome mapping, and apply the exact rules in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md). For accepted APPROVE/DENY, emit a deterministic minimal `DecisionJustification`; semantic gaps and conflicts are not pre-validator exits.
+### S3 Contradiction inventory and impact
 
-## Early terminal structural errors
+Validate `ContradictionCoveragePlan` hard limits, deterministic partition membership and every receipt. Receipt union must equal the full contradiction-eligible inventory and input hashes must match. Missing/truncated/partial partitions block the run.
 
-- invalid stage schema after one repair;
-- duplicate/unknown local IDs or a requirement cycle;
-- fabricated, unauthorized, cross-scope, or stale source ref;
-- illegal source role/relation/authority class;
-- inconsistent cross-links between typed objects.
+Globally join determinate opposing observations by stable predicate identity and the same entailment target, including cross-partition pairs. Validate refs、truth/value、scope、time and authority. Apply versioned precedence. Derive `VALIDITY_CRITICAL | NON_BLOCKING` from affected Requirement reachability、proof eligibility and resolution state; model severity is ignored for canonical effect.
 
-These return a structural disposition and an exact `executed_stages` trace. No canonical output is produced.
+### S4 Proof selection and completeness
 
-## Non-terminal semantic conditions
+For every required proof role, choose an eligible determinate binding using the versioned proof policy: authority/preference tier、stable source identity、binding semantic key. Selected bindings become `CRITICAL`; unselected explanatory candidates become `SUPPORTING`; indeterminate/ineligible candidates remain analysis-only.
 
-The following must not terminate before contradiction and completeness execute:
+Compute one assessment per reconciled effective Requirement. DIRECT_ATOM uses selected role evidence and contradiction state. ALL_OF uses the fixed conjunction truth table. Compute support paths、blocking IDs and deterministic finding templates. Do not demand redundant direct evidence on derived Requirements.
 
-- a Requirement currently has no CRITICAL evidence/counterevidence binding;
-- the Requirement set is empty;
-- a proposed high-risk outcome has no support path yet;
-- an unresolved or blocking question exists;
-- contradictory current authorities exist;
-- model confidence is low or semantic evidence is ambiguous;
-- proposed outcome appears inconsistent with evidence.
+### S5 Outcome and acceptance
 
-V1 codes such as `CRITICAL_CLAIM_UNSUPPORTED`, `HIGH_RISK_DECISION_UNSUPPORTED`, and `BLOCKING_QUESTION_UNRESOLVED` therefore move out of the early structural validator. Their v2 equivalents are RequirementAssessments and final-gate findings.
+Compute expected `APPROVE | DENY | REVIEW` from root assessments and compare it with the untrusted proposal through the versioned outcome policy. For accepted APPROVE/DENY, emit a `DecisionJustification` whose proof selection excludes display text、case/domain/local IDs and iteration order.
+
+## Early structural errors
+
+- invalid schema after one bounded repair;
+- duplicate/unknown local IDs、invalid predicate identity or requirement cycle;
+- fabricated、unauthorized、cross-scope or stale ref;
+- illegal source role/authority relation;
+- manifest/world/hash mismatch;
+- inconsistent typed cross-link.
+
+These may terminate early with an exact stage trace and no canonical output.
+
+## Execution-blocking conditions
+
+- credential/provider/transport/budget unavailable;
+- source universe `INCOMPLETE | UNKNOWN`;
+- hard limits cannot represent the complete contradiction inventory;
+- partition timeout、truncation、missing receipt or coverage mismatch.
+
+These return `RUN_BLOCKED`, not a semantic disposition. Partial contradiction results are never published as complete.
+
+## Non-structural semantic conditions
+
+- a Stage-1 requirement is absent but Stage-1B coverage proposes it;
+- a required proof role has no determinate evidence;
+- entailment is `INDETERMINATE`;
+- current authorities conflict;
+- model outcome disagrees with evidence;
+- model advisory materiality/severity is wrong.
+
+Once representable effective Requirements exist, these must reach reconciliation、contradiction、proof/completeness and gate as applicable. They do not justify an early structural exit.
 
 ## Canonicalization
 
-Canonicalization runs only after disposition `ACCEPTED`.
+Canonicalization runs only after `ACCEPTED`.
 
-### Stable mapping
+### Stable proof mapping
 
-- each RequirementAssessment selected by `DecisionJustification` maps to one canonical Claim recording proposition, expected truth, and assessment status;
-- selected winning EvidenceBindings map to SourceFragment → assessment Claim edges through Runtime invalidation-bearing `SUPPORTED_BY` / `GOVERNED_BY`, including counterevidence that justifies an accepted DENY;
-- selected DERIVED_ALL links map prerequisite Claim → derived Claim edges;
-- selected requirement-DAG root assessment Claims map to validity-bearing Decision-requires-Claim edges;
-- deterministic stable IDs derive from compilation inputs and versioned policy;
-- identical edges deduplicate; ordering is stable.
+- every selected RequirementAssessment maps to a Claim identified from stable predicate/topology semantics, not display text;
+- every Stage-4 `SELECTED_PROOF` binding maps SourceFragment → DIRECT Claim through validity-bearing `SUPPORTED_BY | GOVERNED_BY`;
+- every selected ALL_OF relationship maps prerequisite Claim → derived Claim;
+- selected roots map Claim → Decision;
+- materially used policy refs and the exact SourceSetManifest map through a `DecisionInterpretation` Claim to the Decision;
+- IDs、ordering and edge dedupe are deterministic.
 
-### Materiality
+### Canonical materiality
 
-Only `CRITICAL` edges are validity-bearing for later invalidation. `SUPPORTING` edges remain provenance-only. The canonicalizer cannot upgrade evidence based on relevance, model-read telemetry, or broad document membership.
+Only deterministic proof-selected bindings and materially participating interpretation policy/manifest refs produce `critical=true` edges. Model prose/labels never control canonical materiality. Unselected support remains provenance-only or analysis-only.
 
-`CONTRADICTED_BY` is not a direct invalidation relation in the current Runtime kernel. It cannot be the sole provenance for an accepted DENY; unresolved contradictions produce no accepted canonical graph, while a precedence-resolved winner is mapped through the validity-bearing assessment edge above.
+`CONTRADICTED_BY` is not a direct Runtime invalidation relation and cannot be the sole provenance of an accepted DENY. Counterevidence selected to justify DENY uses an invalidation-bearing support/governance edge.
 
 ### No silent semantic repair
 
-The canonicalizer cannot:
+Canonicalizer cannot:
 
-- substitute a near-match ref;
-- add a binding omitted by Stage 2;
-- promote SUPPORTING to CRITICAL;
-- resolve a contradiction by model preference;
-- add redundant direct edges to satisfy a shallow completeness check;
-- change the proposed outcome.
+- invent or near-match a ref;
+- add an omitted Requirement or binding;
+- use model materiality/severity as canonical truth;
+- resolve authority by model preference;
+- coerce unsupported logic;
+- add redundant direct edges;
+- change the proposed outcome;
+- omit policy/manifest provenance that materially produced the justification.
 
-The canonicalizer also cannot include unselected sibling Requirements “for completeness”. APPROVE includes all required root closures; DENY includes only the deterministic failed-root proof slice. Full analysis remains in the compiler record without becoming Runtime critical state.
+## Stable DENY proof selection
+
+APPROVE includes all necessary root closures. DENY selects one failed proof using:
+
+```text
+failure_class_priority from versioned proof policy
+→ failed DIRECT predicate_semantic_key
+→ sorted selected proof SourceRef identities
+→ flattened canonical path topology hash
+```
+
+Human-readable proposition text is excluded. Semantically equivalent paraphrases over the same structured predicates/context must select the same Runtime critical dependency set.
 
 ## Compilation hash
 
-The v2 hash covers at least:
+The Revision-2 hash covers at least:
 
-- normalized request and trusted outcome semantics;
-- validated Requirements, EvidenceBindings, Contradictions, and RequirementAssessments;
-- deterministic outcome class and DecisionJustification;
-- canonical refs and source/fragment hashes;
-- world snapshot;
-- pipeline/compiler/validation-policy versions;
-- deterministic precedence-policy version;
-- stage prompt/schema/model metadata required for provenance.
+- normalized request and stable predicate semantics;
+- exact `CompilerPolicyBundle` refs/hashes;
+- exact `SourceSetManifest` and contradiction coverage plan/receipts;
+- decomposition、coverage、reconciliation and effective Requirements;
+- evidence candidates、validated proof selection and canonical materiality;
+- contradiction observations、global pairs、precedence and deterministic impact;
+- RequirementAssessments、expected outcome and DecisionJustification;
+- canonical refs/source hashes、world snapshot and stage trace;
+- pipeline/compiler/schema/prompt/model metadata required for provenance.
 
-The same validated inputs and versions must produce an identical disposition, graph, trace, and hash.
+Changing only `proposition_display` must not change the semantic proof key or canonical edge set.
+
+## Runtime invalidation contract
+
+Accepted graph validity depends on both enterprise evidence and interpretation state. Revisions of selected source fragments、authority/outcome/classification/source-selection/proof/partition/logic policies、predicate/decision-class contracts or the SourceSetManifest must enter the ordinary artifact-change invalidation path and make the old Decision stale when they materially participated.
+
+`RuntimeAcceptanceService` rechecks exact mission revision、world snapshot、policy bundle、manifest and compilation hash before atomic mutation. Runtime—not the compiler model—owns later Decision status transitions.

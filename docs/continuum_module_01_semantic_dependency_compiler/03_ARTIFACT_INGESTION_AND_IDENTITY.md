@@ -138,6 +138,53 @@ Do not require permanent storage of long quoted text. Store safe excerpts only w
 
 Do not build a universal ingestion engine in this module.
 
+## P0 normalized governing-rule contract
+
+Reading a policy fragment is not enough to claim support for arbitrary policy logic. A governing fragment may participate in a normal accepted P0 compilation only when its active `ParsedRepresentation` exposes a versioned, trusted normalized-rule record:
+
+```text
+NormalizedRule
+  obligation_key             stable within the logical policy artifact
+  governing_source_ref       exact current fragment
+  predicate_code             from the versioned PredicateCatalog
+  expected_state
+  logic_form                 DIRECT_ATOM | ALL_OF | OR | THRESHOLD |
+                             EXCEPTION | QUANTIFIED | UNPARSED | OTHER
+  child_obligation_keys[]
+  scope_qualifiers
+  temporal_qualifiers
+  normalized_rule_hash
+```
+
+P0 accepts only `DIRECT_ATOM | ALL_OF`. Applicable `OR`、threshold、exception、quantified、unparsed or other unsupported forms produce a typed `REJECTED_UNSUPPORTED_LOGIC` result and no canonical graph. The compiler must never reinterpret them as conjunction. The normalized rule must be source-authored structured policy or produced by a controlled versioned parser and independently approved/signed; unreviewed model normalization is not a trusted acceptance input.
+
+Raw Markdown/PDF prose may still be ingested and shown as context, but if the governing semantics needed for a Decision lack a trusted normalized-rule representation, source coverage is not sufficient for normal acceptance.
+
+## Compiler policy and source-manifest artifacts
+
+Deterministic interpretation inputs use the same immutable identity model as enterprise sources. At minimum the following are versioned artifacts in the world snapshot:
+
+- authority precedence policy;
+- authority classification policy;
+- outcome semantics policy;
+- source-selection policy;
+- decision-class contract;
+- predicate catalog;
+- proof-selection policy;
+- context-partition policy;
+- supported-logic policy;
+- the exact `SourceSetManifest` produced for the compilation.
+
+Their canonical refs and content hashes are not audit-only metadata. Any materially participating policy/manifest ref becomes a validity-bearing Runtime dependency of an accepted Decision, so a revision change enters the ordinary deterministic invalidation path.
+
+Revision 2 extends the artifact/source-type vocabulary with trusted `COMPILER_POLICY` and `SOURCE_SET_MANIFEST` provenance classes. A manifest logical key is derived from scope、decision class、coverage-boundary digest and selection-policy logical key; its revision content hashes the complete selected universe/world snapshot. Relevant universe changes publish a superseding manifest revision so existing Runtime edges can invalidate deterministically.
+
+## Source-universe coverage
+
+Every compilation binds to a content-addressed `SourceSetManifest` containing the selection policy/version, world snapshot, coverage boundary, included artifacts/fragments, excluded artifacts with reason codes, retrieval/index/query versions, contradiction-eligible refs, partition-plan hash, and `DECLARED_COMPLETE | INCOMPLETE | UNKNOWN` status.
+
+Only a trusted source-selection component may declare completeness. A retrieved subset whose completeness cannot be proven for the decision class is `UNKNOWN` and causes `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. Silent truncation is forbidden.
+
 ## Revision semantics
 
 A compiler request is bound to a `world_snapshot_id`. Every referenced revision must be valid in that snapshot, and every current revision is bound to one active parsed representation.

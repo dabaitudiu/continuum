@@ -8,22 +8,15 @@ This is a planning range, not a timer-based definition of done. If the work fini
 
 ## Implementation status — 2026-08-19
 
-The v1 Phases A–G code exists, but its model method is not accepted. The authenticated OpenAI lane failed the Phase F quality gate, and paired Experiment 1 triggered K3 for the current critic. On 2026-08-19 the product owner selected Option B: replace the vague critic with Requirement Decomposition, Evidence Binding, an Independent Contradiction Pass, Requirement Completeness, and a Deterministic Acceptance Gate. Option A remains a benchmark baseline only; Option C is rejected.
+The v1 Phases A–G code exists, but its model method is not accepted. The authenticated OpenAI lane failed the Phase F quality gate, and paired Experiment 1 triggered K3 for the current critic. On 2026-08-19 the product owner selected Option B's direction, rejected the vague critic, and then **rejected the first concrete Option B specification** on 11 P0 architectural blockers. Option A remains a benchmark baseline only; Option C is rejected.
 
-The replacement design is specified in `15_REPLACEMENT_ARCHITECTURE.md` and is **not yet implemented**. No implementation plan may begin until the product owner reviews that design. No full 120-case paid benchmark, holdout inference, live Gemini acceptance, or Module 02 work is authorized at this stage.
+Revision 2 is specified in `15_REPLACEMENT_ARCHITECTURE.md` and is **under review, not approved or implemented**. The product owner explicitly prohibited writing a v2 implementation plan at this stage. No production compiler change、blind-holdout generation/read、live model call、full 120 paid benchmark、live Gemini acceptance or Module 02 work is authorized.
 
-## Replacement sequence after design approval
+## V2 planning gate
 
-This is a phase boundary, not authorization to code:
+No Revision-2 implementation sequence is specified here because the concrete architecture has not been approved. After product-owner approval, a separate planning step may translate the approved contracts into verification checkpoints.
 
-1. freeze method-blind requirement annotations and the 60-case locked holdout before v2 implementation;
-2. write a detailed implementation plan with verification checkpoints;
-3. freeze the old critic as a benchmark-only legacy arm and remove it from v2/default candidate production wiring;
-4. implement typed Requirements and EvidenceBindings plus deterministic validators;
-5. implement the dedicated Contradiction and Requirement Completeness stages;
-6. implement the deterministic outcome/acceptance gate and canonical transitive mapping;
-7. execute preregistered Experiments 2–4, then the three-arm 30-case Experiment 5;
-8. stop on any failed progression gate; only a PASS permits full DEV, holdout, then live Gemini in that order.
+The independently owned blind holdout is **not** a development-plan artifact. The implementation agent may see only metadata until full DEV PASS and methodology freeze; it must not generate、read or commit holdout bodies.
 
 The historical phases below describe the v1 build and remain for audit; they are not evidence that the replacement architecture is complete.
 

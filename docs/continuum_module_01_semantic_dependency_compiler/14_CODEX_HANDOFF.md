@@ -2,9 +2,9 @@
 
 ## 2026-08-19 architecture amendment
 
-The historical first-implementation instruction below has already been executed for v1. It is no longer the next action. Paired live evidence triggered K3, and the product owner selected Option B while rejecting the vague critic.
+The historical first-implementation instruction below has already been executed for v1. It is no longer the next action. Paired live evidence triggered K3; the product owner selected Option B's direction、rejected the vague critic, and rejected the first concrete Option B spec on 11 P0 blockers.
 
-The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md`; do not write compiler code, generate the locked holdout, call a live model, run the full 120 cases, or begin Module 02 until the product owner approves that design. After approval, freeze the holdout and write a separate implementation plan before coding.
+The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md` Revision 2. Do not write an implementation plan or compiler code、generate/read blind-holdout bodies、call a live model、run full 120 DEV or begin Module 02 until the product owner approves the design. The blind holdout is owned outside the repository by the product owner/independent evaluator and is not revealed until full DEV PASS plus method freeze.
 
 ## Mission
 

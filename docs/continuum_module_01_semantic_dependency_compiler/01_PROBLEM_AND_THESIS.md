@@ -33,6 +33,9 @@ The compiler is successful when it can answer:
 - Which references were valid at decision time?
 - Are there conflicting facts or policies?
 - Did the model omit an obvious critical source?
+- Was the governing-source universe itself complete?
+- Which deterministic interpretation policies made the proof valid?
+- Is evidence determinate, or genuinely ambiguous?
 
 ## Example
 
@@ -101,10 +104,12 @@ Does the compiler work across multiple mission domains rather than only vendor o
 
 ## Design stance
 
-We prefer a **hybrid compiler** with explicit semantic stages:
+We prefer a **hybrid compiler** with explicit semantic stages, limited at P0 to gate-shaped decisions representable as `DIRECT_ATOM | ALL_OF`:
 
-- Model: Requirement Decomposition, Evidence Binding, and dedicated contradiction proposals.
-- Deterministic code: identity, access scope, schema, temporal validity, reference integrity, DIRECT/DERIVED_ALL completeness, outcome/justification selection, graph compilation, and invariant enforcement.
-- Deterministic acceptance: precedence, outcome/blocking policy, disposition, canonicalization, and Runtime boundary.
+- Model: Requirement Decomposition、an independent outcome-blind governing-obligation inventory、three-state evidence/role proposals and partitioned contradiction observations.
+- Deterministic code: complete SourceSet/policy validation、stable predicate identity、requirement reconciliation、proof selection/materiality、contradiction coverage/impact、DIRECT_ATOM/ALL_OF completeness、outcome/justification selection and graph compilation.
+- Deterministic acceptance: versioned precedence/outcome/proof policies、disposition、canonicalization and Runtime boundary. Every materially used policy/manifest revision becomes a validity dependency.
 
-The former open-ended second-pass critic is rejected by the product owner after K3 evidence. See `15_REPLACEMENT_ARCHITECTURE.md`; reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.
+Unsupported OR、threshold、exception、quantified or unparsed governing logic fails closed; it is not approximated. Canonical `CRITICAL` and contradiction impact are never direct model fields.
+
+The former open-ended second-pass critic is rejected by the product owner after K3 evidence. The first concrete Option B specification was also rejected; `15_REPLACEMENT_ARCHITECTURE.md` Revision 2 is awaiting review. Reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.
