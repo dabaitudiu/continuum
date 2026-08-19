@@ -2,9 +2,9 @@
 
 ## 2026-08-19 architecture amendment
 
-The historical first-implementation instruction below has already been executed for v1 and is no longer the next action. Paired live evidence triggered K3；the product owner selected Option B's direction、rejected the vague critic、rejected the first spec on P0-1～P0-11 and Revision 2 on P0-12～P0-19.
+The historical first-implementation instruction below has already been executed for v1 and is no longer the next action. Paired live evidence triggered K3；the product owner selected Option B's direction、rejected the vague critic and rejected concrete specs through Revision 3（P0-1～P0-27）。
 
-The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md` Revision 3. Do not write an implementation plan or compiler code、generate/read blind-holdout bodies、call a live model、run full 120 DEV or begin Module 02 until the product owner approves the design. The blind holdout remains externally owned and is not revealed until OpenAI full DEV、Gemini full DEV and method freeze；Gemini is primary blind lane.
+The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md` Revision 4. Do not write an implementation plan or compiler code、generate/read blind-holdout bodies、call a live model、run full 120 DEV or begin Module 02 until the product owner approves the design. The blind holdout remains externally owned and is not revealed until OpenAI full DEV、Gemini full DEV and method freeze；Gemini is primary blind lane.
 
 ## Mission
 

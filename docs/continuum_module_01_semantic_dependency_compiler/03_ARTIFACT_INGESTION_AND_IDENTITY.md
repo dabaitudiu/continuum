@@ -147,9 +147,9 @@ NormalizedRule
   normalized_rule_id         stable content-addressed identity
   obligation_key             stable within the logical policy artifact
   governing_source_ref       exact current fragment
-  requirement_predicate_codes[]
-  applicability_predicate_codes[]
-  expected_state
+  requirement_templates[]     reusable predicate code + subject/object roles +
+                              typed context bindings + expected state + proof roles
+  applicability_templates[]
   logic_form                 DIRECT_ATOM | ALL_OF | OR | THRESHOLD |
                              EXCEPTION | QUANTIFIED | UNPARSED | OTHER
   child_obligation_keys[]
@@ -158,7 +158,7 @@ NormalizedRule
   normalized_rule_hash
 ```
 
-P0 accepts only `DIRECT_ATOM | ALL_OF`. Applicable `OR`、threshold、exception、quantified or other unsupported forms produce `REJECTED_UNSUPPORTED_LOGIC`；a material rule outside the pre-registered catalog produces `REJECTED_UNSUPPORTED_PREDICATE`。The compiler must never reinterpret、invent or omit them. The normalized rule must be source-authored structured policy or produced by a controlled versioned parser and independently approved/signed；unreviewed model normalization is not a trusted acceptance input.
+P0 accepts only `DIRECT_ATOM | ALL_OF`. Applicable `OR`、threshold、exception、quantified or other unsupported forms produce `REJECTED_UNSUPPORTED_LOGIC`；a material rule outside the pre-registered catalog, including `NOT_EXISTS` or `EXISTS + expected_state=FALSE` absence semantics, produces `REJECTED_UNSUPPORTED_PREDICATE`。Templates are reusable domain/decision-class semantics and may not contain case IDs、exact benchmark graphs/outcomes or concrete source revisions. The compiler must never reinterpret、invent or omit them. The normalized rule must be source-authored structured policy or produced by a controlled versioned parser and independently approved/signed；unreviewed model normalization is not a trusted acceptance input.
 
 Every in-boundary fragment is accounted exactly once in a content-addressed `RuleNormalizationManifest` as `NORMALIZED_RULES | NO_GOVERNING_RULE | UNSUPPORTED_LOGIC | UNSUPPORTED_PREDICATE | UNPARSED_REVIEW_REQUIRED`, with parser/reviewer receipts. Raw Markdown/PDF prose may still be shown as context, but missing/unreviewed normalization blocks；silent parser omission is never “no rule”。
 
@@ -180,11 +180,15 @@ At minimum the following are versioned `CompilerPolicyArtifact` records：
 - rule-normalization and reviewer policy;
 - decision-class contract;
 - predicate catalog;
+- entity-binding policy;
 - proof-selection policy;
+- Evidence-coverage policy;
 - context-partition policy;
+- temporal-validity policy;
+- semantic-epoch policy;
 - supported-logic policy;
 
-`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `RuleNormalizationManifest`、`SourceSetManifest`、partition certificates、applicability justifications and `DecisionInterpretation` are compiler-derived records. Material policy refs and selective coverage/rule/applicability guard keys are validity-bearing；full derived manifest inventories are audit derivation, not one coarse CRITICAL dependency.
+`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `DecisionProposal`/`DecisionEntityContext` are signed immutable request-input envelopes in a separate request store；they reference but are not members of the input world and do not create a fourth compiler artifact namespace. `RuleNormalizationManifest`、`SourceSetManifest`、Evidence/contradiction certificates、applicability/temporal guards、`DecisionValidityEnvelope` and `DecisionInterpretation` are compiler-derived records. Material policy refs and selective coverage/rule/Evidence/contradiction/applicability guard keys are validity-bearing；full derived inventories are audit derivation, not one coarse CRITICAL dependency.
 
 ## Source-universe coverage
 

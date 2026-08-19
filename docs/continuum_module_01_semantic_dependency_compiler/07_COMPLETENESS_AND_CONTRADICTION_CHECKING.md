@@ -2,46 +2,52 @@
 
 ## Architecture decision
 
-The old Completeness Critic remains rejected. Revision 3 replaces it with six disjoint contracts:
+The old Completeness Critic remains rejected. Revision 4 replaces it with seven disjoint contracts:
 
 1. authoritative universe + fragment-complete normalization prove the obligation input inventory;
-2. independent governing-obligation coverage proposes typed semantic Requirements/applicability bindings;
-3. deterministic applicability proof and reconciliation create justified exclusions/effective Requirements;
-4. partitioned independent contradiction observation covers applicability and requirement predicates;
-5. deterministic proof selection/completeness derives materiality、contradiction impact and RequirementAssessments;
-6. deterministic gate and selective provenance mapping decide Runtime eligibility.
+2. approved reusable templates plus trusted entity roles deterministically instantiate every semantic Requirement/applicability target；
+3. no-top-K `EvidenceCoveragePlan` and fragment receipts cover Evidence/applicability discovery；
+4. scalable independent fragment contradiction observation covers the same target semantics without ref×predicate negative output；
+5. deterministic applicability/proof/completeness derives materiality、impact and RequirementAssessments；
+6. temporal guards and epoch-bound validity envelope define authorization lifetime；
+7. deterministic proposal Gate and selective provenance mapping decide Runtime eligibility without outcome substitution.
 
 No pass emits `UNKNOWN_SOURCE_REQUIRED`, edits canonical state, or decides final disposition.
 
-## Independent Requirement Coverage
+## Trusted Requirement Authority and Complete Accounting
 
 ### Question
 
-> Given this request、decision class and the universe-rooted、normalization-complete governing inventory, which material obligations may apply and what current facts support their applicability?
+> Given this immutable proposal/entity context and the universe-rooted、normalization-complete governing inventory, did every approved reusable Requirement/applicability template instantiate exactly once?
 
-### Independence boundary
+### Authority boundary
 
-The pass does not receive Stage-1 decomposition or proposed outcome. It sees every obligation from the validated `RuleNormalizationManifest + SourceSetManifest` chain, including pre-registered applicability predicates. Large inventories use deterministic disjoint partitions and complete receipts；partial coverage blocks rather than silently sampling.
+`RuleNormalizationManifest.requirement_templates[]` and decision-class proposal-validity templates are the only authorities. Deterministic Stage 1 binds their subject/object roles through signed `DecisionEntityContext`. Domain-agent rationale and model output cannot add、replace or suppress Requirements；templates cannot contain case IDs、exact benchmark graphs/outcomes or concrete source revisions.
 
-### Output and reconciliation
+### Output and accounting
 
-It outputs one advisory observation、candidate applicability bindings and Requirement candidates for every representable normalized obligation. Stage 1C validates only provisional proof；Stage 3 independently covers applicability conflicts；Stage 4 finalizes APPLICABLE only when all conditions remain true and NOT_APPLICABLE only from a stable determinate false guard. Both persist `ApplicabilityJustification`；otherwise INDETERMINATE fails closed. A model N/A label cannot suppress a Requirement before those passes。
+Each obligation/template gets one `RequirementInstantiationReceipt` containing instantiated Requirements、applicability target keys、entity context and status. Every candidate remains until Stage 4 finalizes APPLICABLE from all true conditions or NOT_APPLICABLE from a stable determinate false guard after contradiction；otherwise INDETERMINATE fails closed.
 
-Deterministic reconciliation compares Stage 1A and coverage by semantic key:
+Accounting rules：
 
-- match → origin `BOTH`;
-- valid coverage-only omission → retain as conditional `COVERAGE_PASS` candidate and run downstream binding/contradiction/completeness；Stage 4 applicability decides effective membership;
-- incompatible expected states/topology → fail-closed coverage conflict;
+- every normalized obligation and decision-class template appears exactly once;
+- reusable template + entity role binding deterministically defines semantic ID/topology;
+- incompatible/duplicate/missing template or entity role → fail-closed coverage conflict;
 - unsupported logic/predicate → typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE`;
-- unknown/fabricated ref → structural failure.
+- `NOT_EXISTS`/retrieval-derived absence → typed `ABSENCE_PROOF_NOT_SUPPORTED_P0`;
+- invented target/entity/ref → structural failure.
 
-This catches a Stage-1 omission in production without asking a vague critic to find arbitrary problems.
+This catches a domain-proposal/rationale omission by construction without making the compiler a second Decision Maker or a vague critic。
+
+## Complete Evidence and Applicability Discovery
+
+`EvidenceCoveragePlan` contains all instantiated Requirement/applicability targets and every fragment certified eligible by versioned entity/source-role/namespace rules. It has no top-K field. Deterministic partitions yield one `FragmentEvidenceObservation` per ref with only actual matches；empty means processed/no match reported. Exact receipts prove processing coverage, while method-blind annotations measure semantic recall/precision. Partial、dense、over-limit or best-effort retrieval coverage is `RUN_BLOCKED`；complete no-match becomes insufficient evidence, never absence proof。
 
 ## Independent Contradiction Pass
 
 ### Input
 
-- reconciled supported Requirement candidates plus every applicability predicate/guard;
+- template-instantiated Requirement candidates plus every applicability predicate/guard;
 - complete contradiction-eligible ref inventory from the manifest;
 - deterministic coverage plan and hard limits;
 - source content、authority/scope/time metadata and stable predicate contracts.
@@ -50,17 +56,17 @@ The pass is independent of Stage-2 bindings.
 
 ### Coverage-preserving map/reduce
 
-Deterministic partitioning assigns every eligible ref exactly once. Each map call emits typed observations and a receipt. Reducer verifies every expected partition、input hash and processed-ref union before semantic reduction.
+Deterministic partitioning assigns every eligible ref exactly once. Each map call emits one `FragmentSemanticObservation` per ref with actual `matched_predicates[]` and a receipt. Reducer verifies every expected partition、target/input hash、wrapper and processed-ref union before semantic reduction.
 
-Determinate opposing observations are globally joined by stable predicate identity **and entailment target**, so sources in different partitions can conflict without mixing applicability with business state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction。
+Determinate opposing matches are globally joined by stable predicate **plus entity and entailment target**, so sources in different partitions can conflict without mixing entities/applicability/business state. `INDETERMINATE` is retained as ambiguity but does not form a false binary contradiction. Output complexity is O(fragments+actual matches), not a negative cross-product。
 
-If hard limits、timeout、truncation、missing receipt or union mismatch prevent complete coverage, the result is `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. It is never reported as a zero-contradiction success.
+If executable hard limits、dense output、timeout、truncation、missing receipt or union mismatch prevent complete coverage, the result is `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`. It is never reported as a zero-contradiction success.
 
 Observations are not binding candidates. An unbound precedence winner may make the conflict/omission visible but cannot be promoted to proof or Runtime provenance by the contradiction pass；without a matching validated Stage-2 binding, completeness remains insufficient.
 
 ### Deterministic precedence and impact
 
-Only versioned policy may resolve authority. The model's severity and resolution recommendation are advisory.
+Only versioned policy may resolve authority. The Revision-4 model schema has no severity/resolution authority.
 
 Conflict impact is `VALIDITY_CRITICAL` iff:
 
@@ -98,7 +104,7 @@ Normalized obligation、applicability evidence and factual state are not interch
 
 Priority is: any CONTRADICTED → CONTRADICTED; else any UNSATISFIED → UNSATISFIED; else all SATISFIED → SATISFIED; else INSUFFICIENT_EVIDENCE.
 
-Every effective Requirement receives exactly one code-computed assessment. Coverage pass—not completeness—may introduce a missing semantic Requirement. Completeness itself cannot invent Requirements、refs、bindings or placeholder evidence.
+Every effective Requirement receives exactly one code-computed assessment. Trusted template instantiation—not completeness—defines Requirements. Completeness itself cannot invent Requirements、refs、bindings or placeholder evidence.
 
 ## Reachability
 
@@ -114,11 +120,11 @@ A valid transitive path is sufficient. No duplicate Source → derived Claim or 
 
 - applicable unsupported logic → `REJECTED_UNSUPPORTED_LOGIC`;
 - applicable unsupported predicate → `REJECTED_UNSUPPORTED_PREDICATE`;
-- universe/normalization/source/partition coverage incomplete → execution `RUN_BLOCKED`;
-- unresolved requirement coverage conflict → `REJECTED_REQUIREMENT_COVERAGE`;
+- universe/normalization/source/Evidence/contradiction coverage incomplete → execution `RUN_BLOCKED`;
+- unresolved template/accounting conflict → `REJECTED_REQUIREMENT_COVERAGE`;
 - insufficient determinate evidence → `REJECTED_INCOMPLETE_REQUIREMENTS` or `NEEDS_HUMAN_REVIEW`;
 - unresolved validity-critical contradiction → `NEEDS_HUMAN_REVIEW`;
-- outcome mismatch → `REJECTED_OUTCOME_CONSTRAINT` / `REJECTED_CONTRADICTION`;
+- supplied proposal outcome mismatch → `REJECTED_OUTCOME_CONSTRAINT` / `REJECTED_CONTRADICTION`，with no replacement Decision;
 - only fully compatible APPROVE/DENY can be `ACCEPTED`.
 
 DENY proof selection uses stable predicate/source/topology identity; lexical proposition text is forbidden.
@@ -127,16 +133,18 @@ DENY proof selection uses stable predicate/source/topology identity; lexical pro
 
 Report separately:
 
-- Stage-1 decomposition recall;
-- coverage-only omission recovery and false-candidate rate;
-- reconciled Requirement recall/precision;
+- template/obligation accounting、Requirement recall/precision and K6 case-specific/general reuse metrics;
+- proposal validation accuracy and outcome-substitution rate（target 0）；
+- entity-binding/cross-entity canonicalization errors（target 0）；
+- Evidence/applicability receipt completion、semantic match recall/precision and no-match false-negative rate；
 - entailment confusion including INDETERMINATE;
 - proof-selected CRITICAL recall/precision;
 - contradiction pair and deterministic-impact recall;
-- universe/normalization/source/partition coverage completion;
+- universe/normalization/source/Evidence/contradiction coverage completion and hard-limit usage;
 - APPLICABLE/N/A proof completeness and transition stale recall;
 - RequirementAssessment accuracy;
 - disposition and accepted-case coverage;
 - selective policy/rule/coverage invalidation and `coverage_induced_unnecessary_invalidation_rate`.
+- temporal-expiry and semantic-epoch authorization escape rates（both target 0）。
 
 Safe rejection over almost every case is not proof of compiler usefulness.

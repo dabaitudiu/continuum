@@ -88,7 +88,7 @@ If only §11.2 changes later, the runtime should not blindly invalidate every de
 
 ### RQ1 — Dependency completeness
 
-Can Gemini identify the material dependencies of its own structured decision with high recall?
+Can reusable trusted rule/decision-class templates define material gate semantics without case-specific graphs, while Gemini/OpenAI interpret the complete Evidence domain with high recall?
 
 ### RQ2 — Granularity
 
@@ -106,10 +106,11 @@ Does the compiler work across multiple mission domains rather than only vendor o
 
 We prefer a **hybrid compiler** with explicit semantic stages, limited at P0 to gate-shaped decisions representable as `DIRECT_ATOM | ALL_OF`:
 
-- Model: Requirement Decomposition、an independent outcome-blind governing-obligation/applicability inventory、three-state evidence/role proposals and partitioned contradiction observations.
-- Deterministic code: authoritative universe + fragment normalization + SourceSet validation、stable pre-registered predicate identity、applicability proof、requirement reconciliation、proof selection/materiality、contradiction coverage/impact、DIRECT_ATOM/ALL_OF completeness、outcome/justification selection and graph compilation.
-- Deterministic acceptance: versioned precedence/outcome/proof/normalization/selection policies、selective coverage guards、disposition、canonicalization and Runtime derivation boundary. Every materially used policy/rule/guard revision becomes validity provenance without making the whole inventory a super-dependency.
+- Domain agent: immutable `DecisionProposal` outcome and signed `DecisionEntityContext`；compiler never replaces the business Decision.
+- Model: fragment-complete three-state Evidence/applicability interpretation and a separate scalable contradiction observation pass；no Requirement/outcome/entity authority.
+- Deterministic code: authoritative universe + normalization + SourceSet validation、approved reusable template→entity Requirement instantiation/accounting、proof selection/materiality、contradiction impact、DIRECT_ATOM/ALL_OF completeness、temporal validity and proposal Gate.
+- Deterministic acceptance: versioned policies、selective coverage guards、epoch-bound validity envelope、disposition、canonicalization and Runtime barrier. Every materially used policy/rule/guard revision becomes validity provenance without making the whole inventory a super-dependency.
 
-Unsupported OR、threshold、exception、quantified or unparsed governing logic and material predicates outside the frozen catalog fail closed；they are not approximated or ignored. Canonical applicability、`CRITICAL` and contradiction impact are never direct model fields.
+Unsupported OR、threshold、exception、quantified/unparsed logic、material predicates outside the frozen catalog and absence/`NOT_EXISTS` proof fail closed；they are not approximated or ignored. Canonical applicability、`CRITICAL` and contradiction impact are never direct model fields.
 
-The former open-ended second-pass critic is rejected by the product owner after K3 evidence. The first concrete Option B specification and Revision 2 were also rejected；`15_REPLACEMENT_ARCHITECTURE.md` Revision 3 is awaiting review. Reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.
+The former open-ended second-pass critic is rejected by the product owner after K3 evidence. Concrete Option B specifications through Revision 3 were also rejected；`15_REPLACEMENT_ARCHITECTURE.md` Revision 4 is awaiting review. Reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.

@@ -2,7 +2,7 @@
 
 ## Status
 
-This is the provider-neutral Option B Revision-3 protocol under product-owner review. The direction is approved；the concrete specification is not. OpenAI remains a provider-neutral falsification lane and Gemini is the competition-provider DEV/blind acceptance lane. No live calls are authorized by this document.
+This is the provider-neutral Option B Revision-4 protocol under product-owner review. The direction is approved；the concrete specification is not. OpenAI remains a provider-neutral falsification lane and Gemini is the competition-provider DEV/blind acceptance lane. No live calls are authorized by this document.
 
 The implemented reasoner/critic protocol is frozen as the v1 ablation baseline. The old critic prompt must not be tuned or preserved as production fallback.
 
@@ -14,88 +14,66 @@ The implemented reasoner/critic protocol is frozen as the v1 ablation baseline. 
 - output must match the stage-specific schema;
 - no stage may emit canonical IDs, mutate Runtime state, select deterministic precedence, or authorize an action;
 - no stage may declare universe/normalization/selection completeness、canonical applicability、canonical materiality、canonical contradiction impact or final disposition;
+- model stages receive immutable `DecisionProposal` outcome and already-instantiated predicate/entity target keys only；they may not author/replace the business outcome、Requirement、predicate or entity；
+- every fragment-complete map returns exactly one wrapper per assigned fragment, with an empty match list when it reports no relevant proposition；no top-K or silent negative cross-product；
 - concise semantic propositions and summaries are stored; hidden chain-of-thought is neither requested nor persisted;
-- invalid schema receives at most one bounded repair attempt, then ends as a structural failure;
+- invalid schema receives only the policy-configured bounded repair count；v4 fragment Evidence/contradiction maps use zero repairs, then end as structural failure;
 - every invocation records provider/model/version, prompt/schema version, request configuration, response identity, usage, latency, and ledger settlement.
 
-## Stage 0 — No model ownership
+## Stage 0/1 — No model ownership
 
-Trusted code validates `SourceUniverseSnapshot → RuleNormalizationManifest → SourceSetManifest` plus deterministic partitions and selective coverage guards. A model cannot declare catalog、normalization or retrieved subset complete. `INCOMPLETE | UNKNOWN | REVIEW_REQUIRED` coverage blocks the run before semantic inference. These derived records bind exact world/policy inputs but are not members of the input world snapshot.
+Trusted code validates `DecisionProposal` producer/outcome/world binding、`DecisionEntityContext` roles and `SourceUniverseSnapshot → RuleNormalizationManifest → SourceSetManifest`. It then deterministically instantiates every approved governing/decision-class `RequirementTemplate` and accounts every obligation/applicability target exactly once. A model cannot declare coverage complete or create Requirements. `INCOMPLETE | UNKNOWN | REVIEW_REQUIRED` blocks before semantic inference. Derived records bind exact inputs but are not members of the input world snapshot.
 
-## Stage 1A — Requirement Decomposition
-
-Input:
-
-- trusted task definition;
-- decision type, risk class, outcome vocabulary and versioned decision-class/predicate contracts;
-- manifest-bounded source summaries/content as data.
-
-Output: `DecisionAnalysisProposal` containing one proposed outcome from the trusted vocabulary plus `Requirement[]`.
-
-The instruction asks for atomic APPROVE-validity predicates and `DIRECT_ATOM | ALL_OF` structure. It uses stable `PredicateIdentity`; display text is non-authoritative. It forbids refs in Requirement fields and explicitly surfaces unsupported OR/threshold/exception/quantified logic rather than coercing it.
-
-## Stage 1B — Independent Governing-Obligation Coverage
+## Stage 2 — Complete Evidence/applicability interpretation
 
 Input:
 
-- trusted request and decision-class/predicate contracts;
-- every governing fragment in the complete manifest plus normalized-rule metadata;
-- **not** Stage-1A output and **not** the proposed outcome.
+- one deterministic `EvidenceCoveragePlan` partition containing ≤16 assigned fragments and only the catalog-allowed target keys for each fragment；
+- template-instantiated Requirement and applicability target descriptors with trusted entity bindings；
+- source identity/content/authority/time metadata as untrusted data.
 
-Output per deterministic partition: one advisory `RequirementCoverageObservation` per assigned normalized governing obligation、candidate bindings for its pre-registered applicability predicates、a coverage receipt and semantic `RequirementCoverageCandidate[]` for every representable obligation regardless of proposed applicability。
+Output: exactly one `FragmentEvidenceObservation` per assigned fragment plus one `EvidenceCoverageReceipt`.
 
-The pass inventories material governing obligations without seeing Stage 1A/outcome. It may propose current-state bindings only for declared applicability predicates；it cannot judge business outcome、assign canonical materiality/severity、rewrite Stage 1 or invent refs/codes. Stage 1C validates provisional proof candidates but cannot finalize before contradiction. All supported Requirement candidates proceed through binding；Stage 3 checks independent applicability conflicts；Stage 4 finalizes APPLICABLE/N/A justifications and the effective Requirement set. INDETERMINATE fails closed。
-
-## Stage 2 — Evidence Binding
-
-Input:
-
-- reconciled supported Requirement candidates, including provisionally N/A/indeterminate obligations;
-- request-scoped source inventory and selected fragment content;
-- source identity and authority metadata.
-
-Output: `EvidenceBindingCandidate[]` only.
-
-For each binding, the model states semantic role、`NORMALIZED_OBLIGATION | REQUIREMENT_PREDICATE` target、`ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE`、normalized value where applicable and concise counterfactual analysis. Applicability predicate bindings use the Stage-1B contract. A policy that requires training proves neither applicability nor current training. The model does not output canonical `CRITICAL | SUPPORTING`；deterministic proof selection owns it.
+Each fragment wrapper contains only actual matched Requirement/applicability predicates、semantic role、three-state entailment、bounded canonical subject/object/value and asserted horizon；free prose is forbidden. Empty matches mean processed/no match reported. The model cannot emit a target outside the plan or an entity ID. Deterministic code validates receipts、entity/ref/scope/time/role and derives bindings. Governing authority is bound from trusted rule/template provenance, not rediscovered by the model. The model does not output canonical `CRITICAL | SUPPORTING`。
 
 ## Stage 3 — Independent Contradiction Pass
 
 Input:
 
-- reconciled supported Requirement candidates plus all applicability predicate targets;
+- template-instantiated Requirement plus all applicability predicate targets;
 - one deterministic partition of the complete current/in-scope contradiction-eligible inventory, independent of Stage-2 refs;
 - source values/claims and authority metadata.
 
-Output: `ContradictionObservation[]` plus a coverage receipt.
+Output: one `FragmentSemanticObservation` per assigned fragment plus a coverage receipt.
 
-This prompt does not ask for omissions、dependency repair、outcome rewrite or final disposition. Each partition maps source propositions to stable Requirement predicates. Deterministic code verifies receipt coverage, globally joins observations across partitions, applies precedence, and derives validity impact. Model severity is advisory only. Timeout、truncation or partial union blocks the run rather than reporting an empty contradiction set.
+This separate prompt does not receive Stage-2 matches/refs and does not ask for omissions、dependency repair、outcome rewrite、severity or disposition. Each wrapper contains only actual matches；empty means processed/no match reported. Deterministic code verifies exact fragment coverage、globally joins matches by predicate/entity/target across partitions、applies precedence and derives impact. The output is O(fragments+actual matches). Timeout、dense output、truncation or partial union blocks rather than reporting an empty contradiction set.
 
-## Stage 4 — Deterministic Proof Selection and Requirement Completeness
+## Stage 4/5 — Deterministic proof、temporal validity and proposal Gate
 
 This stage has no model invocation.
 
 Input:
 
-- reconciled Requirements、validated binding candidates、globally reduced contradictions and policy bundle;
+- template-instantiated Requirements、validated binding candidates、globally reduced contradictions and policy bundle;
 - DIRECT_ATOM/ALL_OF requirement DAG.
 
-Output: proof-selected `EvidenceBinding[]` plus exactly one deterministic `RequirementAssessment` per effective Requirement.
+Output: proof-selected `EvidenceBinding[]`、one assessment per effective Requirement、`TemporalValidityGuard[]`、`DecisionValidityEnvelope` and proposal disposition.
 
-For each required proof role, code selects eligible determinate evidence by versioned authority/proof policy. Selected bindings become canonical CRITICAL dependencies. Missing roles or only INDETERMINATE evidence produce `INSUFFICIENT_EVIDENCE`. ALL_OF uses a fixed conjunction table. This stage cannot add a Requirement、ref or semantic observation; `UNKNOWN_SOURCE_REQUIRED` is unrepresentable.
+For each required proof role, code selects eligible determinate evidence by versioned authority/proof policy. Selected bindings become canonical CRITICAL dependencies. Missing roles or only INDETERMINATE evidence produce `INSUFFICIENT_EVIDENCE`. Time-sensitive proofs require a verified finite horizon. Gate compares the evidence-supported class to the immutable proposal；mismatch rejects/reviews it and never emits a replacement outcome. This stage cannot add a Requirement、ref or semantic observation；`UNKNOWN_SOURCE_REQUIRED` is unrepresentable.
 
 ## Failure handling
 
 ### Structural failures
 
-- schema/enum/local-ID/cross-link failure after one repair: structural terminal;
+- schema/enum/local-ID/cross-link failure after configured repairs（zero for v4 fragment maps）: structural terminal;
 - unknown, unauthorized, stale, or illegal source ref: deterministic structural terminal;
 - provider/auth/transport/budget unavailable: execution `BLOCKED`, not semantic rejection.
-- incomplete/unknown universe/SourceSet、incomplete/review-required normalization or partial contradiction receipts: `RUN_BLOCKED` with no semantic success;
-- unsupported logic/predicate: typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE` with no canonical graph.
+- incomplete/unknown universe/SourceSet、incomplete/review-required normalization or partial/over-limit/dense Evidence/contradiction receipts: `RUN_BLOCKED` with no semantic success;
+- unsupported logic/predicate/absence: typed `REJECTED_UNSUPPORTED_LOGIC | REJECTED_UNSUPPORTED_PREDICATE` with no canonical graph.
 
 ### Semantic conditions
 
-Missing support、indeterminate applicability/entailment、contradictions and outcome mismatch do not masquerade as structural errors. Once inputs are structurally valid, they reach the contradiction/proof/completeness stages before the gate.
+Missing support、cross-entity match、indeterminate applicability/entailment、contradictions and proposal-outcome mismatch do not masquerade as structural errors. Once inputs are structurally valid, they reach contradiction/proof/completeness before Gate.
 
 ## Provider strategy
 

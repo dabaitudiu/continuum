@@ -6,12 +6,12 @@ Avoid evaluating the compiler only on the one scenario it was designed around.
 
 ## Option B evaluation amendment
 
-The current 120-case corpus remains the visible DEV set and its existing refs、outcomes、contradictions、mutations and thresholds are immutable. The product owner approved Option B's direction but rejected the first specification and Revision 2. No individual-case tuning or full paid rerun is authorized.
+The current 120-case corpus remains the visible DEV set and its existing refs、outcomes、contradictions、mutations and thresholds are immutable. The product owner approved Option B's direction but rejected concrete specifications through Revision 3. No individual-case tuning or full paid rerun is authorized.
 
 Before any replacement prompt/schema/logic implementation, only method-blind DEV annotation design may occur:
 
 1. freeze `DEV Requirement Annotation v1` independently of replacement output;
-2. per case include stable PredicateIdentity、expected state、DIRECT_ATOM/ALL_OF topology、applicable governing keys、applicability-condition predicates and unsupported logic/predicate labels;
+2. per case include immutable proposal outcome/expected validation class、entity-role bindings、Requirement template IDs、stable PredicateIdentity/state/topology、governing/applicability keys、expected Evidence/contradiction matches、temporal expectations and unsupported logic/predicate/absence labels;
 3. freeze corpus/catalog/schema refs、annotation hashes、annotator/adjudicator identities and method-blind attestation in an append-only manifest；corrections require a new version + audit diff;
 4. prove production code and prompts cannot import/read DEV ground truth;
 5. preregister each bounded live experiment.
@@ -63,7 +63,12 @@ Across domains include:
 - near-duplicate policy clauses;
 - source with prompt injection text;
 - multiple simultaneous material dependencies;
-- cases where only one narrow clause is relevant.
+- cases where only one narrow clause is relevant;
+- cross-entity adversaries（Alice/Bob、Vendor A/B）；
+- time passage beyond a proof horizon with no source revision；
+- enterprise/rule/policy/catalog changes racing an authorization；
+- material absence obligations that must be typed unsupported in P0；
+- new in-scope cases using frozen reusable catalogs/templates without semantic-schema edits。
 
 ## Ground truth
 
@@ -74,15 +79,20 @@ required_critical_refs
 acceptable_supporting_refs
 forbidden_or_irrelevant_refs
 expected_outcome_constraints
+decision_proposal_outcome / expected_validation_class
+expected_entity_role_bindings
+expected_requirement_template_ids
 blocking_contradictions
 expected_staleness_after_mutation
+expected_temporal_expiry_behavior
+expected_semantic_epoch_authorization_behavior
 ```
 
 Ground truth is manually authored and version-controlled.
 
-For Revision 3, `DEV Requirement Annotation v1` is method-blind and frozen before replacement outputs. It includes stable PredicateIdentity、expected state/topology、applicable governing keys、applicability predicates and unsupported logic/predicate labels. Human display text is not the matching key. It is evaluator-only；corrections publish a new version and invalidate same-version metric claims rather than editing history。
+For Revision 4, `DEV Requirement Annotation v1` is method-blind and frozen before replacement outputs. It includes proposal validation class、entity roles、template IDs、stable predicates/state/topology、governing/applicability keys、Evidence/contradiction matches、temporal expectations and unsupported labels. Human display/rationale text is not the matching key. It is evaluator-only；corrections publish a new version and invalidate same-version claims rather than editing history。
 
-The model request receives the complete decision-type outcome vocabulary (`APPROVED`, `DENIED`, `NEEDS_HUMAN_REVIEW`) so the categorical field is well-defined. It never receives the case's ground-truth `allowed_outcomes`; exposing that singleton would leak the answer and invalidate outcome compliance.
+The domain-agent fixture supplies an immutable proposal outcome from the registered decision-class vocabulary. Replacement model stages do not author outcome/Requirements and need not receive the proposal outcome；they receive only instantiated target descriptors and assigned source fragments. They never receive ground-truth validation class/allowed outcomes。
 
 ## Metrics
 
@@ -122,9 +132,9 @@ Material contradictions flagged.
 
 Target P0: **>= 0.90**.
 
-### Independent Requirement Coverage
+### Requirement Authority and Evidence Coverage
 
-Report Stage-1A omission count、per-obligation receipt completion、APPLICABLE/NOT_APPLICABLE/INDETERMINATE confusion、applicability-proof completeness、coverage-only recovery/false candidates and reconciled Requirement recall/precision. Include both applicable→N/A and N/A→applicable mutation stale recall。
+Report template/obligation accounting、effective Requirement recall/precision、domain-rationale omissions recovered by deterministic templates、Evidence/applicability fragment/receipt completion、semantic match recall/precision/no-match false negatives、APPLICABLE/NOT_APPLICABLE/INDETERMINATE confusion and bidirectional applicability stale recall。
 
 ### Entailment Calibration
 
@@ -134,13 +144,21 @@ Report a full `ENTAILED_TRUE | ENTAILED_FALSE | INDETERMINATE` matrix separately
 
 Score model binding candidates separately from Stage-4 selected proof. Canonical critical recall/precision is computed over selected proofs; model-authored importance text is never the canonical label.
 
-### Source and Contradiction Coverage
+### Source、Evidence and Contradiction Coverage
 
-Report universe attestation、fragment normalization accounting、SourceSet selection、eligible inventory、partitions/receipts、hard-limit blocks and cross-partition contradiction recall. A partial inventory is never a completed pass。
+Report universe attestation、fragment normalization accounting、SourceSet selection、Evidence/contradiction eligible inventory、fragment wrappers/actual matches、calls/input/output tokens versus v4 maxima、partitions/receipts、hard-limit/dense blocks and cross-partition recall. A partial inventory is never a completed pass。
 
 ### Interpretation-Policy Mutation
 
-Mutate each materially used catalog/normalization/selection/authority/outcome/proof policy、governing rule set、applicability fact and contradiction-eligibility guard. Relevant Decisions must stale；irrelevant inventory/supporting changes must not automatically stale. Report `coverage_induced_unnecessary_invalidation_rate` with denominator。
+Mutate each materially used catalog/entity-role/normalization/selection/authority/outcome/proof policy、governing rule set、applicability fact and Evidence/contradiction-eligibility guard. Relevant Decisions must stale；irrelevant inventory/supporting changes must not automatically stale. Report `coverage_induced_unnecessary_invalidation_rate` with denominator。
+
+### Proposal、Entity、Temporal and Epoch Safety
+
+Report proposal validation/disposition confusion、canonical outcome-substitution attempts（target 0）、cross-entity false matches/canonicalizations（canonical target 0）、temporal-guard horizon completeness、authorization at/beyond exact expiry（escape target 0）、and side-effect authorization across enterprise/new-rule/policy/catalog epoch races without a complete irrelevance certificate chain（escape target 0）。
+
+### K6 / Manual Specification Generality
+
+Per domain report predicate count、normalized-rule-template count、decision-class template count、case-specific predicate/rule/dependency-template count（all target 0）、cases requiring catalog/schema change、`schema_reuse_rate_on_new_in_scope_cases`（target 1.00 under frozen semantics）and `new_case_success_without_semantic_schema_modification`. A schema edit keyed to a known/revealed case invalidates that generality claim。
 
 ### Stable Semantic Proof Selection
 
@@ -148,7 +166,7 @@ For paired semantic paraphrases, requirement semantic IDs and Runtime critical e
 
 ### Compilation Determinism
 
-Same validated draft → identical canonical graph.
+Same validated proposal/entity/snapshots/clock/epoch → identical canonical graph/envelope.
 
 Target: **100%**.
 
@@ -175,15 +193,15 @@ Primary three-arm comparison:
 1. **Document-level dependency baseline** — every document read becomes critical.
 2. **Reasoner-only (Option A)** — frozen single-pass baseline; never the final architecture.
 3. **Old critic pipeline** — frozen K3 legacy baseline; no further tuning and no Runtime eligibility.
-4. **New requirement-centred pipeline (Option B Revision 3)** — authoritative universe + complete normalization + selective SourceSet guards、Requirement Decomposition、independent obligation/applicability coverage、deterministic reconciliation、Evidence Binding、Independent Contradiction、deterministic proof/completeness and Gate.
+4. **New requirement-centred pipeline (Option B Revision 4)** — immutable domain proposal/entity context、authoritative universe + complete normalization、trusted reusable template instantiation、complete Evidence/applicability coverage、scalable independent contradiction、deterministic proof/temporal envelope and proposal Gate.
 
 The primary Option A/B-legacy/Option B-new comparison uses the same frozen 30-case stratified subset, tasks, sources, provider/model settings, and metric implementation. Architecture-specific prompt/schema/call topology is an explicit experimental variable and must be reported with stage calls, latency, tokens, and cost.
 
-Requirement/coverage/proof-role/three-state-entailment metrics apply only to the new architecture and are `N/A` for legacy arms. Three-arm headline deltas use only metrics defined identically across all arms; C-only diagnostics remain separate.
+Template/entity/Evidence coverage/proof-role/three-state-entailment/temporal/epoch metrics apply only to the new architecture and are `N/A` for legacy arms. Three-arm headline deltas use only metrics defined identically across all arms；C-only diagnostics remain separate.
 
 Proposal-union refs, accepted canonical refs, accepted compilation coverage, and Runtime mutation outcomes are distinct metrics. NOT_ACCEPTED cases are not counted as Runtime stale escapes; accepted-only mutation rates always disclose their denominators.
 
-For the replacement, report candidate binding metrics separately from applicability proof、selected proof and accepted `DecisionJustification`. A minimal proof slice cannot erase unaccepted/unselected ground-truth dependencies from coverage denominator。
+For the replacement, report fragment search wrappers/matches、candidate bindings、applicability proof、selected proof and accepted `DecisionJustification` separately. A minimal proof slice cannot erase missed ground-truth semantics from the Evidence/Requirement denominator。
 
 ## Paired prompt-injection evaluation
 

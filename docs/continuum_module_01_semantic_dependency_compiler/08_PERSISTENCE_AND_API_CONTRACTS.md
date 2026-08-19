@@ -2,7 +2,7 @@
 
 ## Status
 
-The persistence/API replacement below is Revision-3 design-only and awaits product-owner review after Revision 2 was rejected. Existing v1 records remain readable and immutable. Any replacement uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as new stage outputs.
+The persistence/API replacement below is Revision-4 design-only and awaits product-owner review after Revision 3 was rejected. Existing v1 records remain readable and immutable. Any replacement uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as new stage outputs.
 
 ## Persistence entities
 
@@ -13,29 +13,30 @@ Source identity entities remain unchanged:
 - `ParsedRepresentation`
 - `SourceFragment`
 
-The replacement stores immutable records across enterprise-world、compiler-policy and compiler-derived namespaces, plus a signed authoritative-registry snapshot envelope. Required records include：
+The replacement stores immutable records across enterprise-world、compiler-policy and compiler-derived namespaces, plus signed authoritative-registry and request-input envelopes. Proposal/entity inputs reference but are not members of their input world snapshot. Required records include：
 
+- `DecisionProposalRecord` / `ProposalOutcomeBindingRecord` / `DecisionEntityContextRecord`
 - `CompilationRequest`
 - `CompilerPolicyBundleRecord`
 - `PolicyUsageTraceRecord`
 - `SourceUniverseSnapshotRecord`
 - `RuleNormalizationManifestRecord` / per-fragment accounting receipt
 - `SourceSetManifestRecord`
-- `CoverageBoundaryGuardRecord` / `GoverningRuleSetGuardRecord` / `ContradictionEligibilityGuardRecord`
-- `RequirementProposalSetRecord`
-- `RequirementCoverageObservationSetRecord` / per-partition `RequirementCoverageReceiptRecord`
-- `RequirementCoverageCandidateSetRecord`
-- `ApplicabilityProofCandidateSetRecord`
+- `CoverageBoundaryGuardRecord` / `GoverningRuleSetGuardRecord` / `EvidenceEligibilityGuardRecord` / `ContradictionEligibilityGuardRecord`
+- `RequirementTemplateResolutionRecord` / `RequirementInstantiationReceiptRecord`
 - `ApplicabilityJustificationRecord`
-- `RequirementReconciliationRecord`
 - `EffectiveRequirementSetRecord`
+- `EvidenceCoveragePlanRecord` / `EvidenceCoverageReceiptRecord` / `FragmentEvidenceObservationRecord`
 - `EvidenceBindingCandidateSetRecord`
 - `ProofSelectedEvidenceBindingSetRecord`
-- `ContradictionCoveragePlanRecord` / `ContradictionCoverageReceiptRecord`
+- `ContradictionCoveragePlanRecord` / `ContradictionCoverageReceiptRecord` / `FragmentSemanticObservationRecord`
 - `ContradictionSetRecord`
 - `RequirementAssessmentSetRecord`
 - `UnsupportedLogicFindingRecord`
 - `UnsupportedPredicateFindingRecord`
+- `TemporalValidityGuardRecord`
+- `DecisionValidityEnvelopeRecord`
+- `SemanticChangeSetRecord` / `DecisionIrrelevanceCertificateRecord`（Runtime/Drift-owned interface records）
 - `DecisionJustificationRecord` for accepted APPROVE/DENY only;
 - `CompilerFindingRecord`
 - `CompilationResultRecord`
@@ -53,26 +54,29 @@ disposition?
 pipeline_version
 compiler_version
 validation_policy_version
+decision_proposal_ref / hash / producer_id / producer_version / unchanged outcome
+proposal_outcome_binding_ref / hash / policy_ref
+decision_entity_context_ref / hash
 compiler_policy_bundle_ref / hash
 input_world_snapshot_id / source_universe_snapshot_id / compiler_policy_snapshot_id
 rule_normalization_manifest_ref / hash / coverage_status
 policy_usage_trace[]
 source_set_manifest_ref / hash / coverage_status
 executed_stages[]
-requirement_proposals[]
-requirement_coverage_observations[] / receipts[]
-applicability_proof_candidates[]
+requirement_templates[] / instantiation_receipts[]
 applicability_justifications[]
-requirement_coverage_candidates[]
 effective_requirements[]
+evidence_coverage_plan / receipts[] / fragment_observations[]
 evidence_binding_candidates[]
 proof_selected_evidence_bindings[]
-contradiction_coverage_plan / receipts[]
+contradiction_coverage_plan / receipts[] / fragment_semantic_observations[]
 contradictions[]
 requirement_assessments[]
 unsupported_logic_findings[]
 unsupported_predicate_findings[]
 selective_coverage_guard_keys[]
+temporal_validity_guards[]
+decision_validity_envelope?
 derivation_binding_hash
 decision_justification? only when ACCEPTED
 findings[]
@@ -84,19 +88,21 @@ Executed stages use the replacement vocabulary:
 
 ```text
 POLICY_BUNDLE_VALIDATED
+DECISION_PROPOSAL_AND_ENTITY_CONTEXT_VALIDATED
 SOURCE_UNIVERSE_VALIDATED
 RULE_NORMALIZATION_VALIDATED
 SOURCE_SET_COVERAGE_VALIDATED
-REQUIREMENTS_DECOMPOSED
-GOVERNING_OBLIGATIONS_INVENTORIED
-APPLICABILITY_PROOFS_VALIDATED
-REQUIREMENTS_RECONCILED
+REQUIREMENTS_INSTANTIATED
+REQUIREMENT_TEMPLATES_ACCOUNTED
+EVIDENCE_PARTITIONS_COMPLETED
+EVIDENCE_COVERAGE_VALIDATED
 BINDINGS_VALIDATED
 CONTRADICTION_PARTITIONS_COMPLETED
 CONTRADICTION_COVERAGE_VALIDATED
 CONTRADICTIONS_REDUCED
 PROOFS_SELECTED
 COMPLETENESS_COMPUTED
+TEMPORAL_VALIDITY_ENVELOPE_COMPUTED
 GATE_EVALUATED
 CANONICALIZED
 ```
@@ -109,7 +115,7 @@ The generic compiler surface remains internal and capability-protected. Runtime 
 
 ### `POST /api/compiler/requests`
 
-Create a request bound to mission/work item、exact enterprise world snapshot、expected mission revision、decision type/risk class、outcome vocabulary、active policy snapshot/bundle and source-universe/coverage decision class. Domain outcome mapping is resolved from versioned policy, not an unproven audit string.
+Create a request referencing an already immutable/signed domain-agent `DecisionProposal` and `DecisionEntityContext`, bound to mission/work item、exact enterprise world snapshot/revision、active policy bundle and universe/coverage decision class. Domain outcome mapping is resolved/validated from versioned policy；the compiler endpoint cannot author or alter the proposal outcome/entities.
 
 ### `POST /api/compiler/{request_id}/run`
 
@@ -117,7 +123,7 @@ Run the selected versioned pipeline. Product wiring may select only the approved
 
 ### `GET /api/compiler/{request_id}`
 
-Return immutable request、policy/manifest provenance、coverage/partition receipts、stage outputs/findings、exact trace、run status、semantic disposition and canonical output if accepted. Partial contradiction output must be visibly incomplete and can never appear under a completed coverage state.
+Return immutable proposal/request、policy/manifest provenance、Evidence/contradiction coverage receipts、stage outputs/findings、temporal/epoch envelope、exact trace、run status、semantic disposition and canonical output if accepted. Partial output must be visibly incomplete and can never appear under a completed coverage state.
 
 ### `POST /api/compiler/{request_id}/accept`
 
@@ -128,29 +134,32 @@ The current draft/compile routes may remain as versioned v1 readers during migra
 ## Internal interfaces
 
 ```text
-ContextAssembler.assemble(request)
+DecisionProposalValidator.validate(proposal, entity_context, world, policies)
+ContextAssembler.assemble(proposal, entity_context, request)
 PolicyBundleValidator.validate(bundle, policy_snapshot)
 SourceUniverseValidator.validate(universe_snapshot, world_snapshot)
 RuleNormalizer.account(universe_snapshot, policy_bundle) -> RuleNormalizationManifest
 SourceSetAssembler.assemble(request, universe, normalization, policy_bundle)
 SourceCoverageValidator.validate(manifests, exact_inputs)
-RequirementDecomposer.decompose(context) -> DecisionAnalysisProposal
-RequirementCoverageAnalyzer.inventory(context_without_decomposition)
-ApplicabilityProofValidator.validate_provisional(observations, current_bindings, policies)
-RequirementReconciler.reconcile(proposal, coverage_candidates, contracts)
-EvidenceBinder.bind(effective_requirements, context)
-EvidenceBindingValidator.validate(candidates, requirements, context)
-ContradictionPartitioner.plan(manifest, requirements, limits)
-ContradictionObserver.observe(partition, requirements)
-ContradictionReducer.validate_and_reduce(plan, receipts, observations)
-DeterministicProofSelector.finalize_applicability_and_select(requirements, provisional_applicability, bindings, contradictions, policies)
+RequirementTemplateResolver.resolve(normalization, decision_class_contract)
+RequirementInstantiator.instantiate(templates, entity_context)
+RequirementAccountingValidator.validate(manifests, templates, receipts)
+EvidenceCoveragePlanner.plan(manifest, requirements, applicability_targets, limits)
+FragmentEvidenceInterpreter.observe(partition, target_descriptors)
+EvidenceCoverageReducer.validate_and_bind(plan, receipts, fragment_observations)
+ContradictionCoveragePlanner.plan(manifest, target_descriptors, limits)
+FragmentContradictionObserver.observe(partition, target_descriptors)
+ContradictionReducer.validate_and_reduce(plan, receipts, fragment_observations)
+DeterministicProofSelector.finalize_applicability_and_select(requirements, bindings, contradictions, policies)
 DeterministicRequirementCompleteness.compute(requirements, selected_proofs, contradictions)
-DeterministicAcceptanceGate.evaluate(...) -> disposition + DecisionJustification?
+TemporalValidityCompiler.compile(selected_proofs, applicability, policies, trusted_clock)
+DeterministicProposalGate.evaluate(proposal, ...) -> disposition + DecisionJustification? + DecisionValidityEnvelope?
 Canonicalizer.compile(...)
 RuntimeAcceptanceService.accept(...)
+SemanticEpochAuthorizationBarrier.authorize(decision, envelope, current_epoch, certificates, trusted_clock)
 ```
 
-RequirementDecomposer、RequirementCoverageAnalyzer、EvidenceBinder and partitioned ContradictionObserver are the only model interfaces. Coverage does not receive decomposition output；trusted normalization is not an unreviewed model acceptance path. Validators/reducers return immutable objects；applicability/proof selectors own canonical applicability/materiality/impact；only Runtime acceptance mutates canonical state.
+`FragmentEvidenceInterpreter` and independent `FragmentContradictionObserver` are the only replacement model interfaces. They receive pre-instantiated target/entity keys and complete bounded partitions, not outcome/Requirement-authoring authority. Validators/reducers return immutable objects；deterministic selectors/Gate own applicability/materiality/impact/disposition；only Runtime acceptance/barrier mutates or authorizes canonical state.
 
 ## Transaction boundary
 
@@ -161,8 +170,9 @@ Runtime acceptance revalidates:
 - `pipeline_version` is the approved active production pipeline;
 - disposition is `ACCEPTED`;
 - canonical graph/hash are present and immutable;
-- expected mission revision、enterprise world/universe/policy snapshots and derived-artifact envelope exactly match;
-- universe/normalization/selection/partition coverage was complete and all selected applicability/policy/coverage guards exist as validity-bearing provenance;
+- proposal/producer/outcome/entity context、expected mission revision、enterprise world/universe/policy snapshots and derived envelope exactly match;
+- universe/normalization/selection/Evidence/contradiction coverage was complete and all selected applicability/policy/coverage guards exist as validity-bearing provenance;
+- trusted time is before exclusive `authorization_not_after` and semantic epoch is equal or fully covered by deterministic irrelevance certificates；
 - inbox/idempotency and atomic audit/outbox requirements hold.
 
 ## Events
@@ -171,18 +181,20 @@ Suggested versioned events:
 
 ```text
 compiler.requested
+compiler.decision_proposal.validated
 compiler.source_universe.validated
 compiler.rule_normalization.validated
 compiler.source_set.validated
-compiler.requirements.decomposed
-compiler.requirement_coverage.proposed
-compiler.applicability.validated
-compiler.requirements.reconciled
-compiler.bindings.proposed
+compiler.requirements.instantiated
+compiler.requirement_templates.accounted
+compiler.evidence_partition.completed
+compiler.evidence_coverage.validated
+compiler.bindings.validated
 compiler.contradiction_partition.completed
 compiler.contradictions.reduced
 compiler.proofs.selected
 compiler.completeness.assessed
+compiler.temporal_validity.compiled
 compiler.unsupported_logic.detected
 compiler.unsupported_predicate.detected
 compiler.structural.failed
@@ -190,6 +202,11 @@ compiler.run.blocked
 compiler.review.required
 compiler.compilation.accepted
 compiler.compilation.rejected
+runtime.semantic_epoch.reserved
+runtime.decision.irrelevance_certified
+runtime.semantic_epoch.published
+runtime.decision.authorization_denied_expired
+runtime.decision.authorization_denied_epoch_gap
 ```
 
 These are compiler events. Only successful Runtime acceptance emits final `decision.created` and graph mutation events.

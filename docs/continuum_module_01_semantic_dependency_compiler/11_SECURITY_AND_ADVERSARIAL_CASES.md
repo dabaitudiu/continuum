@@ -20,6 +20,14 @@
 16. Selector declares completeness over an incomplete catalog/index.
 17. A whole SourceSet manifest becomes a super-dependency and stales unrelated Decisions.
 18. Model invents a predicate code for an unrepresentable obligation.
+19. Compiler silently replaces the domain-agent proposal outcome.
+20. A template or model encodes a benchmark-specific exact graph/outcome.
+21. Top-K Evidence search omits a current fact/applicability proof.
+22. Model uses Bob/Vendor B evidence for Alice/Vendor A.
+23. Time-sensitive proof remains authorizing after expiry with no source revision.
+24. Empty retrieval is treated as `NOT_EXISTS` proof.
+25. New semantic epoch becomes executable before old Decisions stale/certify irrelevance.
+26. Dense contradiction output is truncated and reported complete.
 
 ## Trust classification
 
@@ -34,7 +42,7 @@ authority_rank
 
 Example authority ordering is domain-configured, never model-invented.
 
-Authority classification、precedence、outcome、universe/selection、normalization/review、proof、partition、predicate/decision-class and supported-logic rules are immutable `CompilerPolicyArtifact` revisions outside the enterprise world snapshot. Accepted Decisions retain critical provenance to materially participating policies、applicability facts and selective boundary/rule/eligibility guards；full manifests are audit derivation, not a super-dependency。
+Authority classification、precedence、proposal-outcome mapping、universe/selection、normalization/review、entity roles、Evidence/contradiction coverage、proof、temporal/epoch、predicate/decision-class and supported-logic rules are immutable `CompilerPolicyArtifact` revisions outside the enterprise world snapshot. Accepted Decisions retain critical provenance to exact proposal/entity context、material policies、applicability/temporal facts and selective boundary/rule/Evidence/contradiction guards；full manifests are audit derivation, not a super-dependency。
 
 ## Prompt injection isolation and semantic invariance
 
@@ -45,6 +53,7 @@ The agent system prompt explicitly labels external document content as untrusted
 Structural isolation alone is insufficient. Every injection case has a clean twin with identical governing semantics. The pair must preserve:
 
 - stable effective Requirement set;
+- unchanged supplied proposal outcome and entity binding；
 - deterministic selected-proof critical coverage;
 - contradiction inventory and deterministic impact;
 - expected outcome and final disposition;
@@ -72,15 +81,18 @@ The model can read historical revisions only if the request allows them. Histori
 ## Model-label distrust
 
 - Canonical materiality is selected by deterministic proof role; the model has no CRITICAL/SUPPORTING write field.
-- Contradiction impact is computed from reachability、proof eligibility and precedence; model severity is advisory.
+- Contradiction impact is computed from reachability、proof eligibility and precedence；the replacement schema has no model severity field.
 - `INDETERMINATE` cannot be selected as proof.
 - APPLICABLE/NOT_APPLICABLE require deterministic current predicate proof；an unsupported model N/A is INDETERMINATE.
 - Unknown material predicate codes yield `REJECTED_UNSUPPORTED_PREDICATE` rather than invention/omission.
+- Models cannot author Requirements、outcomes、predicate/entity keys；cross-entity matches are proof-ineligible.
+- `NOT_EXISTS`/empty-retrieval absence is explicitly unsupported in P0.
+- Time/epoch authorization is checked synchronously；model output cannot mint guards/certificates.
 - Display proposition text cannot affect semantic identity or DENY proof selection.
 
 ## Context and logic fail-closed rules
 
-Contradiction input is deterministically partitioned with receipts and global reduction. Silent truncation/normalizer omission is forbidden. Governing logic outside DIRECT_ATOM/ALL_OF produces `REJECTED_UNSUPPORTED_LOGIC`；material semantics outside the frozen catalog produce `REJECTED_UNSUPPORTED_PREDICATE`。
+Evidence/applicability and contradiction inputs are fragment-complete deterministic partitions with exact receipts. Output uses fragment wrappers + actual matches；silent top-K、negative-cross-product truncation and normalizer omission are forbidden. Governing logic outside DIRECT_ATOM/ALL_OF produces `REJECTED_UNSUPPORTED_LOGIC`；material/absence semantics outside P0 catalog produce `REJECTED_UNSUPPORTED_PREDICATE`。
 
 ## Adversarial benchmark cases
 
@@ -92,7 +104,7 @@ At least:
 - 10 contradictory-authority cases;
 - 10 dependency-omission cases.
 
-Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、cross-partition conflicts、ambiguous applicability/entailment、two-way applicability transitions、relevant vs irrelevant coverage changes、policy revisions、semantic paraphrases and unsupported logic/predicates。
+Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、Evidence top-K/receipt traps、dense/cross-partition conflicts、cross-entity matches、ambiguous applicability/entailment、two-way applicability transitions、exact temporal expiry、semantic-epoch races、proposal outcome substitution attempts、K6 case-specific template traps and unsupported logic/predicate/absence。
 
 ## Security acceptance
 
