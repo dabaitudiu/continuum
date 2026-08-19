@@ -18,4 +18,3 @@ class ReasoningRequest:
             value = getattr(self, name)
             if not value.strip() or value != value.strip():
                 raise ValueError(f"{name} must be non-empty and trimmed")
-
