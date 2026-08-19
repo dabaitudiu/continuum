@@ -1,116 +1,130 @@
 # 04 — Intermediate Representation (IR)
 
+## Status and versioning
+
+The product owner approved a requirement-centred v2 IR and rejected the current vague critic architecture. The contracts below are **design contracts, not yet implemented**. Their normative field-level definition is in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
+
+The implemented `DecisionDraft`, `ClaimDraft`, `DependencyRef`, `CriticProposal`, and `CriticReview` are v1 legacy types during migration. They remain readable for persisted evidence and the reasoner-only/old-critic ablation arms, but they are not the final architecture and must not be silently reinterpreted as v2.
+
 ## Design goal
 
-The IR is the contract between probabilistic agent reasoning and deterministic runtime semantics.
+The IR separates four semantic questions that v1 mixed together:
 
-## DecisionDraft
+1. What propositions must hold for the Decision?
+2. Which exact source fragments bear on each proposition, and with what materiality?
+3. Which authoritative propositions conflict?
+4. Is each explicit requirement sufficiently and consistently evidenced?
 
-```json
-{
-  "request_id": "...",
-  "decision_type": "SECURITY_REVIEW",
-  "proposed_outcome": "APPROVED",
-  "claims": [],
-  "decision_dependencies": [],
-  "unresolved_questions": [],
-  "rationale_summary": "...",
-  "model_metadata": {}
-}
+Only after all four outputs are structurally validated may deterministic code decide a compilation disposition and construct canonical graph state.
+
+## V2 analysis objects
+
+### `Requirement`
+
+```text
+requirement_local_id
+proposition
+kind: FACT | RULE | AUTHORIZATION | EVIDENCE_PRESENCE | NEGATIVE_CONSTRAINT
+necessity: CRITICAL | SUPPORTING
+polarity: MUST_HOLD | MUST_NOT_HOLD
+depends_on_requirement_ids[]
+applies_to_outcomes[]
+rationale_summary
 ```
 
-## ClaimDraft
+A Requirement is a semantic proposition. Its schema contains no source ref.
 
-```json
-{
-  "claim_local_id": "c1",
-  "claim_type": "FACT|RULE|DERIVED_FACT|ASSESSMENT",
-  "statement": "Vendor handles customer PII",
-  "dependencies": [],
-  "derived_from_claims": [],
-  "materiality": "CRITICAL|SUPPORTING|CONTEXTUAL",
-  "confidence": 0.0
-}
+### `EvidenceBinding`
+
+```text
+binding_local_id
+requirement_local_id
+source_ref
+semantic_role: EVIDENCE | GOVERNING_AUTHORITY | SATISFACTION_RECORD | COUNTEREVIDENCE
+stance: SUPPORTS | OPPOSES
+materiality: CRITICAL | SUPPORTING
+validity_impact: MAY_CHANGE_VALIDITY | EXPLANATION_ONLY
+counterfactual_summary
 ```
 
-`statement` is a concise auditable summary, not hidden chain-of-thought.
+`CRITICAL` means the source can change requirement/decision validity; relevant explanatory evidence is `SUPPORTING` or omitted. A model proposes this classification, deterministic code enforces ref/type/field consistency, and benchmark evidence measures semantic correctness.
 
-## DependencyRef
+### `Contradiction`
 
-```json
-{
-  "source_ref": "vendor-profile@r7#$.handles_customer_pii",
-  "relation": "SUPPORTED_BY",
-  "materiality": "CRITICAL",
-  "purpose": "Establishes that the policy clause applies"
-}
+```text
+contradiction_local_id
+requirement_local_id
+lhs_ref
+rhs_ref
+lhs_binding_id?
+rhs_binding_id?
+proposition
+contradiction_type
+severity
+model_resolvable_by_precedence
+model_recommended_disposition
+deterministic_resolution
+precedence_rule_id?
 ```
 
-Allowed relations P0:
+The model proposes the semantic conflict. Deterministic code owns source validation, authority metadata, precedence, and effective resolution.
 
-- `SUPPORTED_BY`
-- `GOVERNED_BY`
-- `DERIVED_FROM`
-- `REQUIRES`
-- `AUTHORIZES`
-- `CONTRADICTED_BY`
+### `RequirementAssessment`
 
-`AUTHORIZES` remains a runtime graph relation, but a raw `SourceFragment` DependencyRef may not emit it. Authorization is a deterministic `Decision → Action` edge owned by Runtime, not authority inferred directly from text or approval evidence.
-
-## Decision-level dependencies
-
-Not every dependency needs an intermediate claim, but material policy and authorization dependencies should usually be explicit.
-
-Example:
-
-```json
-{
-  "source_ref": "security-policy@v13#section/7.3",
-  "relation": "GOVERNED_BY",
-  "materiality": "CRITICAL"
-}
+```text
+requirement_local_id
+status: SATISFIED | UNSATISFIED | CONTRADICTED | INSUFFICIENT_EVIDENCE
+critical_binding_ids[]
+supporting_binding_ids[]
+contradiction_ids[]
+support_path_requirement_ids[]
+missing_evidence_proposition?
+assessment_summary
 ```
 
-## UnresolvedQuestion
+Completeness assesses only explicit Requirements. It cannot create Requirements, bindings, source refs, or `UNKNOWN_SOURCE_REQUIRED`.
 
-```json
-{
-  "question": "Is the penetration test newer than 12 months?",
-  "required_source_type": "DOCUMENT",
-  "blocking": true
-}
+## V2 result envelope
+
+```text
+CompilationResultV2
+  request_id
+  compilation_id
+  run_status: IN_PROGRESS | COMPLETED | BLOCKED | FAILED
+  disposition?
+  requirements[]
+  evidence_bindings[]
+  contradictions[]
+  requirement_assessments[]
+  canonical_decision?
+  canonical_claims[]
+  canonical_edges[]
+  findings[]
+  executed_stages[]
+  pipeline_version
+  compiler_version
+  validation_policy_version
+  compilation_hash?
+  stage_model_metadata[]
 ```
 
-If blocking unresolved questions exist, the result cannot compile to an accepted approval decision.
+`BLOCKED` and `FAILED` have no semantic disposition or canonical output. Non-accepted semantic results have no canonical Decision/Claim/Edge. Only an accepted result contains a compilation hash and Runtime-eligible canonical graph.
 
-Historical refs may be explicitly read for audit/context. They cannot be compiled as current `CRITICAL`, `GOVERNED_BY`, `SUPPORTED_BY`, `DERIVED_FROM`, or `REQUIRES` authority.
+## Canonical mapping
 
-## CompilationResult
+Each Requirement maps to one canonical Claim. Requirement dependency paths map to Claim → Claim edges; EvidenceBindings map to SourceFragment → Claim edges; applicable critical Claims map to Decision-requires-Claim edges.
 
-```json
-{
-  "compilation_id": "...",
-  "status": "ACCEPTED",
-  "decision_candidate": {},
-  "canonical_claims": [],
-  "canonical_edges": [],
-  "validation_findings": [],
-  "critic_findings": [],
-  "contradictions": [],
-  "compiler_version": "..."
-}
-```
-
-## Canonical claim identity
-
-P0 may assign generated UUIDs at commit time. Do not attempt semantic deduplication across unrelated decisions yet.
+The canonicalizer validates support through the transitive Source → Claim → Claim → Decision closure. It must not require or manufacture redundant direct Source → derived Claim/Decision edges.
 
 ## Determinism requirement
 
-Given the same:
+Given identical:
 
-- validated `DecisionDraft`;
-- source registry snapshot;
-- compiler version;
+- validated v2 analysis objects;
+- SourceRegistry/world snapshot;
+- compiler and validation-policy versions;
+- deterministic outcome semantics and precedence policy;
 
-canonicalization must produce the same normalized edge set and status disposition.
+the final disposition, canonical ordering, IDs, edge set, compilation hash, and stage trace must be identical.
+
+No hidden chain-of-thought is persisted. Only typed propositions, concise summaries, exact refs, deterministic findings, and model/usage provenance are retained.

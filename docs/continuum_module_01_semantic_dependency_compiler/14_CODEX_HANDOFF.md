@@ -1,5 +1,11 @@
 # 14 — Codex Handoff
 
+## 2026-08-19 architecture amendment
+
+The historical first-implementation instruction below has already been executed for v1. It is no longer the next action. Paired live evidence triggered K3, and the product owner selected Option B while rejecting the vague critic.
+
+The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md`; do not write compiler code, generate the locked holdout, call a live model, run the full 120 cases, or begin Module 02 until the product owner approves that design. After approval, freeze the holdout and write a separate implementation plan before coding.
+
 ## Mission
 
 Implement **Module 01: Semantic Dependency Compiler** as specified in this directory.

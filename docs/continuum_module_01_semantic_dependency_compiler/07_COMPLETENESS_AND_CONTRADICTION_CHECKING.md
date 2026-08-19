@@ -1,98 +1,99 @@
-# 07 — Completeness and Contradiction Checking
+# 07 — Independent Contradiction and Requirement Completeness
 
-## Why referential validity is not enough
+## Architecture decision
 
-A perfectly valid dependency list can still be dangerously incomplete.
+The former Completeness Critic is rejected. It mixed missing dependencies, unsupported claims, irrelevant refs, contradiction candidates, severity, and disposition; allowed `UNKNOWN_SOURCE_REQUIRED`; and often never ran because semantic conditions terminated validation first.
 
-Example:
+The replacement has two separate passes with disjoint write contracts:
 
-```text
-Decision: approve access
-Dependencies: manager approval
-```
+1. Independent Contradiction Pass writes `Contradiction` proposals only.
+2. Requirement Completeness writes `RequirementAssessment` proposals only.
 
-If the real rule also requires security training, all references may be valid while the decision is still unsafe.
+Neither pass edits Requirements, EvidenceBindings, the proposed outcome, or canonical state.
 
-## Completeness critic
+## Independent Contradiction Pass
 
-The critic sees enough context to ask:
+### Question
 
-> Given this task, outcome, claims, and source inventory, what material dependency appears missing?
+> For each explicit Requirement, do two current, in-scope authoritative source propositions conflict in a way that can affect validity?
 
-It must output structured findings.
+### Input
 
-```json
-{
-  "missing_dependencies": [
-    {
-      "candidate_ref": "access-policy@v5#section/training",
-      "severity": "CRITICAL",
-      "why": "Approval requires current security training"
-    }
-  ],
-  "unsupported_claims": [],
-  "irrelevant_dependencies": []
-}
-```
+- explicit Requirements;
+- validated EvidenceBindings;
+- bounded relevant authoritative fragments, including relevant unbound refs;
+- source values/claims, trust class, authority rank, scope, and temporal metadata.
 
-## Candidate-ref constraint
+### Output
 
-The critic must select from the existing source catalog or say `UNKNOWN_SOURCE_REQUIRED`. It cannot invent canonical refs.
+Typed ref pairs, proposition/topic, contradiction type, severity, and non-authoritative model recommendation. Deterministic code validates the refs and computes precedence/resolution.
 
-## Completeness policy
+### Deterministic precedence
 
-Suggested P0 policy:
+Only configured rules may resolve a conflict, such as current over historical revision, signed over draft approval, canonical record over cached snapshot, or an explicit mission override. Equal-authority unresolved CRITICAL conflict cannot silently accept.
 
-- any `CRITICAL` missing dependency => block acceptance;
-- `SUPPORTING` omission => warning;
-- `CONTEXTUAL` omission => ignore for validity.
+The pass is executed even when Stage 2 produced incomplete evidence. Otherwise a missing binding can hide the very conflict needed to explain why approval is unsafe.
 
-## Contradiction model
+## Requirement Completeness
 
-Represent contradiction as first-class compiler finding:
+### Question
 
-```text
-finding_id
-claim_or_topic
-source_ref_a
-source_ref_b
-severity
-precedence_rule_applied?
-resolution
-```
+> Is each Stage 1 Requirement sufficiently evidenced by a direct or transitive validated path, after contradiction results are known?
 
-## Deterministic precedence rules
+### Input
 
-Where possible, use domain-configured precedence before model judgment:
+- explicit Requirements and requirement DAG;
+- validated CRITICAL/SUPPORTING bindings;
+- validated contradiction results;
+- deterministic direct/transitive support-path summaries.
 
-- newer policy revision supersedes older policy revision;
-- signed human approval supersedes draft approval;
-- canonical database record supersedes cached tool snapshot;
-- mission-specific policy may override global policy if explicitly configured.
+### Output
 
-## Unresolved contradictions
+Exactly one `RequirementAssessment` per explicit Requirement:
 
-If no precedence rule exists and the contradiction is material:
+- `SATISFIED`
+- `UNSATISFIED`
+- `CONTRADICTED`
+- `INSUFFICIENT_EVIDENCE`
 
-```text
-status = NEEDS_HUMAN_REVIEW
-```
+### Hard boundaries
 
-Do not average confidence scores.
+Completeness cannot:
 
-## Optional entailment checker
+- invent a requirement omitted by Stage 1;
+- invent or suggest a canonical source ref;
+- emit `UNKNOWN_SOURCE_REQUIRED`;
+- add or rewrite a binding;
+- require a redundant direct source edge when transitive support exists;
+- decide final disposition.
 
-For critical source→claim edges, a small second-pass verifier can classify:
+If evidence is insufficient, it records a semantic `missing_evidence_proposition`. Requirement omission quality is measured separately against frozen requirement ground truth.
 
-```text
-SUPPORTED
-PARTIALLY_SUPPORTED
-NOT_SUPPORTED
-AMBIGUOUS
-```
+## Reachability rule
 
-This is an evaluation aid and guardrail, not proof of truth.
+For a critical Requirement to count as evidenced, deterministic code must find at least one current, authorized, validity-bearing CRITICAL path from a SourceFragment through zero or more prerequisite/derived Claims to that Requirement and onward to the Decision.
 
-## Benchmark importance
+`SUPPORTING`, `CONTEXTUAL`, `CONTRADICTED_BY`, stale, unauthorized, or rootless derived paths do not satisfy this rule. Conversely, a valid Source → Claim → Claim → Decision path is sufficient without a duplicate Source → derived Claim/Decision edge.
 
-Completeness checking must be evaluated on deliberate omission cases. Without omission tests, the system only proves it can reject hallucinated IDs — the easy part.
+## Final gate effects
+
+- missing/insufficient applicable critical Requirement → `REJECTED_INCOMPLETE_REQUIREMENTS`;
+- unresolved equal-authority CRITICAL contradiction → `NEEDS_HUMAN_REVIEW`;
+- deterministically winning authority contradicts the proposed outcome → `REJECTED_CONTRADICTION`;
+- semantic result inconsistent with trusted outcome class → `REJECTED_OUTCOME_CONSTRAINT`;
+- only a fully compatible result can be `ACCEPTED` and canonicalized.
+
+These are deterministic gate decisions over typed validated inputs, not direct model decisions.
+
+## Evaluation
+
+Contradiction and completeness are scored separately:
+
+- contradiction pair recall and critical-severity recall;
+- requirement proposition recall;
+- requirement assessment accuracy;
+- critical dependency recall/precision;
+- explicit stage-execution coverage;
+- disposition and accepted-case coverage.
+
+The benchmark must expose safe-by-rejection behavior. A zero stale-escape rate over one accepted case is not proof of compiler usefulness.

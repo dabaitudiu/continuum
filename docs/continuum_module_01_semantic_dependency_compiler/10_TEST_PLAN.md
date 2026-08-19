@@ -10,6 +10,12 @@ Focus on deterministic code:
 - fragment resolution;
 - temporal validity;
 - scope checks;
+- Requirement schema, outcome vocabulary, and DAG integrity;
+- EvidenceBinding cross-links and CRITICAL/validity-impact consistency;
+- Contradiction pair validation and deterministic precedence;
+- RequirementAssessment cross-links and one-assessment-per-requirement;
+- transitive Source → Claim → Claim → Decision reachability;
+- deterministic `APPROVE | DENY | REVIEW` acceptance rules;
 - canonical edge normalization;
 - duplicate edge handling;
 - materiality rules;
@@ -35,9 +41,11 @@ Cases:
 - unknown ref rejected;
 - stale revision rejected;
 - cross-scope ref rejected;
-- critical claim without support rejected;
-- critic omission blocks acceptance;
-- contradiction forces review;
+- critical requirement without support reaches contradiction and completeness before gate rejection;
+- equal-authority contradiction reaches a dedicated typed pass and forces review;
+- a transitive Claim support path is accepted without redundant direct source edges;
+- reasoner-only and old-critic baselines cannot call Runtime acceptance;
+- no v2 failure falls back to old critic;
 - runtime revision changes after compile → accept fails.
 
 ### Live Gemini contract tests
@@ -48,6 +56,8 @@ Must test:
 
 - structured output schema;
 - only allowed refs cited;
+- Requirement output contains propositions rather than refs;
+- CRITICAL/SUPPORTING EvidenceBinding separation;
 - multiple source fragments;
 - missing evidence case;
 - contradiction case;
@@ -71,6 +81,21 @@ Include:
 - expected critical refs;
 - observed bad output;
 - fixed prompt/compiler version.
+
+New Option B regression fixtures must be method-level and must not branch on benchmark case IDs or known source refs. Required cases:
+
+- supporting evidence is not promoted to CRITICAL;
+- a critical omission becomes `INSUFFICIENT_EVIDENCE` and blocks at the gate;
+- contradiction missed by v1 is found and typed;
+- equal-authority conflict cannot silently accept;
+- a critical fragment mutation makes an accepted Decision stale;
+- supporting/irrelevant fragment mutation leaves it valid;
+- stale historical evidence cannot authorize acceptance;
+- prompt injection cannot create an authority edge;
+- semantic incompleteness cannot skip contradiction/completeness;
+- existing transitive Claim/Decision dependency semantics satisfy completeness;
+- three-arm ablation routing and metrics are isolated correctly;
+- production packages cannot import DEV/HOLDOUT ground truth.
 
 ## Mutation tests
 
@@ -109,3 +134,5 @@ P0 targets are modest but measurable:
 - adversarial model cases.
 
 Mock tests can never turn a live-Gemini acceptance row green.
+
+The redesign experiment sequence remains bounded: targeted Experiments 2–4, then integrated 30-case Experiment 5. Full 120 DEV, locked holdout, and live Gemini remain gated and are not run during architecture review.

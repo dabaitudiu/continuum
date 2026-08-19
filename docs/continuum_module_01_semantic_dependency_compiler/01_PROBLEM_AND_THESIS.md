@@ -101,8 +101,10 @@ Does the compiler work across multiple mission domains rather than only vendor o
 
 ## Design stance
 
-We prefer a **hybrid compiler**:
+We prefer a **hybrid compiler** with explicit semantic stages:
 
-- Gemini: semantic interpretation, claim extraction, dependency proposal, contradiction reasoning.
+- Model: Requirement Decomposition, Evidence Binding, dedicated contradiction proposals, and completeness assessment over explicit requirements.
 - Deterministic code: identity, access scope, schema, temporal validity, reference integrity, graph compilation, invariant enforcement.
-- Optional second Gemini pass: completeness/critique, never canonical state mutation.
+- Deterministic acceptance: precedence, outcome/blocking policy, disposition, canonicalization, and Runtime boundary.
+
+The former open-ended second-pass critic is rejected by the product owner after K3 evidence. See `15_REPLACEMENT_ARCHITECTURE.md`; reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.

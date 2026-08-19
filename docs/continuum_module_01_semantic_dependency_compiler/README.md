@@ -53,6 +53,7 @@ The budget is expected to be consumed by real uncertainty: document identity, de
 13. `12_IMPLEMENTATION_PLAN.md`
 14. `13_ACCEPTANCE_MATRIX_AND_KILL_CRITERIA.md`
 15. `14_CODEX_HANDOFF.md`
+16. `15_REPLACEMENT_ARCHITECTURE.md`
 
 ## Definition of done
 
@@ -60,4 +61,6 @@ This module is done only when all P0 rows in `13_ACCEPTANCE_MATRIX_AND_KILL_CRIT
 
 ## Current status
 
-Phases A–G are implemented and Compiler Lab is locally deliverable. The module itself remains **not done**. The preserved 120-case evidence fails canonical dependency quality, contradiction, outcome, must-block, and acceptance-coverage requirements; the required live Gemini row remains `BLOCKED`. The bounded live paired ablation in `docs/reports/module-01-critic-ablation.md` triggers K3 for the current critic, which recovered no true omission or contradiction signal and added false refs/false blocks. Do not begin Module 02 or remove/replace the critic without product-owner review. See the current acceptance matrix, failure analysis, and ablation report.
+Phases A–G v1 code exists and Compiler Lab is locally deliverable. The module itself remains **not done**. The preserved 120-case evidence fails canonical dependency quality, contradiction, outcome, must-block, and acceptance-coverage requirements; the required live Gemini row remains `BLOCKED`. The bounded live paired ablation in `docs/reports/module-01-critic-ablation.md` triggers K3 for the current critic, which recovered no true omission or contradiction signal and added false refs/false blocks.
+
+On 2026-08-19 the product owner selected Option B and rejected the vague critic as the final architecture. The replacement design is documented in `15_REPLACEMENT_ARCHITECTURE.md` and is awaiting review; it is not implemented. Option A is a benchmark baseline only, Option C is not authorized, and the old critic will remain only for frozen ablation/replay during migration. Do not begin Module 02 or the full paid benchmark.

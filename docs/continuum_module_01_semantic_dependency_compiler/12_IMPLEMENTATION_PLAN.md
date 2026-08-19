@@ -8,7 +8,24 @@ This is a planning range, not a timer-based definition of done. If the work fini
 
 ## Implementation status — 2026-08-19
 
-Phases A–G are implemented. Phase D's OpenAI and Gemini transports are locally contract-tested. The authenticated OpenAI lane has now completed but fails the Phase F quality gate; the Gemini lane remains `BLOCKED` because this environment supplied no Gemini/Vertex credentials. The deterministic reference lane still passes, but it does not override the live failure. Consequently the stop condition at the end of this document remains in force.
+The v1 Phases A–G code exists, but its model method is not accepted. The authenticated OpenAI lane failed the Phase F quality gate, and paired Experiment 1 triggered K3 for the current critic. On 2026-08-19 the product owner selected Option B: replace the vague critic with Requirement Decomposition, Evidence Binding, an Independent Contradiction Pass, Requirement Completeness, and a Deterministic Acceptance Gate. Option A remains a benchmark baseline only; Option C is rejected.
+
+The replacement design is specified in `15_REPLACEMENT_ARCHITECTURE.md` and is **not yet implemented**. No implementation plan may begin until the product owner reviews that design. No full 120-case paid benchmark, holdout inference, live Gemini acceptance, or Module 02 work is authorized at this stage.
+
+## Replacement sequence after design approval
+
+This is a phase boundary, not authorization to code:
+
+1. freeze method-blind requirement annotations and the 60-case locked holdout before v2 implementation;
+2. write a detailed implementation plan with verification checkpoints;
+3. freeze the old critic as a benchmark-only legacy arm and remove it from v2/default candidate production wiring;
+4. implement typed Requirements and EvidenceBindings plus deterministic validators;
+5. implement the dedicated Contradiction and Requirement Completeness stages;
+6. implement the deterministic outcome/acceptance gate and canonical transitive mapping;
+7. execute preregistered Experiments 2–4, then the three-arm 30-case Experiment 5;
+8. stop on any failed progression gate; only a PASS permits full DEV, holdout, then live Gemini in that order.
+
+The historical phases below describe the v1 build and remain for audit; they are not evidence that the replacement architecture is complete.
 
 ## Phase A — Source identity kernel (5–6h)
 

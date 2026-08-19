@@ -1,114 +1,93 @@
-# 06 — Dependency Validation and Canonicalization
+# 06 — Validation, Acceptance, and Canonicalization
 
-## Validator pipeline
+## Fixed validator order
 
-Validation occurs in a fixed order so failures are reproducible.
+Validation follows the replacement pipeline, and each stage records its own trace. Structural integrity is checked immediately after the stage that introduces the data; semantic validity is accumulated until the final gate.
 
-### V1 Schema validation
+### S1 Requirement structure
 
-Check:
+Check schema, trimmed/bounded text, enum values, duplicate/unknown local IDs, outcome vocabulary, and acyclic `depends_on_requirement_ids`. Requirements cannot contain source refs.
 
-- required fields;
-- enum values;
-- max lengths;
-- confidence range;
-- duplicate local claim IDs;
-- relation type legality.
+### S2 Evidence binding integrity
 
-### V2 Referential integrity
+Check canonical ref existence, request allowlist, owner scope, world-snapshot temporal validity, source type, authority-role legality, binding cross-links, and CRITICAL/materiality field consistency.
 
-Every `source_ref` must exist in the request's SourceRegistry snapshot.
+Unknown refs are fatal. Fuzzy repair is forbidden. A historical source may be read only when explicitly allowed and cannot become a current CRITICAL validity-bearing authority.
 
-Unknown refs are fatal.
+### S3 Contradiction integrity and precedence
 
-### V3 Scope authorization
+Check both refs, optional binding/ref identity, requirement linkage, source classes, authority rank, and configured precedence. The model's claim that a conflict is resolvable never changes deterministic precedence.
 
-A valid source may still be outside the current mission/agent scope. Reject cross-tenant or unauthorized refs.
+### S4 Completeness cross-links and reachability
 
-### V4 Temporal validity
+Check one assessment per explicit Requirement, referenced binding/contradiction IDs, and the claimed transitive requirement path. Compute support through validity-bearing CRITICAL paths; do not demand direct evidence on a derived Requirement if a valid leaf-to-decision path already exists.
 
-Validate that the referenced revision was current or otherwise allowed in `world_snapshot_id`.
+### S5 Deterministic outcome/acceptance policy
 
-### V5 Dependency type rules
+Apply the exact `APPROVE | DENY | REVIEW` rules in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md). Semantic gaps and conflicts reach this stage; they are not pre-validator exits.
 
-Examples:
+## Early terminal structural errors
 
-- `GOVERNED_BY` source must be policy/rule-like.
-- `SUPPORTED_BY` cannot target an unrelated action node.
-- `AUTHORIZES` should originate from a valid decision in runtime, not raw text.
-- `DERIVED_FROM` between claims must form an allowed graph.
+- invalid stage schema after one repair;
+- duplicate/unknown local IDs or a requirement cycle;
+- fabricated, unauthorized, cross-scope, or stale source ref;
+- illegal source role/relation/authority class;
+- inconsistent cross-links between typed objects.
 
-Raw source fragments may never emit `AUTHORIZES`; that relation is reserved for deterministic Runtime `Decision → Action` edges.
+These return a structural disposition and an exact `executed_stages` trace. No canonical output is produced.
 
-### V6 Claim support
+## Non-terminal semantic conditions
 
-Every critical FACT/RULE claim must have a reachable positive, `CRITICAL` source path. `CONTRADICTED_BY`, `CONTEXTUAL`, unrelated critical edges, and derived chains whose root has no valid source path do not count as support.
+The following must not terminate before contradiction and completeness execute:
 
-### V7 Decision support
+- a critical Requirement currently has no evidence binding;
+- the Requirement set is empty or an APPROVE outcome has no applicable critical Requirement;
+- a proposed high-risk outcome has no support path yet;
+- an unresolved or blocking question exists;
+- contradictory current authorities exist;
+- model confidence is low or semantic evidence is ambiguous;
+- proposed outcome appears inconsistent with evidence.
 
-High-risk outcomes must have at least one complete critical source → claim → decision path, or a direct validity-bearing source → decision edge. “APPROVED with an unrelated/negative critical edge” is invalid.
-
-`allow_historical=True` grants read access only. A historical ref that is critical or validity-bearing is rejected as stale authority; it may remain explicit non-validity-bearing context.
+V1 codes such as `CRITICAL_CLAIM_UNSUPPORTED`, `HIGH_RISK_DECISION_UNSUPPORTED`, and `BLOCKING_QUESTION_UNRESOLVED` therefore move out of the early structural validator. Their v2 equivalents are RequirementAssessments and final-gate findings.
 
 ## Canonicalization
 
-### Normalize refs
+Canonicalization runs only after disposition `ACCEPTED`.
 
-Resolve aliases to canonical fragment refs before persistence.
+### Stable mapping
 
-### Deduplicate edges
+- each Requirement maps to one canonical Claim;
+- validated EvidenceBindings map to SourceFragment → Claim edges;
+- requirement DAG links map to Claim → Claim edges;
+- applicable critical Claims map to Decision-requires-Claim edges;
+- deterministic stable IDs derive from compilation inputs and versioned policy;
+- identical edges deduplicate; ordering is stable.
 
-Two identical edges collapse deterministically.
+### Materiality
 
-### Stable ordering
+Only `CRITICAL` edges are validity-bearing for later invalidation. `SUPPORTING` edges remain provenance-only. The canonicalizer cannot upgrade evidence based on relevance, model-read telemetry, or broad document membership.
 
-Sort by source ref, target local claim/decision identity, relation, then materiality.
+### No silent semantic repair
 
-### Preserve materiality
+The canonicalizer cannot:
 
-`CRITICAL` edges drive later invalidation. `SUPPORTING`/`CONTEXTUAL` edges are provenance-only unless domain policy promotes them.
-
-### Canonical edge creation
-
-Example:
-
-```text
-fragment:policy...#section/7.3
-    --GOVERNED_BY[CRITICAL]-->
-claim:c3
-
-claim:c3
-    --REQUIRES[CRITICAL]-->
-decision:security-review
-```
-
-## Important rule: no broad auto-upgrade
-
-The compiler must not convert every source the model read into a critical dependency. Reading context is not the same as material dependence.
-
-## Important rule: no silent repair
-
-If the model cites:
-
-```text
-policy-v13#section7
-```
-
-but only:
-
-```text
-policy-v13#section/7.3
-```
-
-exists, the compiler may return a repair suggestion, but must not silently substitute it in a high-risk decision.
+- substitute a near-match ref;
+- add a binding omitted by Stage 2;
+- promote SUPPORTING to CRITICAL;
+- resolve a contradiction by model preference;
+- add redundant direct edges to satisfy a shallow completeness check;
+- change the proposed outcome.
 
 ## Compilation hash
 
-Persist a hash over:
+The v2 hash covers at least:
 
-- normalized DecisionDraft;
-- canonical refs + source hashes;
-- compiler version;
-- validation policy version.
+- normalized request and trusted outcome semantics;
+- validated Requirements, EvidenceBindings, Contradictions, and RequirementAssessments;
+- canonical refs and source/fragment hashes;
+- world snapshot;
+- pipeline/compiler/validation-policy versions;
+- deterministic precedence-policy version;
+- stage prompt/schema/model metadata required for provenance.
 
-This lets audit records prove what was compiled.
+The same validated inputs and versions must produce an identical disposition, graph, trace, and hash.

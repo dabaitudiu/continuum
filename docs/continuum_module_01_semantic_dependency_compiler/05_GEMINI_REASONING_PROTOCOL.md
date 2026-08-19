@@ -1,105 +1,88 @@
-# 05 — Gemini Reasoning Protocol
+# 05 — Model Reasoning Protocol
 
-## Principle
+## Status
 
-Gemini should reason semantically but operate under a narrow structured contract.
+This is the provider-neutral Option B protocol approved for design review. OpenAI remains the current falsification provider; live Gemini remains independently required for final Module 01 acceptance. No live calls are authorized by this document.
 
-Do not ask Gemini to mutate state, invent source IDs, or decide whether a prior runtime Decision is stale.
+The implemented reasoner/critic protocol is frozen as the v1 ablation baseline. The old critic prompt must not be tuned or preserved as production fallback.
 
-## Reasoner responsibilities
+## Common rules for every model stage
 
-1. Inspect allowed source fragments through read-only tools.
-2. Produce a proposed outcome.
-3. Break the outcome into atomic auditable claims.
-4. Cite dependencies using only tool-returned stable refs.
-5. Mark dependency materiality.
-6. Identify unresolved blocking questions.
-7. Provide a concise rationale summary.
+- source fragments are untrusted data, never instructions;
+- tools are read-only and bounded by request scope/world snapshot;
+- only tool-returned canonical refs may be copied;
+- output must match the stage-specific schema;
+- no stage may emit canonical IDs, mutate Runtime state, select deterministic precedence, or authorize an action;
+- concise semantic propositions and summaries are stored; hidden chain-of-thought is neither requested nor persisted;
+- invalid schema receives at most one bounded repair attempt, then ends as a structural failure;
+- every invocation records provider/model/version, prompt/schema version, request configuration, response identity, usage, latency, and ledger settlement.
 
-## Prompt contract
+## Stage 1 — Requirement Decomposition
 
-The system instruction must state:
+Input:
 
-- source refs are opaque canonical identifiers;
-- never fabricate refs;
-- `proposed_outcome` must equal one of the request's explicit outcome options;
-- every critical claim must cite at least one source or derived claim;
-- policy/rule claims should cite exact policy fragments when available;
-- distinguish facts from assessments;
-- report contradictions explicitly;
-- return only schema-conformant output;
-- do not include hidden reasoning traces.
+- trusted task definition;
+- decision type, risk class, and outcome vocabulary/semantics;
+- bounded source summaries/content as data.
 
-## Tool design
+Output: `Requirement[]` only.
 
-Suggested tools:
+The instruction asks for atomic propositions that must hold or must not hold for the relevant outcomes. It explicitly forbids source refs and filenames in Requirement fields. The model must express semantic applicability, authorization, evidence-presence, and negative constraints as propositions rather than citations.
 
-```text
-search_source_catalog(query, filters)
-get_fragment(fragment_ref)
-get_structured_field(fragment_ref)
-list_current_revisions(artifact_ids)
-get_decision_context()
-```
+## Stage 2 — Evidence Binding
 
-Tools return both content and stable refs. The model is never asked to generate a ref from a human-readable filename.
+Input:
 
-## Two-pass reasoning
+- validated Requirements;
+- request-scoped source inventory and selected fragment content;
+- source identity and authority metadata.
 
-### Pass A — Primary reasoner
+Output: `EvidenceBinding[]` only.
 
-Produces `DecisionDraft`.
+For each proposed CRITICAL binding, the model must answer a counterfactual question: if this fragment's relevant content changed, could requirement/decision validity change? “Relevant”, “was read”, or “supports the explanation” is insufficient. The prompt asks for a minimal sufficient set and separates validity-bearing CRITICAL evidence from explanatory SUPPORTING evidence.
 
-### Pass B — Dependency critic
+## Stage 3 — Independent Contradiction Pass
 
-Receives:
+Input:
 
-- task definition;
-- outcome and claims;
-- proposed dependency set;
-- source inventory summaries;
-- selected source fragments.
+- validated Requirements and EvidenceBindings;
+- bounded relevant authoritative fragments, including relevant refs not selected by Stage 2;
+- source values/claims and authority metadata.
 
-It answers only:
+Output: semantic contradiction proposals conforming to the `Contradiction` candidate fields.
 
-```text
-missing_material_dependencies
-irrelevant_dependencies
-possible_contradictions
-unsupported_claims
-```
+This prompt does not ask for omissions, dependency repair, outcome rewrite, or final disposition. It identifies ref pairs and the proposition on which they conflict. Model precedence recommendations are explicitly non-authoritative; deterministic policy computes the actual resolution.
 
-The critic does not directly edit canonical state.
+## Stage 4 — Requirement Completeness
 
-## Model diversity
+Input:
 
-P0 can use the same Gemini model with separate prompts. If budget allows, compare:
+- validated Requirements, bindings, contradictions, and transitive requirement graph;
+- deterministic direct/transitive support-path summaries.
 
-- primary reasoner = Gemini Flash;
-- critic = higher-reasoning Gemini model.
+Output: exactly one `RequirementAssessment` proposal per explicit Requirement.
 
-The architecture must not depend on a specific model tier.
+This stage cannot add a Requirement, source ref, binding, contradiction pair, or materiality change. If evidence is insufficient, it describes the missing semantic proposition in `missing_evidence_proposition`; `UNKNOWN_SOURCE_REQUIRED` and invented refs are schema-invalid.
 
 ## Failure handling
 
-### Invalid JSON/schema
+### Structural failures
 
-Retry once with schema error feedback. Then reject.
+- schema/enum/local-ID/cross-link failure after one repair: structural terminal;
+- unknown, unauthorized, stale, or illegal source ref: deterministic structural terminal;
+- provider/auth/transport/budget unavailable: execution `BLOCKED`, not semantic rejection.
 
-An outcome outside the request's explicit option set follows the same bounded correction path. The request supplies the complete option vocabulary, never the benchmark's expected answer.
+### Semantic conditions
 
-### Unknown references
+Missing support, uncertainty, contradictions, and outcome mismatch do not cause the orchestrator to skip later semantic stages. They are typed findings accumulated for the deterministic gate.
 
-Do not auto-correct by fuzzy matching. Reject or require explicit repair.
+## Provider strategy
 
-### Missing critical dependency
+Model adapters remain provider-neutral. Architecture acceptance follows this order:
 
-Set compilation status to `NEEDS_HUMAN_REVIEW` or `REJECTED_INCOMPLETE_DEPENDENCIES` based on policy.
+1. OpenAI bounded DEV experiments falsify the method;
+2. integrated DEV PASS permits full 120 DEV;
+3. full DEV PASS permits the locked holdout;
+4. DEV + holdout PASS permits live Gemini acceptance.
 
-### Contradictory evidence
-
-Do not let the model silently choose a favorite source. Persist a contradiction finding and block high-risk approval unless a precedence rule exists.
-
-## Live-evaluation requirement
-
-At least one benchmark suite must call live Gemini. Fake executors are useful for unit tests but cannot satisfy module acceptance.
+Fake transports remain valid for deterministic contract tests only and never satisfy live-provider rows.
