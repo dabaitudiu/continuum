@@ -78,13 +78,17 @@
 3. 实现纯只读 tool facade，返回 opaque fully-qualified refs 和最小 metadata；不得暴露写入口。
 4. 跑 tests 到 GREEN。
 
-## Task 5：Phase D2 — ADK/Gemini reasoner 与 critic executor
+## Task 5：Phase D2 — provider-neutral reasoner、OpenAI 预算门与 ADK/Gemini executor
 
 **文件：**
 
 - 新建 `backend/app/compiler/prompts.py`
 - 新建 `backend/app/compiler/reasoner.py`
+- 新建 `backend/app/compiler/budget.py`
 - 新建 `backend/tests/compiler/test_gemini_reasoner.py`
+- 新建 `backend/tests/compiler/test_openai_reasoner.py`
+- 新建 `backend/tests/compiler/test_model_budget.py`
+- 新建 `backend/tests/live/test_live_openai_compiler.py`
 - 新建 `backend/tests/live/test_live_gemini_compiler.py`
 - 修改 `backend/pyproject.toml`（固定兼容版本范围和 live marker）
 
@@ -92,10 +96,13 @@
 
 1. 写 fake external transport contract tests：Pydantic structured output、工具返回 ref、schema 错误反馈后只重试一次、第二次失败、model metadata、prompt version、无隐藏 CoT 字段。
 2. 观察 RED。
-3. 基于已安装 ADK 2.x 官方 API 实现 reasoner/critic agents；模型默认 `gemini-3.5-flash` 或环境覆盖且必须满足 3.5+ allowlist；temperature/config 明确记录。
-4. 对模型/网络边界做 dependency injection；unit tests 只替代最外层外部调用，不断言 mock 自身。
-5. 添加 credential-gated live tests，缺凭据时 SKIP 且明确不能转化为 PASS；覆盖 multi-source、missing evidence、contradiction、prompt injection。
-6. 运行 fake contract 和全量 tests，提交 `feat: integrate bounded Gemini dependency reasoning`。
+3. 实现 provider-neutral reasoner/critic contract；OpenAI Responses API 和 ADK/Gemini 共享同一 typed output，不共享 provider-specific transport。
+4. 实现并发安全、持久化的 OpenAI budget ledger：累计硬上限 10 美元；调用前 reserve，调用后按 usage settle；余额不足在网络前拒绝；定价和版本进入审计。
+5. 先接 OpenAI structured outputs 做真实验证，默认成本敏感模型由环境显式配置；其证据标为 `live_openai`，不覆盖 Gemini P0。
+6. 基于已安装 ADK 2.x 官方 API 实现 reasoner/critic agents；模型默认 `gemini-3.5-flash` 或环境覆盖且必须满足 3.5+ allowlist；temperature/config 明确记录。
+7. 对模型/网络边界做 dependency injection；unit tests 只替代最外层外部调用，不断言 mock 自身。
+8. 添加两套 credential-gated live tests，缺凭据时 SKIP 且明确不能转化为 PASS；覆盖 multi-source、missing evidence、contradiction、prompt injection。
+9. 运行 fake contract 和全量 tests，提交 `feat: integrate bounded model dependency reasoning`。
 
 ## Task 6：Phase E — 完整性、矛盾和 authority precedence
 
@@ -153,7 +160,7 @@
 3. 写 runner tests：document-level baseline、single-pass、full pipeline；live/fake evidence 分栏；3x30 variance；模型/配置/prompt 记录；失败指标让 gate 非零退出。
 4. 观察 RED 后实现 runner、JSON report 和 Markdown summary。
 5. 运行 deterministic corpus，保存实际报告；目标未达标则迭代 prompt/critic/compiler，但不改真值迎合实现。
-6. 有凭据时运行 live Gemini 全 corpus + adversarial + variance，保存原始 machine report 和摘要；无凭据时保持 P0 BLOCKED。
+6. 先在 10 美元累计上限内运行 live OpenAI corpus/adversarial/variance，保存实际 usage/cost；再在有凭据时运行 live Gemini 全 corpus + adversarial + variance。二者证据分开，无 Gemini 凭据时对应 P0 保持 BLOCKED。
 7. 提交 `feat: add continuum dependency benchmark`。
 
 ## Task 9：Phase G1 — 编译持久化、API 和 outbox

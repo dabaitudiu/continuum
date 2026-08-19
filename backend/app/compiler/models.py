@@ -251,8 +251,36 @@ class CanonicalEdge(FrozenModel):
     purpose: str | None = Field(default=None, max_length=1000)
 
 
+class ResolvedDependency(FrozenModel):
+    proposed_ref: str = Field(min_length=1, max_length=2048)
+    canonical_ref: str = Field(min_length=1, max_length=2048)
+    target_kind: str = Field(min_length=1, max_length=64)
+    target_local_id: str = Field(min_length=1, max_length=256)
+    relation: DependencyRelation
+    materiality: Materiality
+    purpose: str | None = Field(default=None, max_length=1000)
+    artifact_type: str = Field(min_length=1, max_length=64)
+    source_type: str = Field(min_length=1, max_length=64)
+    trust_class: str = Field(min_length=1, max_length=64)
+    authority_rank: int = Field(ge=0)
+    revision_id: str = Field(min_length=1, max_length=256)
+    revision_label: str = Field(min_length=1, max_length=256)
+    representation_id: str = Field(min_length=1, max_length=256)
+    source_hash: str
+    fragment_hash: str
+    is_historical: bool
+
+    @field_validator("source_hash", "fragment_hash")
+    @classmethod
+    def _validate_source_hash(cls, value: str) -> str:
+        if not _SHA256_PATTERN.fullmatch(value):
+            raise ValueError("source dependency hashes must be lowercase SHA-256")
+        return value
+
+
 class ValidationReport(FrozenModel):
     findings: list[ValidationFinding] = Field(default_factory=list)
+    resolved_dependencies: list[ResolvedDependency] = Field(default_factory=list)
     disposition: CompilationDisposition | None = None
 
 
@@ -298,4 +326,3 @@ class CompilationResult(FrozenModel):
         if value is not None and not _SHA256_PATTERN.fullmatch(value):
             raise ValueError("compilation_hash must be lowercase SHA-256")
         return value
-

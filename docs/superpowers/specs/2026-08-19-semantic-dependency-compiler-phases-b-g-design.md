@@ -77,6 +77,16 @@ Gemini 输出只包含局部 claim id 和它从工具返回值中复制的 refs�
 
 Schema 错误只重试一次；未知 ref 不做模糊替换。所有状态与 canonical id 由编译器按固定算法生成。
 
+模型执行层是 provider-neutral contract：Google ADK/Gemini 是最终规格要求的实现；在 Gemini 凭据尚不可用时，产品所有者授权先用 OpenAI Responses API 做真实模型验证。OpenAI 运行不得冒充 `Live Gemini` P0 证据，两类报告分别落盘。
+
+OpenAI 验证有 **10 美元累计硬上限**：
+
+- 默认使用支持 structured outputs 的成本敏感模型；
+- 每次调用前按 max input/output 预留最坏成本，余额不足时不发请求；
+- 每次调用后用响应 usage 的 input/cached/output token 分项记账；
+- 预算 ledger 持久化且并发安全，累计到上限后确定性拒绝；
+- 测试、报告和 UI 都显示预算上限、实际消耗及定价表版本。
+
 ### 3. 规范化稳定且可审计
 
 规范化输入包括 validated draft、解析后的 fully-qualified refs、对应 source/fragment hashes、compiler version、validation policy version、prompt version。JSON 使用固定字段形状、UTF-8、排序键和紧凑分隔符。相同输入必须得到逐字节相同的 canonical output 和 `compilation_hash`。
@@ -111,6 +121,8 @@ Critic 只能从请求 allowlist 中选择 `candidate_ref`，或返回 `UNKNOWN_
 - 10 omission。
 
 Runner 分开输出 deterministic/fake 集成证据和 credential-gated live Gemini 证据。mock 结果永远不能把 `live_gemini` 行标为 PASS。报告同时给出文档级基线、单阶段 reasoner、完整双阶段编译器的指标。
+
+在 Gemini 凭据可用前，先运行同一 corpus 的 live OpenAI 套件验证 prompt/schema/critic 方法与预算；该结果进入独立 `live_openai` evidence 行，不覆盖 `live_gemini`。
 
 ### 7. 产品交付面
 
