@@ -13,6 +13,8 @@ from app.sources.identity import (
     SourceType,
     TrustClass,
     content_hash,
+    derive_representation_id,
+    derive_revision_id,
     ingest_json_revision,
 )
 from app.sources.registry import (
@@ -41,5 +43,7 @@ __all__ = [
     "TrustClass",
     "WorldSnapshot",
     "content_hash",
+    "derive_representation_id",
+    "derive_revision_id",
     "ingest_json_revision",
 ]

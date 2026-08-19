@@ -35,8 +35,17 @@ def artifact() -> Artifact:
 
 def revision(label: str = "r7") -> Revision:
     payload = {"handles_customer_pii": True, "region": "eu"}
+    revision_identity_hash = content_hash(
+        {
+            "artifact_id": "record:vendor-profile",
+            "revision_label": label,
+        }
+    )
     return Revision(
-        revision_id=f"record:vendor-profile@sha256:{content_hash(payload)}",
+        revision_id=(
+            "record:vendor-profile@revision:"
+            f"{revision_identity_hash}"
+        ),
         artifact_id="record:vendor-profile",
         revision_label=label,
         content_hash=content_hash(payload),
@@ -100,6 +109,31 @@ def test_content_hash_is_canonical_for_mapping_key_order() -> None:
 
     assert content_hash(left) == content_hash(right)
     assert len(content_hash(left)) == 64
+
+
+def test_revision_rejects_identity_not_derived_from_artifact_and_label() -> None:
+    source_revision = revision()
+    payload = source_revision.model_dump()
+    payload["revision_id"] = "forged-revision"
+
+    with pytest.raises(ValidationError, match="revision_id"):
+        Revision.model_validate(payload)
+
+
+def test_representation_rejects_identity_not_derived_from_parser_inputs() -> None:
+    ingested = ingest_json_revision(
+        artifact(),
+        revision_label="r-forged",
+        value={"approved": True},
+        created_at=NOW,
+        valid_from=NOW,
+        parser_version="json-v1",
+    )
+    payload = ingested.representation.model_dump()
+    payload["representation_id"] = "forged-representation"
+
+    with pytest.raises(ValidationError, match="representation_id"):
+        type(ingested.representation).model_validate(payload)
 
 
 def test_json_field_refs_survive_unrelated_field_addition() -> None:
@@ -262,7 +296,22 @@ def test_structured_field_names_with_reserved_and_unicode_characters_round_trip(
     serialized = [str(fragment.source_ref()) for fragment in ingested.fragments]
     assert any("%23" in raw for raw in serialized)
     assert any("%40" in raw for raw in serialized)
+    assert any("%25" in raw for raw in serialized)
     assert any("%E6%8E%A7%E5%88%B6" in raw for raw in serialized)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "record:vendor@r1#%24.approved",
+        "record:vendor@r1#%2fpath",
+        "record:vendor@r1#%e6%8e%a7%e5%88%b6",
+        "record:vendor@r1#%ZZ",
+    ],
+)
+def test_source_ref_rejects_noncanonical_percent_encoding(raw: str) -> None:
+    with pytest.raises(ValueError, match="source ref"):
+        SourceRef.parse(raw)
 
 
 def test_unconfigured_array_is_atomic_not_positionally_addressed() -> None:

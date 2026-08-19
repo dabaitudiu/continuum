@@ -259,6 +259,39 @@ def test_registry_never_overwrites_business_revision_content() -> None:
     assert original.revision.content_hash == r2.revision.content_hash
 
 
+def test_registry_rejects_revision_identity_bypassing_model_validation() -> None:
+    registry = InMemorySourceRegistry()
+    source_artifact = artifact()
+    registry.add_artifact(source_artifact)
+    valid = ingest(source_artifact, "r1", {"approved": True})
+    forged = valid.revision.model_copy(
+        update={"revision_id": "forged-revision"},
+        deep=True,
+    )
+
+    with pytest.raises(SourceRegistryError) as raised:
+        registry.add_revision(forged)
+
+    assert raised.value.code == "REVISION_ID_INVALID"
+
+
+def test_registry_rejects_representation_identity_bypassing_validation() -> None:
+    registry = InMemorySourceRegistry()
+    source_artifact = artifact()
+    registry.add_artifact(source_artifact)
+    valid = ingest(source_artifact, "r1", {"approved": True})
+    registry.add_revision(valid.revision)
+    forged = valid.representation.model_copy(
+        update={"representation_id": "forged-representation"},
+        deep=True,
+    )
+
+    with pytest.raises(SourceRegistryError) as raised:
+        registry.add_representation(forged, ())
+
+    assert raised.value.code == "REPRESENTATION_ID_INVALID"
+
+
 def test_snapshot_cannot_bind_revision_from_another_artifact() -> None:
     registry, _, r2 = populated_registry()
 

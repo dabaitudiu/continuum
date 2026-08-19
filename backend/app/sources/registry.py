@@ -12,6 +12,8 @@ from app.sources.identity import (
     ParsedRepresentation,
     Revision,
     SourceRef,
+    derive_representation_id,
+    derive_revision_id,
 )
 
 
@@ -95,6 +97,14 @@ class InMemorySourceRegistry:
 
     def add_revision(self, revision: Revision) -> None:
         with self._lock:
+            if revision.revision_id != derive_revision_id(
+                revision.artifact_id,
+                revision.revision_label,
+            ):
+                raise SourceRegistryError(
+                    "REVISION_ID_INVALID",
+                    "revision identity is not canonically derived",
+                )
             if revision.artifact_id not in self._artifacts:
                 raise SourceRegistryError(
                     "UNKNOWN_SOURCE_ARTIFACT",
@@ -119,6 +129,15 @@ class InMemorySourceRegistry:
         fragments: tuple[Fragment, ...] | list[Fragment],
     ) -> None:
         with self._lock:
+            if representation.representation_id != derive_representation_id(
+                representation.revision_id,
+                representation.parser_version,
+                representation.parser_config_hash,
+            ):
+                raise SourceRegistryError(
+                    "REPRESENTATION_ID_INVALID",
+                    "parsed representation identity is not canonically derived",
+                )
             revision = self._revisions.get(representation.revision_id)
             if revision is None:
                 raise SourceRegistryError(

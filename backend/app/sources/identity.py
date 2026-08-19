@@ -159,7 +159,15 @@ class Revision(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def _validate_interval(self) -> Revision:
+    def _validate_identity_and_interval(self) -> Revision:
+        expected_id = derive_revision_id(
+            self.artifact_id,
+            self.revision_label,
+        )
+        if self.revision_id != expected_id:
+            raise ValueError(
+                "revision_id must be derived from artifact_id and revision_label"
+            )
         if self.valid_until is not None and self.valid_until < self.valid_from:
             raise ValueError("valid_until cannot precede valid_from")
         return self
@@ -187,6 +195,19 @@ class ParsedRepresentation(BaseModel):
         if _SHA256_PATTERN.fullmatch(value) is None:
             raise ValueError("parser_config_hash must be a lowercase SHA-256 digest")
         return value
+
+    @model_validator(mode="after")
+    def _validate_identity(self) -> ParsedRepresentation:
+        expected_id = derive_representation_id(
+            self.revision_id,
+            self.parser_version,
+            self.parser_config_hash,
+        )
+        if self.representation_id != expected_id:
+            raise ValueError(
+                "representation_id must be derived from revision and parser inputs"
+            )
+        return self
 
 
 class Fragment(BaseModel):
@@ -261,6 +282,31 @@ def content_hash(value: Any) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def derive_revision_id(artifact_id: str, revision_label: str) -> str:
+    identity_hash = content_hash(
+        {
+            "artifact_id": artifact_id,
+            "revision_label": revision_label,
+        }
+    )
+    return f"{artifact_id}@revision:{identity_hash}"
+
+
+def derive_representation_id(
+    revision_id: str,
+    parser_version: str,
+    parser_config_hash: str,
+) -> str:
+    identity_hash = content_hash(
+        {
+            "revision_id": revision_id,
+            "parser_version": parser_version,
+            "parser_config_hash": parser_config_hash,
+        }
+    )
+    return f"{revision_id}@representation:sha256:{identity_hash}"
+
+
 def ingest_json_revision(
     artifact: Artifact,
     *,
@@ -277,14 +323,11 @@ def ingest_json_revision(
 
     normalized_array_keys = _normalize_array_identity_keys(array_identity_keys)
     digest = content_hash(value)
-    revision_identity_hash = content_hash(
-        {
-            "artifact_id": artifact.artifact_id,
-            "revision_label": revision_label,
-        }
-    )
     revision = Revision(
-        revision_id=f"{artifact.artifact_id}@revision:{revision_identity_hash}",
+        revision_id=derive_revision_id(
+            artifact.artifact_id,
+            revision_label,
+        ),
         artifact_id=artifact.artifact_id,
         revision_label=revision_label,
         content_hash=digest,
@@ -296,16 +339,11 @@ def ingest_json_revision(
     parser_config_hash = content_hash(
         {"array_identity_keys": normalized_array_keys}
     )
-    representation_hash = content_hash(
-        {
-            "revision_id": revision.revision_id,
-            "parser_version": parser_version,
-            "parser_config_hash": parser_config_hash,
-        }
-    )
     representation = ParsedRepresentation(
-        representation_id=(
-            f"{revision.revision_id}@representation:sha256:{representation_hash}"
+        representation_id=derive_representation_id(
+            revision.revision_id,
+            parser_version,
+            parser_config_hash,
         ),
         revision_id=revision.revision_id,
         parser_version=parser_version,
