@@ -64,11 +64,29 @@ printf '%s\\n' '{"status":"ok"}'
     assert "app.events.outbox_worker" in outbox_job
     assert "--max-retries=3" in outbox_job
     assert "cloudscheduler.googleapis.com" in commands
-    assert "roles/run.invoker" in commands
+    project_grants = [
+        line
+        for line in commands.splitlines()
+        if line.startswith("projects add-iam-policy-binding ")
+    ]
+    assert all("roles/run.invoker" not in line for line in project_grants)
+    job_grant = next(
+        line
+        for line in commands.splitlines()
+        if line.startswith("run jobs add-iam-policy-binding ")
+    )
+    assert "continuum-outbox-relay" in job_grant
+    assert "roles/run.invoker" in job_grant
+    assert (
+        "serviceAccount:continuum-outbox-scheduler@continuum-test.iam.gserviceaccount.com"
+        in job_grant
+    )
     scheduler = next(
         line
         for line in commands.splitlines()
-        if line.startswith(("scheduler jobs create http ", "scheduler jobs update http "))
+        if line.startswith(
+            ("scheduler jobs create http ", "scheduler jobs update http ")
+        )
     )
     assert "continuum-outbox-relay-schedule" in scheduler
     assert "--schedule=*/2 * * * *" in scheduler
@@ -77,7 +95,7 @@ printf '%s\\n' '{"status":"ok"}'
         "us-east1/jobs/continuum-outbox-relay:run"
     ) in scheduler
     assert (
-        "--oauth-service-account-email=continuum-runtime@continuum-test.iam.gserviceaccount.com"
+        "--oauth-service-account-email=continuum-outbox-scheduler@continuum-test.iam.gserviceaccount.com"
         in scheduler
     )
 

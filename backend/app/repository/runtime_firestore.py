@@ -118,6 +118,45 @@ class FirestoreRuntimeRepository:
             for document in documents
         ]
 
+    def ensure_outbox_projection_schema(self, *, batch_size: int = 500) -> int:
+        """Transactionally backfill the v2 pending-outbox query projection."""
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive")
+        migrated = 0
+        while True:
+            documents = list(
+                self._missions.where(
+                    filter=firestore.FieldFilter("schema_version", "<", 2)
+                )
+                .limit(batch_size)
+                .stream()
+            )
+            if not documents:
+                return migrated
+            migrated_this_batch = 0
+            for document in documents:
+                mission_id = document.id
+                reference = self._missions.document(mission_id)
+
+                def migrate_in_transaction(
+                    transaction: Any,
+                    reference: Any = reference,
+                    mission_id: str = mission_id,
+                ) -> bool:
+                    current = _transaction_get(transaction, reference)
+                    data = current.to_dict() or {}
+                    if int(data.get("schema_version", 0)) >= 2:
+                        return False
+                    snapshot = _snapshot_from_document(mission_id, current)
+                    transaction.set(reference, _mission_document(snapshot))
+                    return True
+
+                if self._transaction_runner(migrate_in_transaction):
+                    migrated += 1
+                    migrated_this_batch += 1
+            if migrated_this_batch == 0:
+                return migrated
+
     def find_inbox(
         self,
         mission_id: str,
@@ -245,7 +284,7 @@ def _mission_document(snapshot: RuntimeSnapshot) -> dict[str, Any]:
         "updated_at": mission.updated_at,
         "unpublished_outbox_count": unpublished_outbox_count,
         "has_unpublished_outbox": unpublished_outbox_count > 0,
-        "schema_version": 1,
+        "schema_version": 2,
         "snapshot_json": snapshot.model_dump_json(),
     }
 

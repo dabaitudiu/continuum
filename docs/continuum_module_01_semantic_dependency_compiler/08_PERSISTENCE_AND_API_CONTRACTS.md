@@ -107,4 +107,4 @@ compiler.rejected
 
 These are compiler events, distinct from final `decision.created` runtime events.
 
-Runtime outbox publication is retried independently by `app.events.outbox_worker` (deployed as a Cloud Run Job with a two-minute Cloud Scheduler trigger). The worker pages over the pending projection by stable Mission ID, so old pending Missions cannot be hidden by a recent-Mission limit. A command replay is not required to recover a pending projection.
+Runtime outbox publication is retried independently by `app.events.outbox_worker` (deployed as a Cloud Run Job with a two-minute Cloud Scheduler trigger). The worker first transactionally backfills legacy pending-outbox projections, then pages by stable Mission ID, so old pending Missions cannot be hidden by either a schema upgrade or a recent-Mission limit. Scheduler has a dedicated identity with invoker permission scoped only to this Job. A command replay is not required to recover a pending projection.

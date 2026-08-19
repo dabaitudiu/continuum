@@ -9,7 +9,7 @@
 - Google ADK agents using Gemini through Vertex AI;
 - FastAPI/OpenTelemetry spans exported to Google Cloud Trace.
 
-The runtime service account receives `roles/datastore.user`, `roles/pubsub.publisher`, `roles/aiplatform.user`, `roles/cloudtrace.agent`, and `roles/run.invoker` so Cloud Scheduler can execute the relay job with OAuth. The deployer still needs permission to enable APIs, create resources, grant those roles, act as the scheduler service account, build, and deploy Cloud Run and Scheduler resources.
+The runtime service account receives only its data-plane roles: `roles/datastore.user`, `roles/pubsub.publisher`, `roles/aiplatform.user`, and `roles/cloudtrace.agent`. Cloud Scheduler uses a separate `${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID:-continuum-outbox-scheduler}` identity that receives `roles/run.invoker` only on the relay Job, not at project scope. The deployer still needs permission to enable APIs, create resources, grant those roles, act as the scheduler service account, build, and deploy Cloud Run and Scheduler resources.
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ The whole generic `/api/compiler` surface is disabled unless a separate `CONTINU
 
 The public reference runner validates a bounded request identity and applies a per-instance sliding-window rate limit before creating an aggregate. For internet-scale deployment, place the service behind Cloud Armor/API Gateway for a shared cross-instance quota; the in-process guard is the prototype safety boundary, not a distributed quota service.
 
-The deployed `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay` job runs `app.events.outbox_worker`. It queries only missions with pending outbox messages, pages by stable Mission ID so old records cannot be hidden behind newer idle records, republishes every page, and exits nonzero when any mission remains failed so Cloud Run retries the task. `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay-schedule` invokes the Cloud Run Jobs v2 `:run` endpoint with OAuth every two minutes by default. Override the cron using `CONTINUUM_OUTBOX_SCHEDULE`. This path is intentionally independent of command replay. A manual operational check is:
+The deployed `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay` job runs `app.events.outbox_worker`. Before sweeping, it transactionally backfills legacy Mission documents from outbox projection schema v1 to v2; existing pending events are therefore visible after an upgrade. It then queries only missions with pending outbox messages, pages by stable Mission ID so old records cannot be hidden behind newer idle records, republishes every page, and exits nonzero when any mission remains failed so Cloud Run retries the task. `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay-schedule` invokes the Cloud Run Jobs v2 `:run` endpoint with OAuth every two minutes by default. Override the cron using `CONTINUUM_OUTBOX_SCHEDULE`. This path is intentionally independent of command replay. A manual operational check is:
 
 ```bash
 gcloud run jobs execute continuum-outbox-relay \

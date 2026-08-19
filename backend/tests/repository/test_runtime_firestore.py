@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from app.repository.runtime_firestore import FirestoreRuntimeRepository
-from app.runtime.entities import Commitment, WorkItem
+from app.runtime.entities import Commitment, OutboxMessage, WorkItem
 from app.runtime.errors import RuntimeDomainError
 from tests.repository.runtime_contract import (
     RuntimeRepositoryContract,
@@ -96,8 +96,16 @@ class FakeQuery:
         ]
         if self._filter is not None:
             field, operation, value = self._filter
-            assert operation == "=="
-            documents = [item for item in documents if item[1].get(field) == value]
+            if operation == "==":
+                documents = [item for item in documents if item[1].get(field) == value]
+            elif operation == "<":
+                documents = [
+                    item
+                    for item in documents
+                    if item[1].get(field) is not None and item[1][field] < value
+                ]
+            else:
+                raise AssertionError(f"unsupported fake filter: {operation}")
         if self._after is not None:
             after = self._after[self._field]
             documents = [item for item in documents if item[1][self._field] > after]
@@ -239,3 +247,32 @@ def test_canonical_entities_are_projected_to_queryable_subcollections() -> None:
     commitment = client.read("missions/m-1/commitments/commitment-1")
     assert work is not None and work["status"] == "PENDING"
     assert commitment is not None and commitment["status"] == "OPEN"
+
+
+def test_legacy_pending_outbox_projection_is_backfilled_before_sweep() -> None:
+    client = FakeFirestoreClient()
+    repository = make_repository(client)
+    snapshot = runtime_snapshot("m-legacy")
+    snapshot.outbox = [
+        OutboxMessage(
+            outbox_message_id="outbox:legacy",
+            mission_id="m-legacy",
+            event_type="mission.created",
+            correlation_id="create:legacy",
+            causation_id="create:legacy",
+        )
+    ]
+    repository.create(snapshot)
+    legacy = client._documents["missions/m-legacy"]
+    legacy["schema_version"] = 1
+    legacy.pop("has_unpublished_outbox")
+
+    assert repository.list_pending_outbox(limit=10) == []
+
+    migrated = repository.ensure_outbox_projection_schema(batch_size=1)
+
+    assert migrated == 1
+    assert client.read("missions/m-legacy")["schema_version"] == 2
+    assert [
+        item.mission.mission_id for item in repository.list_pending_outbox(limit=10)
+    ] == ["m-legacy"]

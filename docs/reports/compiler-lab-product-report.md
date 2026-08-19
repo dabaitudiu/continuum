@@ -25,7 +25,7 @@ The screen exposes `Execution mode: DETERMINISTIC_REFERENCE`, the backend-author
 - Acceptance checks the exact mission revision and world snapshot used for compilation.
 - Decision, Claim, Evidence, dependency edges, audit, inbox, and outbox commit atomically; replay returns the existing receipt without a second mission revision.
 - Source revisions bind to the currently active Runtime artifact instance, so update → recompile → update remains invalidatable.
-- A separate outbox relay worker pages over the Firestore pending-outbox projection; a Cloud Scheduler trigger invokes its Cloud Run Job every two minutes with OAuth, so old pending Missions cannot be starved by newer idle Missions and retries do not require command replay.
+- A separate outbox relay worker transactionally backfills legacy projection schema, then pages over the Firestore pending-outbox projection; a least-privilege Scheduler identity invokes only that Cloud Run Job every two minutes with OAuth, so old pending Missions cannot be starved by newer idle Missions and retries do not require command replay.
 - The compiler can propose canonical state, but deterministic Runtime code remains the only owner of state transitions.
 
 ## Honest model-evidence boundary
@@ -48,7 +48,7 @@ Desktop measurement produced the intended `264px / 856px / 320px` source, proven
 
 ## Automated evidence
 
-- The full backend suite reports **449 passed, 2 live credential tests skipped**, with **89% branch-aware coverage**.
+- The full backend suite reports **450 passed, 2 live credential tests skipped**, with **89% branch-aware coverage**.
 - The frontend suite reports **19/19 passed**, followed by a successful TypeScript/Vite production build.
 - Compiler demo/API tests cover failure-closed default behavior, generic API isolation, honest PASS/FAIL/BLOCKED evidence status, all four dispositions, exactly-once acceptance, prefix-forgery refusal, and reference replay.
 - Frontend behavior tests cover accepted compilation through Runtime receipt and rejected compilation without a mutation action.

@@ -12,6 +12,8 @@ CONTINUUM_DATABASE="${CONTINUUM_FIRESTORE_DATABASE:-continuum}"
 CONTINUUM_TOPIC="${CONTINUUM_PUBSUB_TOPIC:-continuum-events}"
 CONTINUUM_SERVICE_ACCOUNT_ID="${CONTINUUM_SERVICE_ACCOUNT_ID:-continuum-runtime}"
 CONTINUUM_SERVICE_ACCOUNT="${CONTINUUM_SERVICE_ACCOUNT_ID}@${CONTINUUM_PROJECT_ID}.iam.gserviceaccount.com"
+CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID="${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID:-continuum-outbox-scheduler}"
+CONTINUUM_SCHEDULER_SERVICE_ACCOUNT="${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID}@${CONTINUUM_PROJECT_ID}.iam.gserviceaccount.com"
 
 if [[ -z "${CONTINUUM_PROJECT_ID}" ]]; then
   echo "usage: $0 PROJECT_ID [REGION]" >&2
@@ -44,12 +46,18 @@ if ! gcloud iam service-accounts describe "${CONTINUUM_SERVICE_ACCOUNT}" \
     --project="${CONTINUUM_PROJECT_ID}"
 fi
 
+if ! gcloud iam service-accounts describe "${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT}" \
+  --project="${CONTINUUM_PROJECT_ID}" >/dev/null 2>&1; then
+  gcloud iam service-accounts create "${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT_ID}" \
+    --display-name="Continuum outbox scheduler" \
+    --project="${CONTINUUM_PROJECT_ID}"
+fi
+
 for CONTINUUM_ROLE in \
   roles/aiplatform.user \
   roles/cloudtrace.agent \
   roles/datastore.user \
-  roles/pubsub.publisher \
-  roles/run.invoker; do
+  roles/pubsub.publisher; do
   gcloud projects add-iam-policy-binding "${CONTINUUM_PROJECT_ID}" \
     --member="serviceAccount:${CONTINUUM_SERVICE_ACCOUNT}" \
     --role="${CONTINUUM_ROLE}" \
@@ -103,6 +111,13 @@ gcloud run jobs deploy "${CONTINUUM_OUTBOX_JOB}" \
   --task-timeout=300s \
   --set-env-vars="GOOGLE_CLOUD_PROJECT=${CONTINUUM_PROJECT_ID},CONTINUUM_FIRESTORE_DATABASE=${CONTINUUM_DATABASE},CONTINUUM_FIRESTORE_COLLECTION=missions,CONTINUUM_PUBSUB_TOPIC=${CONTINUUM_TOPIC},CONTINUUM_OUTBOX_SWEEP_PAGE_SIZE=500"
 
+gcloud run jobs add-iam-policy-binding "${CONTINUUM_OUTBOX_JOB}" \
+  --region="${CONTINUUM_REGION}" \
+  --project="${CONTINUUM_PROJECT_ID}" \
+  --member="serviceAccount:${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT}" \
+  --role=roles/run.invoker \
+  --quiet
+
 CONTINUUM_OUTBOX_RUN_URI="https://run.googleapis.com/v2/projects/${CONTINUUM_PROJECT_ID}/locations/${CONTINUUM_REGION}/jobs/${CONTINUUM_OUTBOX_JOB}:run"
 if gcloud scheduler jobs describe "${CONTINUUM_OUTBOX_SCHEDULER}" \
   --location="${CONTINUUM_REGION}" \
@@ -119,7 +134,7 @@ gcloud scheduler jobs "${CONTINUUM_SCHEDULER_ACTION}" http \
   --time-zone="Etc/UTC" \
   --uri="${CONTINUUM_OUTBOX_RUN_URI}" \
   --http-method=POST \
-  --oauth-service-account-email="${CONTINUUM_SERVICE_ACCOUNT}" \
+  --oauth-service-account-email="${CONTINUUM_SCHEDULER_SERVICE_ACCOUNT}" \
   --oauth-token-scope="https://www.googleapis.com/auth/cloud-platform" \
   --max-retry-attempts=5 \
   --quiet
