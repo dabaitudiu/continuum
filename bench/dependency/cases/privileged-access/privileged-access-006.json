@@ -82,9 +82,9 @@
     "source_ref": "benchmark:privileged-access-006:primary@v13!benchmark:privileged-access-006:primary%40revision:b809e822deec9525306fd71f9d0a028be21fa98c59b00511a8b8ecda3afbdbfb%40representation:sha256:a64ca45e4a96b64fca2da31eac32ba7722306ae19989aa8c3023247cfc066599#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Avery Chen: identity verification changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:privileged-access-006"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

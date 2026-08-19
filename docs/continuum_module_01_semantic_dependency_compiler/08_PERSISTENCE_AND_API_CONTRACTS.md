@@ -45,6 +45,8 @@ Canonical normalized result, compiler version, compilation hash, disposition.
 
 ## Proposed API
 
+The generic surface is internal-only. If `CONTINUUM_COMPILER_API_CAPABILITY` is absent it returns no usable endpoint; configured internal callers must provide `X-Continuum-Compiler-Capability`. Public product traffic uses only the fixed `/api/demo/compiler` scenario routes. Runtime acceptance has a second, separate capability.
+
 ### POST `/api/compiler/requests`
 
 Create a compilation request bound to mission/work/world snapshot.
@@ -104,3 +106,5 @@ compiler.rejected
 ```
 
 These are compiler events, distinct from final `decision.created` runtime events.
+
+Runtime outbox publication is retried independently by `app.events.outbox_worker` (deployed as a Cloud Run Job). A command replay is not required to recover a pending projection.

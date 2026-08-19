@@ -5,6 +5,7 @@
 - one public Cloud Run service containing Mission Control and the control-plane API;
 - a named Firestore Native-mode database used as the Mission and compiler system of record (`missions` and `compiler_requests` collections);
 - one Pub/Sub topic receiving durable outbox events;
+- one independent Cloud Run Job that scans and retries pending outbox projections;
 - Google ADK agents using Gemini through Vertex AI;
 - FastAPI/OpenTelemetry spans exported to Google Cloud Trace.
 
@@ -36,7 +37,7 @@ CONTINUUM_VERTEX_LOCATION=global \
 
 The positional region controls Cloud Run and Firestore placement. Gemini uses the separate `CONTINUUM_VERTEX_LOCATION`, which defaults to the Vertex AI `global` endpoint recommended by Google's current Gemini quickstart. Keeping these values separate prevents an invalid Cloud Run region when the model endpoint is `global`.
 
-The script is idempotent for existing APIs, service account, Firestore database, and Pub/Sub topic. It prints the deployed URL and then calls `/api/health`. A healthy cloud response must report:
+The script is idempotent for existing APIs, service account, Firestore database, Pub/Sub topic, service, and outbox relay job. It prints the deployed URL and then calls `/api/health`. A healthy cloud response must report:
 
 ```json
 {
@@ -67,7 +68,18 @@ CONTINUUM_FIRESTORE_COLLECTION=missions
 CONTINUUM_FIRESTORE_COMPILER_COLLECTION=compiler_requests
 ```
 
-The generic `POST /api/compiler/{request_id}/accept` route remains disabled unless a separate `CONTINUUM_RUNTIME_COMPILER_CAPABILITY` secret is injected. Do not put that capability in a public frontend environment variable. Compiler Lab uses its isolated, server-registered reference-fixture acceptance route and does not broaden the production capability.
+The whole generic `/api/compiler` surface is disabled unless a separate `CONTINUUM_COMPILER_API_CAPABILITY` is injected for an internal service caller. Runtime acceptance additionally requires `CONTINUUM_RUNTIME_COMPILER_CAPABILITY`. Do not put either capability in a public frontend environment variable. Compiler Lab uses its isolated, server-registered reference-fixture routes and does not broaden either production capability.
+
+The public reference runner validates a bounded request identity and applies a per-instance sliding-window rate limit before creating an aggregate. For internet-scale deployment, place the service behind Cloud Armor/API Gateway for a shared cross-instance quota; the in-process guard is the prototype safety boundary, not a distributed quota service.
+
+The deployed `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay` job runs `app.events.outbox_worker`. It scans durable Firestore outboxes, republishes unpublished messages, and exits nonzero when any mission remains failed so Cloud Run retries the task. Trigger it periodically with your deployment scheduler; it is intentionally independent of command replay. A manual operational check is:
+
+```bash
+gcloud run jobs execute continuum-outbox-relay \
+  --region=us-east1 \
+  --project=YOUR_PROJECT_ID \
+  --wait
+```
 
 ## Verification boundary
 

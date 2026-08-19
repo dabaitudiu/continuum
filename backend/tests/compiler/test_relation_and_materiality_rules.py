@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-
 from app.compiler.context import CompilationContext, RiskClass
 from app.compiler.models import CompilationDisposition, DecisionDraft, ValidationStage
 from app.compiler.validation import DeterministicDraftValidator
@@ -15,7 +14,6 @@ from app.sources.identity import (
     ingest_json_revision,
 )
 from app.sources.registry import InMemorySourceRegistry, WorldSnapshot
-
 
 NOW = datetime(2026, 8, 19, 10, 0, tzinfo=UTC)
 SCOPE = "tenant:alpha"
@@ -192,7 +190,13 @@ def _draft(
 def test_governed_by_accepts_policy_source() -> None:
     context, refs = _context()
     draft = _draft(
-        [_claim("c1", claim_type="RULE", dependencies=[_dependency(refs["policy"], "GOVERNED_BY")])]
+        [
+            _claim(
+                "c1",
+                claim_type="RULE",
+                dependencies=[_dependency(refs["policy"], "GOVERNED_BY")],
+            )
+        ]
     )
 
     report = DeterministicDraftValidator().validate(draft, context)
@@ -203,7 +207,13 @@ def test_governed_by_accepts_policy_source() -> None:
 def test_governed_by_rejects_document_claiming_policy_authority() -> None:
     context, refs = _context()
     draft = _draft(
-        [_claim("c1", claim_type="RULE", dependencies=[_dependency(refs["document"], "GOVERNED_BY")])]
+        [
+            _claim(
+                "c1",
+                claim_type="RULE",
+                dependencies=[_dependency(refs["document"], "GOVERNED_BY")],
+            )
+        ]
     )
 
     report = DeterministicDraftValidator().validate(draft, context)
@@ -213,13 +223,9 @@ def test_governed_by_rejects_document_claiming_policy_authority() -> None:
     assert report.findings[-1].code == "RELATION_SOURCE_TYPE_INVALID"
 
 
-@pytest.mark.parametrize(
-    ("source_name", "accepted"),
-    [("approval", True), ("document", False)],
-)
-def test_authorizes_requires_human_approval_source(
+@pytest.mark.parametrize("source_name", ["approval", "document"])
+def test_raw_source_fragments_cannot_authorize_runtime_state(
     source_name: str,
-    accepted: bool,
 ) -> None:
     context, refs = _context()
     draft = _draft(
@@ -228,9 +234,10 @@ def test_authorizes_requires_human_approval_source(
 
     report = DeterministicDraftValidator().validate(draft, context)
 
-    assert (report.disposition is None) is accepted
-    if not accepted:
-        assert report.findings[-1].code == "RELATION_SOURCE_TYPE_INVALID"
+    assert report.disposition is CompilationDisposition.REJECTED_SCHEMA
+    assert "SOURCE_RELATION_NOT_ALLOWED" in {
+        finding.code for finding in report.findings
+    }
 
 
 @pytest.mark.parametrize(
@@ -308,6 +315,98 @@ def test_high_risk_approval_requires_a_critical_dependency_path() -> None:
     report = DeterministicDraftValidator().validate(_draft([]), context)
 
     assert report.disposition is CompilationDisposition.REJECTED_INCOMPLETE_DEPENDENCIES
+
+
+@pytest.mark.parametrize("relation", ["CONTRADICTED_BY", "AUTHORIZES"])
+def test_negative_or_runtime_only_relation_does_not_support_a_critical_claim(
+    relation: str,
+) -> None:
+    context, refs = _context()
+
+    report = DeterministicDraftValidator().validate(
+        _draft([_claim("c1", dependencies=[_dependency(refs["record"], relation)])]),
+        context,
+    )
+
+    expected = (
+        CompilationDisposition.REJECTED_SCHEMA
+        if relation == "AUTHORIZES"
+        else CompilationDisposition.REJECTED_INCOMPLETE_DEPENDENCIES
+    )
+    assert report.disposition is expected
+
+
+def test_contextual_edge_does_not_support_a_critical_claim_or_decision() -> None:
+    context, refs = _context()
+
+    report = DeterministicDraftValidator().validate(
+        _draft(
+            [
+                _claim(
+                    "c1",
+                    dependencies=[
+                        _dependency(
+                            refs["record"],
+                            materiality="CONTEXTUAL",
+                        )
+                    ],
+                )
+            ]
+        ),
+        context,
+    )
+
+    assert report.disposition is CompilationDisposition.REJECTED_INCOMPLETE_DEPENDENCIES
+    assert {finding.code for finding in report.findings} == {
+        "CRITICAL_CLAIM_UNSUPPORTED",
+        "HIGH_RISK_DECISION_UNSUPPORTED",
+    }
+
+
+def test_unrelated_critical_edge_cannot_hide_an_unsupported_critical_claim() -> None:
+    context, refs = _context()
+
+    report = DeterministicDraftValidator().validate(
+        _draft(
+            [
+                _claim("unsupported"),
+                _claim(
+                    "supported",
+                    materiality="SUPPORTING",
+                    dependencies=[_dependency(refs["record"])],
+                ),
+            ]
+        ),
+        context,
+    )
+
+    assert report.disposition is CompilationDisposition.REJECTED_INCOMPLETE_DEPENDENCIES
+    assert any(
+        finding.code == "CRITICAL_CLAIM_UNSUPPORTED"
+        and finding.claim_local_id == "unsupported"
+        for finding in report.findings
+    )
+
+
+def test_derived_critical_claim_requires_a_complete_source_path() -> None:
+    context, _ = _context()
+
+    report = DeterministicDraftValidator().validate(
+        _draft(
+            [
+                _claim("root", materiality="SUPPORTING"),
+                _claim("derived", claim_type="RULE", derived_from=["root"]),
+            ]
+        ),
+        context,
+    )
+
+    assert report.disposition is CompilationDisposition.REJECTED_INCOMPLETE_DEPENDENCIES
+    assert any(
+        finding.code == "CRITICAL_CLAIM_UNSUPPORTED"
+        and finding.claim_local_id == "derived"
+        for finding in report.findings
+    )
     assert report.findings[-1].stage is ValidationStage.DECISION_SUPPORT
     assert report.findings[-1].code == "HIGH_RISK_DECISION_UNSUPPORTED"
 

@@ -82,9 +82,9 @@
     "source_ref": "benchmark:privileged-access-026:primary@v13!benchmark:privileged-access-026:primary%40revision:7e5755af5e49c46c52a00a12c1ea7cfce201233c5754823a77cf1486e4d0013e%40representation:sha256:daeba37a1a4f815d70752ab95f8360c7bbab2d8afce3f65c5fe63738e4c7733b#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Riley Tan: identity verification changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:privileged-access-026"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

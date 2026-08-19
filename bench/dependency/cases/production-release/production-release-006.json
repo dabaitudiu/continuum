@@ -82,9 +82,9 @@
     "source_ref": "benchmark:production-release-006:primary@v13!benchmark:production-release-006:primary%40revision:fbf9ba4c69ac08076a9d5882b134c68f3288c1daef99487242a78cd4b59169c7%40representation:sha256:48a21c0ca0e64bdec36eeb7372e6acca910913be1228e5c025feec4f47183542#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Ledger API: maintenance window changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:production-release-006"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

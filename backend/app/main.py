@@ -74,6 +74,7 @@ def create_app(
     compiler_source_registry: SourceRegistry | None = None,
     runtime_compiler_acceptor: Any | None = None,
     runtime_compiler_capability: str | None = None,
+    compiler_api_capability: str | None = None,
     compiler_budget_path: Path | None = None,
     compiler_evidence_report_path: Path | None = None,
     static_dir: Path | None = None,
@@ -143,6 +144,11 @@ def create_app(
                 runtime_compiler_capability
                 if runtime_compiler_capability is not None
                 else os.environ.get("CONTINUUM_RUNTIME_COMPILER_CAPABILITY")
+            ),
+            compiler_api_capability=(
+                compiler_api_capability
+                if compiler_api_capability is not None
+                else os.environ.get("CONTINUUM_COMPILER_API_CAPABILITY")
             ),
         )
     )

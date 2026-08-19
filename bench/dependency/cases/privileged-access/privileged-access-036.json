@@ -82,9 +82,9 @@
     "source_ref": "benchmark:privileged-access-036:primary@v13!benchmark:privileged-access-036:primary%40revision:166f1de50c7e15d36d8c8ef500596d5795976f59c8963de5b6796455106a8fb3%40representation:sha256:752cfb4b0103d4158acae40259adc5fb238d584106926d86919b8e9e1b21a6d5#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Jordan Lim: identity verification changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:privileged-access-036"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

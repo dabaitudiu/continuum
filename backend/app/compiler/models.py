@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
 
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
@@ -260,6 +258,8 @@ class CriticFinding(FrozenModel):
     message: str = Field(min_length=1, max_length=2000)
     candidate_ref: str | None = Field(default=None, max_length=2048)
     claim_local_id: str | None = Field(default=None, max_length=128)
+    expected_relation: DependencyRelation | None = None
+    expected_materiality: Materiality | None = None
 
 
 class MissingDependencyProposal(FrozenModel):
@@ -267,6 +267,8 @@ class MissingDependencyProposal(FrozenModel):
     severity: Materiality
     why: str = Field(min_length=1, max_length=2000)
     claim_local_id: str | None = Field(default=None, max_length=128)
+    expected_relation: DependencyRelation = DependencyRelation.SUPPORTED_BY
+    expected_materiality: Materiality = Materiality.CRITICAL
 
 
 class UnsupportedClaimProposal(FrozenModel):

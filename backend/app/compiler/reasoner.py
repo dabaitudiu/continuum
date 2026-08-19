@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import re
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from google.adk.agents import Agent
@@ -137,9 +137,7 @@ class DefaultAdkExecutor:
             usage = getattr(event, "usage_metadata", None)
             if usage is not None:
                 input_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
-                output_tokens = int(
-                    getattr(usage, "candidates_token_count", 0) or 0
-                )
+                output_tokens = int(getattr(usage, "candidates_token_count", 0) or 0)
                 cached_input_tokens = int(
                     getattr(usage, "cached_content_token_count", 0) or 0
                 )
@@ -331,17 +329,24 @@ class OpenAIResponsesTransport:
                 reasoning={"effort": "low"},
             )
         except Exception as error:
-            self._budget.release(invocation.call_id)
+            self._budget.mark_unknown(invocation.call_id)
             raise ReasonerError(
                 "MODEL_TRANSPORT_ERROR",
-                f"OpenAI Responses call failed: {type(error).__name__}",
+                (
+                    "OpenAI Responses call failed after execution ownership was "
+                    f"reserved; worst-case cost remains held: {type(error).__name__}"
+                ),
             ) from error
 
-        usage = _openai_usage(response)
         try:
+            usage = _openai_usage(response)
             self._budget.settle(invocation.call_id, actual_usage=usage)
         except BudgetError as error:
+            self._budget.mark_unknown(invocation.call_id)
             raise ReasonerError(error.code, error.message) from error
+        except ReasonerError:
+            self._budget.mark_unknown(invocation.call_id)
+            raise
 
         parsed = getattr(response, "output_parsed", None)
         if parsed is None:
@@ -402,9 +407,9 @@ def _is_allowed_gemini_model(model_name: str) -> bool:
 
 
 __all__ = [
-    "DependencyReasoner",
     "AdkExecutionResult",
     "AdkGeminiTransport",
+    "DependencyReasoner",
     "ModelInvocation",
     "OpenAIResponsesTransport",
     "ReasonerError",

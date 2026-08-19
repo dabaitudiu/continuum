@@ -21,6 +21,11 @@ def _record(
     expected_stale: bool = True,
     predicted_stale: bool = True,
     hashes: tuple[str, ...] = ("same", "same"),
+    allowed_outcomes: tuple[str, ...] = ("APPROVED",),
+    predicted_outcome: str = "APPROVED",
+    must_block: bool = False,
+    disposition: str = "ACCEPTED",
+    detected_severities: tuple[tuple[str, str, str], ...] = (),
 ) -> EvaluationRecord:
     return EvaluationRecord(
         case_id=case_id,
@@ -28,10 +33,15 @@ def _record(
         required_critical_refs=required,
         known_source_refs=known,
         expected_blocking_contradictions=expected_contradictions,
+        allowed_outcomes=allowed_outcomes,
+        must_block=must_block,
         expected_stale_after_mutation=expected_stale,
         predicted_critical_refs=predicted,
         accepted_canonical_refs=accepted or predicted,
         detected_contradictions=detected_contradictions,
+        detected_contradiction_severities=detected_severities,
+        predicted_outcome=predicted_outcome,
+        compilation_disposition=disposition,
         predicted_stale_after_mutation=predicted_stale,
         repeat_compilation_hashes=hashes,
     )
@@ -48,6 +58,7 @@ def test_literal_metrics_are_computed_from_counts_not_case_averages() -> None:
             accepted=("a", "x", "fabricated"),
             expected_contradictions=(("a", "b"),),
             detected_contradictions=(("b", "a"),),
+            detected_severities=(("b", "a", "CRITICAL"),),
             expected_stale=True,
             predicted_stale=False,
             hashes=("h1", "h1"),
@@ -70,6 +81,9 @@ def test_literal_metrics_are_computed_from_counts_not_case_averages() -> None:
     assert metrics.critical_precision == 2 / 3
     assert metrics.unsupported_reference_rate == 1 / 4
     assert metrics.contradiction_recall == 1.0
+    assert metrics.contradiction_severity_recall == 1.0
+    assert metrics.outcome_compliance == 1.0
+    assert metrics.blocking_disposition_compliance == 1.0
     assert metrics.stale_escape_rate == 1.0
     assert metrics.unnecessary_invalidation_rate == 1.0
     assert metrics.compilation_determinism == 0.5
@@ -129,6 +143,10 @@ def test_gate_reports_every_failed_target_including_domain_floor() -> None:
         accepted=("a", "unknown"),
         expected_contradictions=(("a", "b"),),
         detected_contradictions=(),
+        allowed_outcomes=("DENIED",),
+        predicted_outcome="APPROVED",
+        must_block=True,
+        disposition="ACCEPTED",
         expected_stale=True,
         predicted_stale=False,
         hashes=("one", "two"),
@@ -143,7 +161,37 @@ def test_gate_reports_every_failed_target_including_domain_floor() -> None:
         "critical_precision",
         "unsupported_reference_rate",
         "contradiction_recall",
+        "contradiction_severity_recall",
+        "outcome_compliance",
+        "blocking_disposition_compliance",
         "stale_escape_rate",
         "compilation_determinism",
         "domain_critical_recall:vendor-onboarding",
+    } <= failed
+
+
+def test_correct_refs_cannot_hide_wrong_outcome_or_downgraded_contradiction() -> None:
+    record = _record(
+        case_id="access-wrong-outcome",
+        domain=BenchmarkDomain.PRIVILEGED_ACCESS,
+        required=("a", "b"),
+        predicted=("a", "b"),
+        known=("a", "b"),
+        expected_contradictions=(("a", "b"),),
+        detected_contradictions=(("a", "b"),),
+        detected_severities=(("a", "b", "SUPPORTING"),),
+        allowed_outcomes=("NEEDS_HUMAN_REVIEW",),
+        predicted_outcome="APPROVED",
+        must_block=True,
+        disposition="ACCEPTED",
+    )
+
+    gate = evaluate_gate(measure([record]))
+
+    assert not gate.passed
+    failed = {row.metric for row in gate.rows if not row.passed}
+    assert {
+        "contradiction_severity_recall",
+        "outcome_compliance",
+        "blocking_disposition_compliance",
     } <= failed

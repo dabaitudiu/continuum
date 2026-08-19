@@ -82,9 +82,9 @@
     "source_ref": "benchmark:production-release-026:primary@v13!benchmark:production-release-026:primary%40revision:fc73addb1842e15cac87fcc169fd9830c1fa89ad25fe16a3c6594bcdebb2d869%40representation:sha256:0bc7fad9eb9a5b74f69d0dd72d452a52cf80b120a62eeba147a9f63c04959c2a#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Search Indexer: maintenance window changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:production-release-026"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

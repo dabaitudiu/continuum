@@ -5,14 +5,12 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
-
 from app.compiler.budget import (
     BudgetError,
     ModelPricing,
     ModelUsage,
     SQLiteBudgetLedger,
 )
-
 
 LUNA_PRICING = ModelPricing(
     provider="OPENAI",
@@ -39,13 +37,13 @@ def test_pricing_charges_cached_input_at_its_distinct_rate() -> None:
 def test_reservation_rejects_before_spend_can_exceed_ten_dollar_cap(
     tmp_path: Path,
 ) -> None:
-    ledger = SQLiteBudgetLedger(tmp_path / "budget.db", limit_usd=Decimal("10"))
+    ledger = SQLiteBudgetLedger(tmp_path / "budget.db", limit_usd=Decimal(10))
     six_dollars = ModelPricing(
         provider="OPENAI",
         model_name="test-model",
-        input_usd_per_million=Decimal("6"),
-        cached_input_usd_per_million=Decimal("6"),
-        output_usd_per_million=Decimal("6"),
+        input_usd_per_million=Decimal(6),
+        cached_input_usd_per_million=Decimal(6),
+        output_usd_per_million=Decimal(6),
         pricing_version="test-v1",
     )
     ledger.reserve(
@@ -64,12 +62,13 @@ def test_reservation_rejects_before_spend_can_exceed_ten_dollar_cap(
     assert raised.value.code == "MODEL_BUDGET_EXHAUSTED"
     assert ledger.snapshot().reserved_usd == Decimal("6.000000000")
     assert ledger.snapshot().spent_usd == Decimal("0E-9")
+    ledger.close()
 
 
 def test_settlement_charges_actual_usage_and_releases_unused_reservation(
     tmp_path: Path,
 ) -> None:
-    ledger = SQLiteBudgetLedger(tmp_path / "budget.db", limit_usd=Decimal("10"))
+    ledger = SQLiteBudgetLedger(tmp_path / "budget.db", limit_usd=Decimal(10))
     ledger.reserve(
         "call-1",
         pricing=LUNA_PRICING,
@@ -85,10 +84,11 @@ def test_settlement_charges_actual_usage_and_releases_unused_reservation(
     assert ledger.snapshot().spent_usd == Decimal("0.032000000")
     assert ledger.snapshot().reserved_usd == Decimal("0E-9")
     assert ledger.snapshot().remaining_usd == Decimal("9.968000000")
+    ledger.close()
 
 
 def test_settlement_is_idempotent_for_the_same_actual_usage(tmp_path: Path) -> None:
-    ledger = SQLiteBudgetLedger(tmp_path / "budget.db", limit_usd=Decimal("10"))
+    ledger = SQLiteBudgetLedger(tmp_path / "budget.db", limit_usd=Decimal(10))
     usage = ModelUsage(input_tokens=10_000, output_tokens=1_000)
     ledger.reserve("call-1", pricing=LUNA_PRICING, maximum_usage=usage)
 
@@ -97,20 +97,65 @@ def test_settlement_is_idempotent_for_the_same_actual_usage(tmp_path: Path) -> N
 
     assert first == second
     assert ledger.snapshot().settled_calls == 1
+    ledger.close()
+
+
+@pytest.mark.parametrize(
+    ("settled", "expected_code"),
+    [
+        (False, "MODEL_BUDGET_CALL_IN_PROGRESS"),
+        (True, "MODEL_BUDGET_CALL_ALREADY_SETTLED"),
+    ],
+)
+def test_call_id_grants_execution_ownership_exactly_once(
+    tmp_path: Path,
+    settled: bool,
+    expected_code: str,
+) -> None:
+    with SQLiteBudgetLedger(
+        tmp_path / "budget.db",
+        limit_usd=Decimal(10),
+    ) as ledger:
+        usage = ModelUsage(input_tokens=10_000, output_tokens=1_000)
+        ledger.reserve("call-1", pricing=LUNA_PRICING, maximum_usage=usage)
+        if settled:
+            ledger.settle("call-1", actual_usage=usage)
+
+        with pytest.raises(BudgetError) as raised:
+            ledger.reserve("call-1", pricing=LUNA_PRICING, maximum_usage=usage)
+
+        assert raised.value.code == expected_code
+
+
+def test_unknown_outcome_keeps_worst_case_cost_reserved(tmp_path: Path) -> None:
+    with SQLiteBudgetLedger(
+        tmp_path / "budget.db",
+        limit_usd=Decimal(10),
+    ) as ledger:
+        usage = ModelUsage(input_tokens=1_000_000, output_tokens=1_000_000)
+        ledger.reserve("call-1", pricing=LUNA_PRICING, maximum_usage=usage)
+        unknown = ledger.mark_unknown("call-1")
+
+        assert unknown.status == "UNKNOWN"
+        assert ledger.snapshot().reserved_usd == LUNA_PRICING.cost(usage)
+        with pytest.raises(BudgetError) as raised:
+            ledger.reserve("call-1", pricing=LUNA_PRICING, maximum_usage=usage)
+        assert raised.value.code == "MODEL_BUDGET_CALL_OUTCOME_UNKNOWN"
 
 
 def test_budget_state_survives_process_reopen(tmp_path: Path) -> None:
     path = tmp_path / "budget.db"
-    first = SQLiteBudgetLedger(path, limit_usd=Decimal("10"))
+    first = SQLiteBudgetLedger(path, limit_usd=Decimal(10))
     usage = ModelUsage(input_tokens=100_000, output_tokens=10_000)
     first.reserve("call-1", pricing=LUNA_PRICING, maximum_usage=usage)
     first.settle("call-1", actual_usage=usage)
     first.close()
 
-    reopened = SQLiteBudgetLedger(path, limit_usd=Decimal("10"))
+    reopened = SQLiteBudgetLedger(path, limit_usd=Decimal(10))
 
     assert reopened.snapshot().spent_usd == Decimal("0.032000000")
     assert reopened.snapshot().settled_calls == 1
+    reopened.close()
 
 
 def test_concurrent_reservations_cannot_race_past_limit(tmp_path: Path) -> None:
@@ -118,14 +163,14 @@ def test_concurrent_reservations_cannot_race_past_limit(tmp_path: Path) -> None:
     pricing = ModelPricing(
         provider="OPENAI",
         model_name="test-model",
-        input_usd_per_million=Decimal("6"),
-        cached_input_usd_per_million=Decimal("6"),
-        output_usd_per_million=Decimal("6"),
+        input_usd_per_million=Decimal(6),
+        cached_input_usd_per_million=Decimal(6),
+        output_usd_per_million=Decimal(6),
         pricing_version="test-v1",
     )
 
     def reserve(call_id: str) -> str:
-        ledger = SQLiteBudgetLedger(path, limit_usd=Decimal("10"))
+        ledger = SQLiteBudgetLedger(path, limit_usd=Decimal(10))
         try:
             ledger.reserve(
                 call_id,

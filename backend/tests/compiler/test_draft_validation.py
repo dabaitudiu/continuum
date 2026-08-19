@@ -3,9 +3,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-
 from app.compiler.context import CompilationContext, RiskClass
-from app.compiler.models import CompilationDisposition, DecisionDraft, ValidationStage
+from app.compiler.models import (
+    ClaimType,
+    CompilationDisposition,
+    DecisionDraft,
+    DependencyRelation,
+    Materiality,
+    ValidationStage,
+)
 from app.compiler.validation import DeterministicDraftValidator
 from app.sources.identity import (
     Artifact,
@@ -16,7 +22,6 @@ from app.sources.identity import (
     ingest_json_revision,
 )
 from app.sources.registry import InMemorySourceRegistry, WorldSnapshot
-
 
 NOW = datetime(2026, 8, 19, 9, 0, tzinfo=UTC)
 SCOPE = "tenant:alpha"
@@ -234,12 +239,50 @@ def test_stale_revision_has_a_distinct_disposition() -> None:
     assert report.resolved_dependencies == []
 
 
-def test_historical_reasoning_is_explicit_and_remains_tagged() -> None:
+def test_historical_reasoning_cannot_become_current_governing_authority() -> None:
     registry, old_ref, _, _ = _registry()
 
     report = DeterministicDraftValidator().validate(
         _draft(old_ref),
         _context(registry, old_ref, allow_historical=True),
+    )
+
+    assert report.disposition is CompilationDisposition.REJECTED_STALE_SOURCE
+    assert report.findings[0].code == "HISTORICAL_AUTHORITY_NOT_ALLOWED"
+    assert report.resolved_dependencies == []
+
+
+def test_historical_context_can_be_read_without_becoming_validity_bearing() -> None:
+    registry, old_ref, _, _ = _registry()
+    draft = _draft(old_ref).model_copy(
+        update={
+            "claims": [
+                _draft(old_ref)
+                .claims[0]
+                .model_copy(
+                    update={
+                        "claim_type": ClaimType.ASSESSMENT,
+                        "materiality": Materiality.CONTEXTUAL,
+                        "dependencies": [
+                            _draft(old_ref)
+                            .claims[0]
+                            .dependencies[0]
+                            .model_copy(
+                                update={
+                                    "relation": DependencyRelation.CONTRADICTED_BY,
+                                    "materiality": Materiality.CONTEXTUAL,
+                                }
+                            )
+                        ],
+                    }
+                )
+            ]
+        }
+    )
+
+    report = DeterministicDraftValidator().validate(
+        draft,
+        _context(registry, old_ref, allow_historical=True, risk_class=RiskClass.LOW),
     )
 
     assert report.disposition is None

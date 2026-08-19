@@ -7,8 +7,8 @@ from typing import Any, Protocol
 from fastapi import APIRouter, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.compiler.context import CompilationContext, RiskClass
 from app.compiler.acceptance import CompilerAcceptanceError
+from app.compiler.context import CompilationContext, RiskClass
 from app.compiler.models import DecisionDraft
 from app.compiler.repository import (
     CompilationAggregate,
@@ -57,6 +57,7 @@ def build_compiler_router(
     source_registry: SourceRegistry,
     runtime_acceptor: RuntimeCompilationAcceptor | None = None,
     runtime_capability: str | None = None,
+    compiler_api_capability: str | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/compiler", tags=["compiler"])
 
@@ -65,7 +66,14 @@ def build_compiler_router(
         response_model=CompilationAggregate,
         status_code=status.HTTP_201_CREATED,
     )
-    def create_request(payload: CompilationRequestCreate) -> CompilationAggregate:
+    def create_request(
+        payload: CompilationRequestCreate,
+        x_continuum_compiler_capability: str | None = Header(default=None),
+    ) -> CompilationAggregate:
+        _require_compiler_capability(
+            compiler_api_capability,
+            x_continuum_compiler_capability,
+        )
         try:
             return repository.create_request(
                 CompilationRequestRecord(
@@ -81,14 +89,26 @@ def build_compiler_router(
     def put_draft(
         request_id: str,
         draft: DecisionDraft,
+        x_continuum_compiler_capability: str | None = Header(default=None),
     ) -> CompilationAggregate:
+        _require_compiler_capability(
+            compiler_api_capability,
+            x_continuum_compiler_capability,
+        )
         try:
             return repository.put_draft(request_id, draft)
         except CompilerRepositoryError as error:
             raise _repository_http_error(error) from error
 
     @router.post("/{request_id}/compile", response_model=CompilationAggregate)
-    def compile_request(request_id: str) -> CompilationAggregate:
+    def compile_request(
+        request_id: str,
+        x_continuum_compiler_capability: str | None = Header(default=None),
+    ) -> CompilationAggregate:
+        _require_compiler_capability(
+            compiler_api_capability,
+            x_continuum_compiler_capability,
+        )
         try:
             aggregate = repository.get(request_id)
             if aggregate.result is not None:
@@ -120,7 +140,14 @@ def build_compiler_router(
             raise _repository_http_error(error) from error
 
     @router.get("/{request_id}", response_model=CompilationAggregate)
-    def get_request(request_id: str) -> CompilationAggregate:
+    def get_request(
+        request_id: str,
+        x_continuum_compiler_capability: str | None = Header(default=None),
+    ) -> CompilationAggregate:
+        _require_compiler_capability(
+            compiler_api_capability,
+            x_continuum_compiler_capability,
+        )
         try:
             return repository.get(request_id)
         except CompilerRepositoryError as error:
@@ -172,10 +199,30 @@ def build_compiler_router(
     return router
 
 
+def _require_compiler_capability(
+    configured: str | None,
+    supplied: str | None,
+) -> None:
+    if configured is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "INTERNAL_COMPILER_API_DISABLED",
+                "message": "the generic compiler API is not exposed by this service",
+            },
+        )
+    if supplied is None or not secrets.compare_digest(configured, supplied):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "COMPILER_CAPABILITY_REQUIRED",
+                "message": "an internal compiler service capability is required",
+            },
+        )
+
+
 def _repository_http_error(error: CompilerRepositoryError) -> HTTPException:
-    status_code = (
-        404 if error.code == "COMPILATION_REQUEST_NOT_FOUND" else 409
-    )
+    status_code = 404 if error.code == "COMPILATION_REQUEST_NOT_FOUND" else 409
     return HTTPException(
         status_code=status_code,
         detail={"code": error.code, "message": error.message},

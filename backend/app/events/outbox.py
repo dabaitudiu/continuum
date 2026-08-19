@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Protocol
 
 from google.cloud import pubsub_v1
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.repository.runtime_protocol import RuntimeRepository
 from app.runtime.entities import OutboxMessage, utc_now
+
+LOGGER = logging.getLogger(__name__)
 
 
 class OutboxPublisher(Protocol):
@@ -35,7 +39,7 @@ class GooglePubSubOutboxPublisher:
         project: str,
         topic: str,
         publish_timeout: float = 30.0,
-    ) -> "GooglePubSubOutboxPublisher":
+    ) -> GooglePubSubOutboxPublisher:
         return cls(
             pubsub_v1.PublisherClient(),
             project=project,
@@ -102,3 +106,48 @@ class OutboxRelay:
                 self._clock(),
             )
         return published_ids
+
+
+class OutboxSweepResult(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    scanned_missions: int = Field(ge=0)
+    pending_missions: int = Field(ge=0)
+    published_messages: int = Field(ge=0)
+    failed_mission_ids: list[str]
+
+
+class OutboxSweeper:
+    """Independent relay entry point for durable pending projections."""
+
+    def __init__(self, repository: RuntimeRepository, relay: OutboxRelay) -> None:
+        self._repository = repository
+        self._relay = relay
+
+    def sweep(self, *, mission_limit: int = 500) -> OutboxSweepResult:
+        if mission_limit < 1:
+            raise ValueError("mission_limit must be positive")
+        snapshots = self._repository.list_recent(mission_limit)
+        pending_missions = 0
+        published_messages = 0
+        failed: list[str] = []
+        for snapshot in snapshots:
+            if not any(message.published_at is None for message in snapshot.outbox):
+                continue
+            pending_missions += 1
+            try:
+                published_messages += len(
+                    self._relay.drain(snapshot.mission.mission_id)
+                )
+            except Exception:
+                failed.append(snapshot.mission.mission_id)
+                LOGGER.exception(
+                    "independent outbox sweep failed; messages remain pending",
+                    extra={"mission_id": snapshot.mission.mission_id},
+                )
+        return OutboxSweepResult(
+            scanned_missions=len(snapshots),
+            pending_missions=pending_missions,
+            published_messages=published_messages,
+            failed_mission_ids=failed,
+        )

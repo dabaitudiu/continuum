@@ -4,13 +4,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 import pytest
-
 from app.compiler.context import CompilationContext, RiskClass
 from app.compiler.models import (
     CompilationDisposition,
     CriticFindingType,
     CriticProposal,
     DecisionDraft,
+    DependencyRelation,
     IrrelevantDependencyProposal,
     Materiality,
     MissingDependencyProposal,
@@ -25,7 +25,6 @@ from app.sources.identity import (
     ingest_json_revision,
 )
 from app.sources.registry import InMemorySourceRegistry, WorldSnapshot
-
 
 NOW = datetime(2026, 8, 19, 15, 0, tzinfo=UTC)
 
@@ -129,7 +128,9 @@ def _case() -> tuple[CompilationContext, DecisionDraft, dict[str, str]]:
 class FixedCritic:
     proposal: CriticProposal
 
-    def review(self, draft: DecisionDraft, context: CompilationContext) -> CriticProposal:
+    def review(
+        self, draft: DecisionDraft, context: CompilationContext
+    ) -> CriticProposal:
         return self.proposal
 
 
@@ -288,6 +289,7 @@ def test_dependency_already_cited_is_not_treated_as_missing() -> None:
                     candidate_ref=refs["manager"],
                     severity=Materiality.CRITICAL,
                     why="Manager approval is required.",
+                    claim_local_id="c1",
                 )
             ]
         ),
@@ -297,6 +299,64 @@ def test_dependency_already_cited_is_not_treated_as_missing() -> None:
 
     assert review.disposition is None
     assert review.findings == []
+
+
+@pytest.mark.parametrize(
+    ("claim_local_id", "relation", "materiality"),
+    [
+        ("c1", DependencyRelation.CONTRADICTED_BY, Materiality.CRITICAL),
+        ("c1", DependencyRelation.SUPPORTED_BY, Materiality.CONTEXTUAL),
+        (None, DependencyRelation.SUPPORTED_BY, Materiality.CRITICAL),
+    ],
+)
+def test_same_ref_on_wrong_typed_edge_cannot_suppress_critical_omission(
+    claim_local_id: str | None,
+    relation: DependencyRelation,
+    materiality: Materiality,
+) -> None:
+    context, draft, refs = _case()
+    misplaced = draft.model_copy(
+        update={
+            "claims": [
+                draft.claims[0].model_copy(
+                    update={
+                        "dependencies": [
+                            draft.claims[0]
+                            .dependencies[0]
+                            .model_copy(
+                                update={
+                                    "relation": relation,
+                                    "materiality": materiality,
+                                }
+                            )
+                        ]
+                    }
+                )
+            ]
+        },
+        deep=True,
+    )
+
+    review = _review(
+        CriticProposal(
+            missing_dependencies=[
+                MissingDependencyProposal(
+                    candidate_ref=refs["manager"],
+                    severity=Materiality.CRITICAL,
+                    why="Manager approval must support the original claim.",
+                    claim_local_id=claim_local_id,
+                    expected_relation=DependencyRelation.SUPPORTED_BY,
+                    expected_materiality=Materiality.CRITICAL,
+                )
+            ]
+        ),
+        context,
+        misplaced,
+    )
+
+    assert review.disposition is CompilationDisposition.REJECTED_INCOMPLETE_DEPENDENCIES
+    assert review.findings[0].expected_relation is DependencyRelation.SUPPORTED_BY
+    assert review.findings[0].expected_materiality is Materiality.CRITICAL
 
 
 def test_unsupported_critical_claim_blocks_and_irrelevant_dependency_warns() -> None:

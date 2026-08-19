@@ -82,9 +82,9 @@
     "source_ref": "benchmark:vendor-onboarding-006:primary@v13!benchmark:vendor-onboarding-006:primary%40revision:0990dfb621e4d7f0c4f8e524bfd79b615bf97da5f68148321c4928420ec3605a%40representation:sha256:c1ac53d9581b3fb8a78a01129e629d8e9ed27cd8a0eb66e37f818b32bcdad59e#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Acme Analytics: penetration test changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:vendor-onboarding-006"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

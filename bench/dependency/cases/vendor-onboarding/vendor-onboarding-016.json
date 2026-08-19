@@ -82,9 +82,9 @@
     "source_ref": "benchmark:vendor-onboarding-016:primary@v13!benchmark:vendor-onboarding-016:primary%40revision:973334ede9707307f1c1ac5829cad19e51c6c3fef4989cd5cf604bfb6ed1942b%40representation:sha256:e880f5b63784c9aa8933d2b655e8a073a1ce07d7c0125e01a12c1b67dd8c5f51#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Nimbus CRM: penetration test changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:vendor-onboarding-016"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

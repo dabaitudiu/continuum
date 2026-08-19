@@ -8,11 +8,16 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from app.compiler.benchmark.corpus import BenchmarkCase, BenchmarkSource
-from app.compiler.benchmark.runner import Prediction, UsageSummary
+from app.compiler.benchmark.runner import (
+    Prediction,
+    UsageSummary,
+    evaluate_runtime_mutation,
+)
 from app.compiler.budget import ModelPricing, ModelUsage
 from app.compiler.canonicalization import DeterministicCanonicalizer
 from app.compiler.context import CompilationContext, RiskClass
 from app.compiler.models import (
+    CompilationDisposition,
     CriticFindingType,
     CriticReview,
     Materiality,
@@ -28,7 +33,6 @@ from app.compiler.tools import ReadOnlySourceTools
 from app.compiler.validation import DeterministicDraftValidator
 from app.sources.identity import Artifact, ingest_json_revision
 from app.sources.registry import InMemorySourceRegistry, WorldSnapshot
-
 
 BENCHMARK_TIME = datetime(2026, 8, 19, 0, 0, tzinfo=UTC)
 BENCHMARK_SCOPE = "benchmark:v1"
@@ -102,7 +106,9 @@ def build_case_runtime(
             )
             current_flags = {source.current for source in revision_sources}
             if len(current_flags) != 1:
-                raise ValueError("all fragments in a revision must share current status")
+                raise ValueError(
+                    "all fragments in a revision must share current status"
+                )
             if True in current_flags:
                 current_count += 1
                 current_revisions[artifact_id] = ingested.revision.revision_id
@@ -110,7 +116,9 @@ def build_case_runtime(
                     ingested.representation.representation_id
                 )
         if current_count != 1:
-            raise ValueError(f"artifact requires exactly one current revision: {artifact_id}")
+            raise ValueError(
+                f"artifact requires exactly one current revision: {artifact_id}"
+            )
 
     world_snapshot_id = f"world:{case.case_id}"
     registry.add_world_snapshot(
@@ -126,9 +134,7 @@ def build_case_runtime(
         source_registry=registry,
         world_snapshot_id=world_snapshot_id,
         owner_scope=BENCHMARK_SCOPE,
-        allowed_source_refs=frozenset(
-            source.source_ref for source in case.sources
-        ),
+        allowed_source_refs=frozenset(source.source_ref for source in case.sources),
         risk_class=RiskClass.HIGH,
         allow_historical=True,
         decision_context={
@@ -178,7 +184,7 @@ class ModelCompilerSubject:
         self._input_tokens = 0
         self._cached_input_tokens = 0
         self._output_tokens = 0
-        self._cost_usd = Decimal("0")
+        self._cost_usd = Decimal(0)
 
     def predict(self, case: BenchmarkCase, *, run_index: int) -> Prediction:
         runtime = build_case_runtime(
@@ -220,6 +226,8 @@ class ModelCompilerSubject:
         critical_refs = tuple(sorted(draft_critical | critic_recovered))
 
         accepted_refs: tuple[str, ...] = ()
+        accepted_edges: tuple[tuple[str, str, str], ...] = ()
+        repeat_hashes: tuple[str, ...] = ()
         if validation.disposition is None and review.disposition is None:
             compilation = self._canonicalizer.compile(
                 draft,
@@ -237,30 +245,89 @@ class ModelCompilerSubject:
                     }
                 )
             )
-            result_payload: object = compilation.model_dump(mode="json")
-        else:
-            result_payload = {
-                "draft": draft.model_dump(mode="json"),
-                "validation": validation.model_dump(mode="json"),
-                "review": review.model_dump(mode="json"),
-            }
-        deterministic_hash = _digest(result_payload)
+            accepted_edges = tuple(
+                sorted(
+                    (
+                        edge.source_id,
+                        edge.relation.value,
+                        edge.materiality.value,
+                    )
+                    for edge in compilation.canonical_edges
+                    if edge.source_kind == "SOURCE_FRAGMENT"
+                )
+            )
+            variants = (
+                draft,
+                draft.model_copy(
+                    update={
+                        "claims": [
+                            claim.model_copy(
+                                update={
+                                    "dependencies": list(reversed(claim.dependencies))
+                                },
+                                deep=True,
+                            )
+                            for claim in reversed(draft.claims)
+                        ],
+                        "decision_dependencies": list(
+                            reversed(draft.decision_dependencies)
+                        ),
+                    },
+                    deep=True,
+                ),
+                draft.model_validate(draft.model_dump(mode="json")),
+            )
+            repeated: list[str] = []
+            for variant in variants:
+                variant_validation = DeterministicDraftValidator().validate(
+                    variant,
+                    runtime.context,
+                )
+                if variant_validation.disposition is not None:
+                    repeated.append(f"blocked:{variant_validation.disposition.value}")
+                    continue
+                repeated.append(
+                    self._canonicalizer.compile(
+                        variant,
+                        runtime.context,
+                        variant_validation,
+                        review,
+                    ).compilation_hash
+                )
+            repeat_hashes = tuple(repeated)
         contradictions = tuple(
             (finding.source_ref_a, finding.source_ref_b)
             for finding in review.contradictions
         )
-        return Prediction(
+        disposition = (
+            validation.disposition
+            or review.disposition
+            or CompilationDisposition.ACCEPTED
+        )
+        prediction = Prediction(
             critical_refs=critical_refs,
             accepted_canonical_refs=accepted_refs,
+            accepted_dependency_edges=accepted_edges,
             detected_contradictions=contradictions,
-            predicted_stale_after_mutation=(
-                case.mutation.source_ref in critical_refs
+            detected_contradiction_severities=tuple(
+                (
+                    finding.source_ref_a,
+                    finding.source_ref_b,
+                    finding.severity.value,
+                )
+                for finding in review.contradictions
             ),
-            repeat_compilation_hashes=(
-                deterministic_hash,
-                deterministic_hash,
-                deterministic_hash,
-            ),
+            proposed_outcome=draft.proposed_outcome,
+            compilation_disposition=disposition,
+            repeat_compilation_hashes=repeat_hashes,
+        )
+        return prediction.model_copy(
+            update={
+                "predicted_stale_after_mutation": evaluate_runtime_mutation(
+                    case,
+                    prediction,
+                )
+            }
         )
 
     def usage_summary(self) -> UsageSummary:
@@ -298,7 +365,9 @@ def _same_artifact_metadata(first: BenchmarkSource, other: BenchmarkSource) -> N
 
 def _top_level_key(logical_path: str) -> str:
     if not logical_path.startswith("$.") or "." in logical_path[2:]:
-        raise ValueError(f"benchmark authoring only supports top-level fields: {logical_path}")
+        raise ValueError(
+            f"benchmark authoring only supports top-level fields: {logical_path}"
+        )
     return logical_path[2:]
 
 

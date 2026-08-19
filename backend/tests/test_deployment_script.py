@@ -57,6 +57,12 @@ printf '%s\\n' '{"status":"ok"}'
     assert "GOOGLE_CLOUD_LOCATION=global" in deploy
     assert "CONTINUUM_COMPILER_STORE=firestore" in deploy
     assert "CONTINUUM_FIRESTORE_COMPILER_COLLECTION=compiler_requests" in deploy
+    outbox_job = next(
+        line for line in commands.splitlines() if line.startswith("run jobs deploy ")
+    )
+    assert "continuum-outbox-relay" in outbox_job
+    assert "app.events.outbox_worker" in outbox_job
+    assert "--max-retries=3" in outbox_job
 
 
 def _write_executable(path: Path, content: str) -> None:

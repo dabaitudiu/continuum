@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 from app.compiler.models import CompilationDisposition, Materiality
 from app.compiler.repository import CompilerRepository
 from app.domain.models import (
+    ArtifactStatus,
     ClaimNode,
     DecisionNode,
     DependencyEdge,
@@ -133,23 +134,19 @@ class RuntimeAcceptanceService:
                         "COMPILATION_RESULT_INVALID",
                         f"canonical edge contains invalid source ref: {edge.source_id}",
                     ) from error
+                runtime_artifact_id = _bind_runtime_artifact(
+                    graph,
+                    current.world,
+                    source_ref,
+                )
                 graph.evidences.setdefault(
                     edge.source_id,
                     EvidenceNode(
                         evidence_id=edge.source_id,
                         kind="SOURCE_FRAGMENT",
                         revision=source_ref.revision_label,
-                        artifact_id=source_ref.artifact_id,
+                        artifact_id=runtime_artifact_id,
                         source_ref=edge.source_id,
-                    ),
-                )
-                graph.artifacts.setdefault(
-                    source_ref.artifact_id,
-                    WorldArtifact(
-                        artifact_id=source_ref.artifact_id,
-                        artifact_type="SOURCE_ARTIFACT",
-                        logical_key=source_ref.artifact_id,
-                        version=source_ref.revision_label,
                     ),
                 )
             try:
@@ -270,3 +267,43 @@ class RuntimeAcceptanceService:
             compilation_hash=result.compilation_hash,
             decision_id=result.decision_candidate.decision_id,
         )
+
+
+def _bind_runtime_artifact(
+    graph: object,
+    world: object,
+    source_ref: SourceRef,
+) -> str:
+    artifacts = graph.artifacts  # type: ignore[attr-defined]
+    for artifact in artifacts.values():
+        if (
+            artifact.logical_key == source_ref.artifact_id
+            and artifact.version == source_ref.revision_label
+            and artifact.status is ArtifactStatus.CURRENT
+        ):
+            return artifact.artifact_id
+
+    world_artifacts = {} if world is None else world.artifacts  # type: ignore[attr-defined]
+    enterprise_artifact = world_artifacts.get(source_ref.artifact_id)
+    if (
+        enterprise_artifact is not None
+        and enterprise_artifact.version == source_ref.revision_label
+        and source_ref.artifact_id not in artifacts
+    ):
+        runtime_artifact_id = source_ref.artifact_id
+        artifact_type = enterprise_artifact.artifact_type
+    else:
+        runtime_artifact_id = (
+            f"{source_ref.artifact_id}@revision:{source_ref.revision_label}"
+        )
+        artifact_type = "SOURCE_ARTIFACT"
+    artifacts.setdefault(
+        runtime_artifact_id,
+        WorldArtifact(
+            artifact_id=runtime_artifact_id,
+            artifact_type=artifact_type,
+            logical_key=source_ref.artifact_id,
+            version=source_ref.revision_label,
+        ),
+    )
+    return runtime_artifact_id

@@ -11,7 +11,6 @@ from app.domain.models import (
 )
 from app.repository.protocol import GraphRepository
 
-
 DIRECT_INVALIDATION_RELATIONS = {
     RelationType.GOVERNED_BY,
     RelationType.SUPPORTED_BY,
@@ -59,6 +58,10 @@ class InvalidationService:
                     evidence.evidence_id
                     for evidence in snapshot.evidences.values()
                     if evidence.artifact_id == old_artifact.artifact_id
+                    and (
+                        payload.get("changed_source_ref") is None
+                        or evidence.source_ref == payload["changed_source_ref"]
+                    )
                 ),
             ]
         )

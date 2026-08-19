@@ -82,9 +82,9 @@
     "source_ref": "benchmark:vendor-onboarding-026:primary@v13!benchmark:vendor-onboarding-026:primary%40revision:c2f8a33b8f9cb58f8f74fed263be98755e87d3a3a6c50d4c92b8ad6a033512ee%40representation:sha256:edd05fb3ef65df8566cff3c62cdd9bae5dbb516263b694e9f7984e02400bc483#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Orchid Payments: penetration test changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:vendor-onboarding-026"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

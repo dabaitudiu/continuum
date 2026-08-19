@@ -19,6 +19,7 @@ from app.compiler.benchmark.runner import (
     RunConfiguration,
     SinglePassReferenceSubject,
     blocked_evidence_run,
+    failed_evidence_run,
 )
 from app.compiler.budget import SQLiteBudgetLedger
 from app.compiler.reasoner import (
@@ -147,7 +148,7 @@ def _run_live_openai(
 
     from openai import OpenAI
 
-    ledger = SQLiteBudgetLedger(budget_path, limit_usd=Decimal("10"))
+    ledger = SQLiteBudgetLedger(budget_path, limit_usd=Decimal(10))
     try:
         transport = OpenAIResponsesTransport(
             client=OpenAI(),
@@ -174,10 +175,7 @@ def _run_live_openai(
         try:
             return runner.run(subject, configuration)
         except ReasonerError as error:
-            return blocked_evidence_run(
-                configuration,
-                reason=f"{error.code}: {error.message}",
-            )
+            return _reasoner_error_evidence(configuration, error)
     finally:
         ledger.close()
 
@@ -224,10 +222,27 @@ def _run_live_gemini(runner: BenchmarkRunner):  # type: ignore[no-untyped-def]
     try:
         return runner.run(subject, configuration)
     except ReasonerError as error:
-        return blocked_evidence_run(
-            configuration,
-            reason=f"{error.code}: {error.message}",
-        )
+        return _reasoner_error_evidence(configuration, error)
+
+
+_BLOCKED_REASONER_CODES = frozenset(
+    {
+        "MODEL_BUDGET_EXHAUSTED",
+        "MODEL_BUDGET_CALL_IN_PROGRESS",
+        "MODEL_BUDGET_CALL_OUTCOME_UNKNOWN",
+        "MODEL_TRANSPORT_ERROR",
+    }
+)
+
+
+def _reasoner_error_evidence(
+    configuration: RunConfiguration,
+    error: ReasonerError,
+):  # type: ignore[no-untyped-def]
+    reason = f"{error.code}: {error.message}"
+    if error.code in _BLOCKED_REASONER_CODES:
+        return blocked_evidence_run(configuration, reason=reason)
+    return failed_evidence_run(configuration, reason=reason)
 
 
 if __name__ == "__main__":

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import json
 import sqlite3
-from decimal import Decimal, ROUND_CEILING
+from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
 from threading import RLock
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 _NINE_PLACES = Decimal("0.000000001")
-_NANODOLLARS = Decimal("1000000000")
-_MILLION = Decimal("1000000")
+_NANODOLLARS = Decimal(1000000000)
+_MILLION = Decimal(1000000)
 
 
 class BudgetError(Exception):
@@ -49,8 +48,7 @@ class ModelPricing(_Value):
         uncached_input = usage.input_tokens - usage.cached_input_tokens
         cost = (
             Decimal(uncached_input) * self.input_usd_per_million
-            + Decimal(usage.cached_input_tokens)
-            * self.cached_input_usd_per_million
+            + Decimal(usage.cached_input_tokens) * self.cached_input_usd_per_million
             + Decimal(usage.output_tokens) * self.output_usd_per_million
         ) / _MILLION
         return cost.quantize(_NINE_PLACES, rounding=ROUND_CEILING)
@@ -106,6 +104,12 @@ class SQLiteBudgetLedger:
         with self._lock:
             self._connection.close()
 
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore[no-untyped-def]
+        self.close()
+
     def reserve(
         self,
         call_id: str,
@@ -131,10 +135,20 @@ class SQLiteBudgetLedger:
                         "MODEL_BUDGET_CALL_CONFLICT",
                         f"call id was reused with different budget inputs: {call_id}",
                     )
-                return reservation
+                code = {
+                    "SETTLED": "MODEL_BUDGET_CALL_ALREADY_SETTLED",
+                    "UNKNOWN": "MODEL_BUDGET_CALL_OUTCOME_UNKNOWN",
+                }.get(reservation.status, "MODEL_BUDGET_CALL_IN_PROGRESS")
+                raise BudgetError(
+                    code,
+                    f"model call id is not available for another execution: {call_id}",
+                )
 
             totals = self._totals_locked()
-            if totals["spent_nano"] + totals["reserved_nano"] + reserved_nano > self._limit_nano:
+            if (
+                totals["spent_nano"] + totals["reserved_nano"] + reserved_nano
+                > self._limit_nano
+            ):
                 raise BudgetError(
                     "MODEL_BUDGET_EXHAUSTED",
                     "model call would exceed the configured cumulative budget",
@@ -183,10 +197,11 @@ class SQLiteBudgetLedger:
                     f"model budget reservation does not exist: {call_id}",
                 )
             pricing = _pricing_from_row(row)
-            maximum_usage = ModelUsage.model_validate_json(row["maximum_usage_json"])
             actual_nano = _to_nano(pricing.cost(actual_usage))
             if row["status"] == "SETTLED":
-                existing_usage = ModelUsage.model_validate_json(row["actual_usage_json"])
+                existing_usage = ModelUsage.model_validate_json(
+                    row["actual_usage_json"]
+                )
                 if existing_usage != actual_usage:
                     raise BudgetError(
                         "MODEL_BUDGET_SETTLEMENT_CONFLICT",
@@ -213,6 +228,35 @@ class SQLiteBudgetLedger:
             assert settled is not None
             return _settlement_from_row(settled)
 
+    def mark_unknown(self, call_id: str) -> BudgetReservation:
+        """Keep the worst-case reservation after an ambiguous post-send failure."""
+        with self._transaction():
+            row = self._connection.execute(
+                "SELECT * FROM model_budget_calls WHERE call_id = ?",
+                (call_id,),
+            ).fetchone()
+            if row is None:
+                raise BudgetError(
+                    "MODEL_BUDGET_RESERVATION_NOT_FOUND",
+                    f"model budget reservation does not exist: {call_id}",
+                )
+            if row["status"] == "SETTLED":
+                raise BudgetError(
+                    "MODEL_BUDGET_ALREADY_SETTLED",
+                    f"settled model call cannot become unknown: {call_id}",
+                )
+            if row["status"] == "RESERVED":
+                self._connection.execute(
+                    "UPDATE model_budget_calls SET status = 'UNKNOWN' WHERE call_id = ?",
+                    (call_id,),
+                )
+            updated = self._connection.execute(
+                "SELECT * FROM model_budget_calls WHERE call_id = ?",
+                (call_id,),
+            ).fetchone()
+            assert updated is not None
+            return _reservation_from_row(updated)
+
     def release(self, call_id: str) -> None:
         with self._transaction():
             row = self._connection.execute(
@@ -221,10 +265,10 @@ class SQLiteBudgetLedger:
             ).fetchone()
             if row is None:
                 return
-            if row["status"] == "SETTLED":
+            if row["status"] != "RESERVED":
                 raise BudgetError(
-                    "MODEL_BUDGET_ALREADY_SETTLED",
-                    f"settled model call cannot be released: {call_id}",
+                    "MODEL_BUDGET_CALL_NOT_RELEASABLE",
+                    f"only a definitely unsent reservation can be released: {call_id}",
                 )
             self._connection.execute(
                 "DELETE FROM model_budget_calls WHERE call_id = ?",
@@ -265,10 +309,11 @@ class SQLiteBudgetLedger:
                     reserved_nano INTEGER NOT NULL,
                     actual_usage_json TEXT,
                     actual_nano INTEGER,
-                    status TEXT NOT NULL CHECK (status IN ('RESERVED', 'SETTLED'))
+                    status TEXT NOT NULL CHECK (status IN ('RESERVED', 'UNKNOWN', 'SETTLED'))
                 );
                 """
             )
+            self._migrate_unknown_status_support()
             row = self._connection.execute(
                 "SELECT limit_nano FROM model_budget_meta WHERE singleton = 1"
             ).fetchone()
@@ -283,14 +328,42 @@ class SQLiteBudgetLedger:
                     "persisted model budget has a different limit",
                 )
 
+    def _migrate_unknown_status_support(self) -> None:
+        row = self._connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'model_budget_calls'"
+        ).fetchone()
+        if row is None or "UNKNOWN" in str(row["sql"]):
+            return
+        self._connection.executescript(
+            """
+            ALTER TABLE model_budget_calls RENAME TO model_budget_calls_legacy;
+            CREATE TABLE model_budget_calls (
+                call_id TEXT PRIMARY KEY,
+                provider TEXT NOT NULL,
+                model_name TEXT NOT NULL,
+                pricing_version TEXT NOT NULL,
+                input_rate TEXT NOT NULL,
+                cached_input_rate TEXT NOT NULL,
+                output_rate TEXT NOT NULL,
+                maximum_usage_json TEXT NOT NULL,
+                reserved_nano INTEGER NOT NULL,
+                actual_usage_json TEXT,
+                actual_nano INTEGER,
+                status TEXT NOT NULL CHECK (status IN ('RESERVED', 'UNKNOWN', 'SETTLED'))
+            );
+            INSERT INTO model_budget_calls SELECT * FROM model_budget_calls_legacy;
+            DROP TABLE model_budget_calls_legacy;
+            """
+        )
+
     def _totals_locked(self) -> dict[str, int]:
         row = self._connection.execute(
             """
             SELECT
                 COALESCE(SUM(CASE WHEN status = 'SETTLED' THEN actual_nano ELSE 0 END), 0) AS spent_nano,
-                COALESCE(SUM(CASE WHEN status = 'RESERVED' THEN reserved_nano ELSE 0 END), 0) AS reserved_nano,
+                COALESCE(SUM(CASE WHEN status IN ('RESERVED', 'UNKNOWN') THEN reserved_nano ELSE 0 END), 0) AS reserved_nano,
                 SUM(CASE WHEN status = 'SETTLED' THEN 1 ELSE 0 END) AS settled_calls,
-                SUM(CASE WHEN status = 'RESERVED' THEN 1 ELSE 0 END) AS reserved_calls
+                SUM(CASE WHEN status IN ('RESERVED', 'UNKNOWN') THEN 1 ELSE 0 END) AS reserved_calls
             FROM model_budget_calls
             """
         ).fetchone()

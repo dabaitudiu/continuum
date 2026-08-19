@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+from collections import defaultdict, deque
 from decimal import Decimal
 from pathlib import Path
+from threading import RLock
+from time import monotonic
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.compiler.acceptance import CompilerAcceptanceError
@@ -41,7 +44,40 @@ class FrozenModel(BaseModel):
 
 
 class ReferenceRunRequest(FrozenModel):
-    request_id: str = Field(min_length=1, max_length=256)
+    request_id: str = Field(
+        min_length=1,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+    )
+
+
+class ReferenceRunLimiter:
+    def __init__(
+        self,
+        *,
+        max_runs: int = 60,
+        window_seconds: float = 60.0,
+        clock: Any = monotonic,
+    ) -> None:
+        if max_runs < 1 or window_seconds <= 0:
+            raise ValueError("reference run limit and window must be positive")
+        self._max_runs = max_runs
+        self._window_seconds = window_seconds
+        self._clock = clock
+        self._runs: defaultdict[str, deque[float]] = defaultdict(deque)
+        self._lock = RLock()
+
+    def allow(self, client_id: str) -> bool:
+        now = float(self._clock())
+        with self._lock:
+            runs = self._runs[client_id]
+            threshold = now - self._window_seconds
+            while runs and runs[0] <= threshold:
+                runs.popleft()
+            if len(runs) >= self._max_runs:
+                return False
+            runs.append(now)
+            return True
 
 
 class BudgetEvidence(FrozenModel):
@@ -185,8 +221,10 @@ def build_compiler_demo_router(
     runtime_repository: RuntimeRepository,
     runtime_acceptor: Any,
     evidence: CompilerEvidenceService,
+    run_limiter: ReferenceRunLimiter | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/demo/compiler", tags=["compiler-demo"])
+    limiter = run_limiter or ReferenceRunLimiter()
 
     @router.get("/status", response_model=CompilerLabStatus)
     def get_status() -> CompilerLabStatus:
@@ -205,7 +243,17 @@ def build_compiler_demo_router(
     def run_scenario(
         scenario_id: str,
         payload: ReferenceRunRequest,
+        request: Request,
     ) -> CompilerLabView:
+        client_id = "unknown" if request.client is None else request.client.host
+        if not limiter.allow(client_id):
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "code": "REFERENCE_RATE_LIMITED",
+                    "message": "reference compilation rate limit exceeded",
+                },
+            )
         try:
             scenario = catalog.scenario(scenario_id)
         except KeyError as error:
@@ -412,18 +460,22 @@ def _provider_evidence(
 ) -> ProviderEvidence:
     configuration = {} if run is None else run.get("configuration", {})
     report_status = None if run is None else run.get("status")
-    report_passed = report_status == "PASS"
-    status = "PASS" if report_passed else "BLOCKED"
-    reason = (
-        None
-        if report_passed
-        else (
-            missing_reason
-            if not credentials_configured
-            else (None if run is None else run.get("blocked_reason"))
-            or "No passing live evidence run is recorded for the current configuration"
-        )
-    )
+    if not credentials_configured:
+        status = "BLOCKED"
+        reason = missing_reason
+    elif report_status == "PASS":
+        status = "PASS"
+        reason = None
+    elif report_status == "FAIL":
+        status = "FAIL"
+        reason = (
+            None if run is None else run.get("failure_reason")
+        ) or "The recorded live evidence run failed its model or metric gate"
+    else:
+        status = "BLOCKED"
+        reason = (
+            None if run is None else run.get("blocked_reason")
+        ) or "No executable live evidence run is recorded for the current configuration"
     return ProviderEvidence(
         status=status,
         provider=provider,

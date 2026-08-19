@@ -160,7 +160,7 @@ GET  /api/demo/compiler/{request_id}
 POST /api/demo/compiler/{request_id}/accept   # registered reference fixtures only
 ```
 
-Compiler requests, drafts, results, findings, outbox events, compilation hashes, and Runtime receipts are immutable/idempotent under their request identity. The general acceptance endpoint requires `X-Continuum-Runtime-Capability`; the product demo endpoint separately accepts only a reference request registered by the server-side scenario runner.
+Compiler requests, drafts, results, findings, outbox events, compilation hashes, and Runtime receipts are immutable/idempotent under their request identity. The generic `/api/compiler` surface is internal and disabled unless `CONTINUUM_COMPILER_API_CAPABILITY` is configured; callers then supply `X-Continuum-Compiler-Capability`. Acceptance additionally requires `X-Continuum-Runtime-Capability`. The public product demo exposes only fixed, server-authored scenarios and separately accepts only a reference request registered by the server-side runner.
 
 ## Safety invariants
 

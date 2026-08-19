@@ -82,9 +82,9 @@
     "source_ref": "benchmark:production-release-016:primary@v13!benchmark:production-release-016:primary%40revision:31fee4fe2c27d9071d2d4db4883aac81da70fdd32f59e922631fd0d1759ac3a8%40representation:sha256:ed14d0381c4393080dfc74f0e9de5f9678758da2e08dc16d59c534decb39b21a#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Identity Gateway: maintenance window changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:production-release-016"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

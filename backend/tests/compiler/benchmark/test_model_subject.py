@@ -121,8 +121,8 @@ def test_model_subject_counts_critic_recovery_without_silently_accepting_it() ->
 
     assert set(prediction.critical_refs) == {primary_ref, missing_ref}
     assert prediction.accepted_canonical_refs == ()
-    assert prediction.predicted_stale_after_mutation
-    assert len(set(prediction.repeat_compilation_hashes)) == 1
+    assert not prediction.predicted_stale_after_mutation
+    assert prediction.repeat_compilation_hashes == ()
     assert [call.output_schema for call in transport.invocations] == [
         DecisionProposal,
         CriticProposal,

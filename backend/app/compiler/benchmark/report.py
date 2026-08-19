@@ -50,19 +50,22 @@ def _markdown(report: BenchmarkReport) -> str:
             "It is not live-model acceptance evidence."
         ),
         "",
-        "| Evidence lane | Baseline | Status | Recall | Precision | Contradiction | Stale escape | Unnecessary | Determinism | Cost USD |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Evidence lane | Baseline | Status | Recall | Precision | Contradiction | Critical severity | Outcome | Block gate | Stale escape | Unnecessary | Determinism | Cost USD |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     blocked_reasons: list[str] = []
     for run in report.runs:
         metrics = run.metrics
         values = (
-            ("—",) * 7
+            ("—",) * 10
             if metrics is None
             else (
                 _pct(metrics.critical_recall),
                 _pct(metrics.critical_precision),
                 _pct(metrics.contradiction_recall),
+                _pct(metrics.contradiction_severity_recall),
+                _pct(metrics.outcome_compliance),
+                _pct(metrics.blocking_disposition_compliance),
                 _pct(metrics.stale_escape_rate),
                 _pct(metrics.unnecessary_invalidation_rate),
                 _pct(metrics.compilation_determinism),
@@ -87,6 +90,13 @@ def _markdown(report: BenchmarkReport) -> str:
             )
     if blocked_reasons:
         lines.extend(("", "## Blocked evidence", "", *blocked_reasons))
+    failure_reasons = [
+        f"- `{run.configuration.evidence_lane.value}`: {run.failure_reason}"
+        for run in report.runs
+        if run.failure_reason
+    ]
+    if failure_reasons:
+        lines.extend(("", "## Failed evidence", "", *failure_reasons))
     lines.extend(
         (
             "",

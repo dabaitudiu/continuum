@@ -3,10 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from fastapi.testclient import TestClient
-
 from app.compiler.canonicalization import DeterministicCanonicalizer
-from app.compiler.models import CriticProposal, DecisionDraft
+from app.compiler.models import CriticProposal
 from app.compiler.repository_memory import InMemoryCompilerRepository
 from app.compiler.review import AuthorityPrecedencePolicy, DeterministicReviewGate
 from app.compiler.service import CompilerService
@@ -21,7 +19,7 @@ from app.sources.identity import (
     ingest_json_revision,
 )
 from app.sources.registry import InMemorySourceRegistry, WorldSnapshot
-
+from fastapi.testclient import TestClient
 
 NOW = datetime(2026, 8, 19, 19, 0, tzinfo=UTC)
 
@@ -148,8 +146,16 @@ def _client() -> tuple[TestClient, InMemoryCompilerRepository, str]:
         compiler_service=_compiler_service(),
         compiler_source_registry=registry,
         runtime_compiler_capability="runtime-secret",
+        compiler_api_capability="compiler-secret",
     )
-    return TestClient(app), repository, source_ref
+    return (
+        TestClient(
+            app,
+            headers={"X-Continuum-Compiler-Capability": "compiler-secret"},
+        ),
+        repository,
+        source_ref,
+    )
 
 
 def test_five_endpoint_workflow_persists_an_auditable_compilation() -> None:
@@ -254,7 +260,9 @@ def test_runtime_capability_accepts_and_links_compilation_to_runtime() -> None:
             compiler_service=_compiler_service(),
             compiler_source_registry=registry,
             runtime_compiler_capability="runtime-secret",
-        )
+            compiler_api_capability="compiler-secret",
+        ),
+        headers={"X-Continuum-Compiler-Capability": "compiler-secret"},
     )
     client.post("/api/compiler/requests", json=_request(source_ref))
     client.post("/api/compiler/request-1/draft", json=_draft(source_ref))
@@ -272,6 +280,26 @@ def test_runtime_capability_accepts_and_links_compilation_to_runtime() -> None:
     assert accepted.status_code == 200
     payload = accepted.json()
     assert payload["snapshot"]["mission"]["revision"] == 1
-    assert payload["compilation_hash"] == payload["snapshot"]["graph"][
-        "decisions"
-    ][payload["decision_id"]]["compilation_hash"]
+    assert (
+        payload["compilation_hash"]
+        == payload["snapshot"]["graph"]["decisions"][payload["decision_id"]][
+            "compilation_hash"
+        ]
+    )
+
+
+def test_public_caller_cannot_create_generic_compiler_aggregates() -> None:
+    registry, source_ref = _source_registry()
+    client = TestClient(
+        create_app(
+            runtime_repository=InMemoryRuntimeRepository(),
+            compiler_repository=InMemoryCompilerRepository(),
+            compiler_service=_compiler_service(),
+            compiler_source_registry=registry,
+        )
+    )
+
+    response = client.post("/api/compiler/requests", json=_request(source_ref))
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "INTERNAL_COMPILER_API_DISABLED"

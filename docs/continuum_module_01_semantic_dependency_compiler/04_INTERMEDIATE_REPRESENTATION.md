@@ -55,6 +55,8 @@ Allowed relations P0:
 - `AUTHORIZES`
 - `CONTRADICTED_BY`
 
+`AUTHORIZES` remains a runtime graph relation, but a raw `SourceFragment` DependencyRef may not emit it. Authorization is a deterministic `Decision → Action` edge owned by Runtime, not authority inferred directly from text or approval evidence.
+
 ## Decision-level dependencies
 
 Not every dependency needs an intermediate claim, but material policy and authorization dependencies should usually be explicit.
@@ -80,6 +82,8 @@ Example:
 ```
 
 If blocking unresolved questions exist, the result cannot compile to an accepted approval decision.
+
+Historical refs may be explicitly read for audit/context. They cannot be compiled as current `CRITICAL`, `GOVERNED_BY`, `SUPPORTED_BY`, `DERIVED_FROM`, or `REQUIRES` authority.
 
 ## CompilationResult
 

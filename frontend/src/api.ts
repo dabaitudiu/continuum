@@ -21,12 +21,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
-  const body = await response.json()
+  const raw = await response.text()
+  let body: Record<string, unknown> = {}
+  if (raw) {
+    try {
+      body = JSON.parse(raw) as Record<string, unknown>
+    } catch {
+      body = { raw: raw.slice(0, 500) }
+    }
+  }
   if (!response.ok) {
-    const detail = body.detail ?? {}
+    const detail = typeof body.detail === 'object' && body.detail !== null
+      ? body.detail as Record<string, unknown>
+      : {}
     throw new ContinuumApiError(
-      detail.message ?? `Request failed with status ${response.status}`,
-      detail.code ?? 'UNKNOWN_API_ERROR',
+      typeof detail.message === 'string'
+        ? detail.message
+        : `Request failed with status ${response.status}${typeof body.raw === 'string' ? `: ${body.raw}` : ''}`,
+      typeof detail.code === 'string' ? detail.code : `HTTP_${response.status}`,
     )
   }
   return body as T

@@ -97,6 +97,10 @@ test('Compiler Lab proves accepted and blocked paths before runtime mutation', a
   })
   await page.goto('/')
   await page.getByRole('button', { name: 'Compiler Lab' }).click()
+  await expect(page.getByText('Execution mode: DETERMINISTIC_REFERENCE')).toBeVisible()
+  for (const stage of ['REQUESTED', 'DRAFT_RECEIVED', 'VALIDATED', 'REVIEWED', 'COMPILED', 'RUNTIME_ACCEPTED']) {
+    await expect(page.getByText(stage)).toBeVisible()
+  }
 
   const evidence = page.getByLabel('Model evidence status')
   await expect(evidence.getByText('DETERMINISTIC REFERENCE')).toBeVisible()

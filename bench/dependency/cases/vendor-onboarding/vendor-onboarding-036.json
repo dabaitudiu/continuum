@@ -82,9 +82,9 @@
     "source_ref": "benchmark:vendor-onboarding-036:primary@v13!benchmark:vendor-onboarding-036:primary%40revision:a5df700491cb41c341c30f5f91ddb32f202ade986901ca6f35bbf3fbf32d8308%40representation:sha256:d46fc31949af4d78d16818a407d37267663a5e8d79258c1f10909025fadc60a4#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Beacon AI: penetration test changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:vendor-onboarding-036"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

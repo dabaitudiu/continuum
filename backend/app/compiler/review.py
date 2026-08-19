@@ -9,9 +9,9 @@ from app.compiler.models import (
     ContradictionFinding,
     ContradictionProposal,
     ContradictionResolution,
-    CriticOutcome,
     CriticFinding,
     CriticFindingType,
+    CriticOutcome,
     CriticProposal,
     CriticReview,
     DecisionDraft,
@@ -88,7 +88,9 @@ class ModelDependencyCritic:
                     ) from error
                 continue
             if not isinstance(response.parsed, CriticProposal):
-                schema_feedback = "provider returned an object that is not a CriticProposal"
+                schema_feedback = (
+                    "provider returned an object that is not a CriticProposal"
+                )
                 if attempt == 2:
                     raise ReasonerError("MODEL_SCHEMA_INVALID", schema_feedback)
                 continue
@@ -128,14 +130,16 @@ class AuthorityPrecedencePolicy:
         if (ref_b, ref_a) in self.explicit_overrides:
             return ContradictionResolution.SOURCE_B_PRECEDES, "MISSION_OVERRIDE"
 
-        if source_a.artifact.artifact_id == source_b.artifact.artifact_id:
-            if source_a.is_historical != source_b.is_historical:
-                if source_a.is_historical:
-                    return (
-                        ContradictionResolution.SOURCE_B_PRECEDES,
-                        "CURRENT_REVISION",
-                    )
-                return ContradictionResolution.SOURCE_A_PRECEDES, "CURRENT_REVISION"
+        if (
+            source_a.artifact.artifact_id == source_b.artifact.artifact_id
+            and source_a.is_historical != source_b.is_historical
+        ):
+            if source_a.is_historical:
+                return (
+                    ContradictionResolution.SOURCE_B_PRECEDES,
+                    "CURRENT_REVISION",
+                )
+            return ContradictionResolution.SOURCE_A_PRECEDES, "CURRENT_REVISION"
 
         if (
             source_a.artifact.source_type is SourceType.HUMAN_APPROVAL
@@ -185,11 +189,9 @@ class DeterministicReviewGate:
         else:
             proposal = critic_outcome
             model_metadata = None
-        draft_refs = {
-            dependency.source_ref
-            for claim in draft.claims
-            for dependency in claim.dependencies
-        } | {dependency.source_ref for dependency in draft.decision_dependencies}
+        draft_dependencies = {
+            claim.claim_local_id: tuple(claim.dependencies) for claim in draft.claims
+        }
         claim_ids = {claim.claim_local_id for claim in draft.claims}
         findings: list[CriticFinding] = []
         contradictions: list[ContradictionFinding] = []
@@ -200,17 +202,33 @@ class DeterministicReviewGate:
         needs_review = False
 
         for missing in proposal.missing_dependencies:
-            if missing.candidate_ref in draft_refs:
+            target_dependencies = (
+                draft.decision_dependencies
+                if missing.claim_local_id is None
+                else draft_dependencies.get(missing.claim_local_id, ())
+            )
+            if any(
+                dependency.source_ref == missing.candidate_ref
+                and dependency.relation is missing.expected_relation
+                and dependency.materiality is missing.expected_materiality
+                for dependency in target_dependencies
+            ):
                 continue
             valid_candidate = True
             if missing.candidate_ref != "UNKNOWN_SOURCE_REQUIRED":
-                valid_candidate = self._resolve(
-                    missing.candidate_ref,
-                    context,
-                ) is not None
+                valid_candidate = (
+                    self._resolve(
+                        missing.candidate_ref,
+                        context,
+                    )
+                    is not None
+                )
             if not valid_candidate:
                 invalid_reference = True
-            if missing.claim_local_id is not None and missing.claim_local_id not in claim_ids:
+            if (
+                missing.claim_local_id is not None
+                and missing.claim_local_id not in claim_ids
+            ):
                 invalid_schema = True
             findings.append(
                 CriticFinding(
@@ -220,6 +238,8 @@ class DeterministicReviewGate:
                     message=missing.why,
                     candidate_ref=missing.candidate_ref,
                     claim_local_id=missing.claim_local_id,
+                    expected_relation=missing.expected_relation,
+                    expected_materiality=missing.expected_materiality,
                 )
             )
             if missing.severity is Materiality.CRITICAL and valid_candidate:

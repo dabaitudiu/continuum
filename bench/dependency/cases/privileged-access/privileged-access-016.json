@@ -82,9 +82,9 @@
     "source_ref": "benchmark:privileged-access-016:primary@v13!benchmark:privileged-access-016:primary%40revision:17a004824cca0b5df1e3d358b27668d38b9968f35b9d40806fc07cc4485be551%40representation:sha256:9819d69209ea3770cbe3061f1792d366ca93c3798108912a60d3265724463ba8#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Morgan Lee: identity verification changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:privileged-access-016"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

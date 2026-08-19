@@ -25,6 +25,9 @@ Status vocabulary: `PASS` means the specified evidence exists; `PARTIAL` means i
 | Critical dependency precision >=0.82 | benchmark report | PARTIAL — reference 1.00; no live score |
 | Unsupported canonical refs = 0% | benchmark + deterministic validator | PASS |
 | Contradiction recall >=0.90 | benchmark report | PARTIAL — reference 1.00; no live score |
+| Critical contradiction severity recall >=0.90 | benchmark report | PARTIAL — reference 1.00; no live score |
+| Outcome constraints = 100% | benchmark report | PARTIAL — reference 1.00; no live score |
+| Must-block disposition compliance = 100% | benchmark report | PARTIAL — reference 1.00; no live score |
 | Unnecessary invalidation <8% in mutation eval | compiler→drift integration eval | PARTIAL — reference 0%; no live score |
 | Stale escape <2% in mutation eval | compiler→drift integration eval | PARTIAL — reference 0%; no live score |
 | Runtime acceptance bound to mission/world revision | concurrency integration test | PASS |
@@ -90,5 +93,6 @@ No autonomous agent may approve its own scope reduction.
 
 - K1, K3, K4, and K5 cannot be adjudicated from deterministic fixtures; they require authenticated model runs.
 - K2 is not observed in the reference lane: canonical dependencies remain fragment-level and reference mutation metrics pass, but this is not yet live evidence.
+- Reference mutation metrics now accept the predicted graph into the real Runtime, apply the corpus replacement mutation, and read the resulting `DecisionStatus`; they no longer infer staleness from ref membership.
 - K6 is **not cleared**: the four product reference cases are deliberately server-authored. The generic reasoner/compiler path exists, but without a passing live-model benchmark we cannot claim the central dependency graph is no longer effectively authored by developers.
 - Therefore no kill decision is justified yet, and no continuation to the full Drift Engine is justified either. The next evidence action is a budget-gated OpenAI run if a key becomes available, followed by the required Gemini run when Google credentials exist.

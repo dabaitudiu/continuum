@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+from app.api.compiler_demo_routes import CompilerEvidenceService, ReferenceRunLimiter
 from app.compiler.context import RiskClass
 from app.compiler.repository import CompilationRequestRecord
 from app.compiler.repository_memory import InMemoryCompilerRepository
@@ -42,7 +44,9 @@ def test_default_compiler_fails_closed_without_a_real_or_reference_critic() -> N
             runtime_repository=InMemoryRuntimeRepository(),
             compiler_repository=InMemoryCompilerRepository(),
             compiler_source_registry=registry,
-        )
+            compiler_api_capability="compiler-secret",
+        ),
+        headers={"X-Continuum-Compiler-Capability": "compiler-secret"},
     )
     client.post("/api/compiler/requests", json=_request(source_ref))
     client.post("/api/compiler/request-1/draft", json=_draft(source_ref))
@@ -63,6 +67,8 @@ def test_default_compiler_fails_closed_without_a_real_or_reference_critic() -> N
             ),
             "candidate_ref": "UNKNOWN_SOURCE_REQUIRED",
             "claim_local_id": None,
+            "expected_relation": "SUPPORTED_BY",
+            "expected_materiality": "CRITICAL",
         }
     ]
 
@@ -74,7 +80,9 @@ def test_reference_shaped_request_still_fails_closed_until_server_registered() -
             runtime_repository=InMemoryRuntimeRepository(),
             compiler_repository=InMemoryCompilerRepository(),
             compiler_source_registry=registry,
-        )
+            compiler_api_capability="compiler-secret",
+        ),
+        headers={"X-Continuum-Compiler-Capability": "compiler-secret"},
     )
     forged_request_id = reference_request_id(
         "authorized-access",
@@ -137,6 +145,56 @@ def test_authorized_reference_scenario_compiles_and_exposes_honest_evidence(
     }
     assert payload["evidence"]["gemini"]["status"] == "BLOCKED"
     assert payload["runtime_receipt"] is None
+
+
+def test_evidence_service_preserves_recorded_live_failure(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setenv("OPENAI_API_KEY", "configured-for-status-test")
+    report_path = tmp_path / "report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "runs": [
+                    {
+                        "run_id": "benchmark:failed",
+                        "status": "FAIL",
+                        "failure_reason": "MODEL_SCHEMA_INVALID: invalid output",
+                        "configuration": {
+                            "evidence_lane": "live_openai",
+                            "reasoner_model": "gpt-5.6-luna",
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = CompilerEvidenceService(
+        report_path=report_path,
+        budget_path=tmp_path / "budget.db",
+    ).status()
+
+    assert evidence.openai.status == "FAIL"
+    assert evidence.openai.reason == "MODEL_SCHEMA_INVALID: invalid output"
+
+
+def test_reference_run_limiter_bounds_public_compilation_creation() -> None:
+    now = [100.0]
+    limiter = ReferenceRunLimiter(
+        max_runs=2,
+        window_seconds=10,
+        clock=lambda: now[0],
+    )
+
+    assert limiter.allow("client-a")
+    assert limiter.allow("client-a")
+    assert not limiter.allow("client-a")
+    assert limiter.allow("client-b")
+    now[0] = 111.0
+    assert limiter.allow("client-a")
 
 
 def test_reference_scenarios_cover_all_blocking_dispositions(tmp_path: Path) -> None:
@@ -212,7 +270,9 @@ def test_demo_orchestrator_refuses_nonaccepted_and_nonfixture_requests(
             runtime_repository=runtime_repository,
             compiler_repository=compiler_repository,
             compiler_source_registry=registry,
-        )
+            compiler_api_capability="compiler-secret",
+        ),
+        headers={"X-Continuum-Compiler-Capability": "compiler-secret"},
     )
     generic.post(
         "/api/compiler/requests",

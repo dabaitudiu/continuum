@@ -82,9 +82,9 @@
     "source_ref": "benchmark:production-release-036:primary@v13!benchmark:production-release-036:primary%40revision:f495538f3df08a8a36ab9669288e57a97aa993ff968a14b76a00eed3f0325f0c%40representation:sha256:47b108c4cc8dbb8410bdff256452e89dca7e3a811eda13e0b6494a268ca9e7af#$.clause",
     "mutation_kind": "replace-fragment-content",
     "replacement_content": "Mutated benchmark evidence for Billing Worker: maintenance window changed.",
-    "expected_stale_decision_ids": [
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
       "decision:production-release-036"
-    ],
-    "expected_unchanged_decision_ids": []
+    ]
   }
 }

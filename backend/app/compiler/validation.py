@@ -19,7 +19,6 @@ from app.compiler.models import (
 from app.sources.identity import SourceRef
 from app.sources.registry import ResolvedSource, SourceRegistryError
 
-
 _REFERENCE_CODES = {
     "UNKNOWN_SOURCE_ARTIFACT",
     "UNKNOWN_SOURCE_REVISION",
@@ -31,7 +30,16 @@ _TEMPORAL_CODES = {
     "STALE_SOURCE_REFERENCE",
     "STALE_PARSED_REPRESENTATION",
     "UNQUALIFIED_HISTORICAL_REFERENCE",
+    "HISTORICAL_AUTHORITY_NOT_ALLOWED",
 }
+_VALIDITY_BEARING_SOURCE_RELATIONS = frozenset(
+    {
+        DependencyRelation.SUPPORTED_BY,
+        DependencyRelation.GOVERNED_BY,
+        DependencyRelation.DERIVED_FROM,
+        DependencyRelation.REQUIRES,
+    }
+)
 _STAGE_ORDER = {
     ValidationStage.SCHEMA: 1,
     ValidationStage.REFERENCE: 2,
@@ -113,13 +121,33 @@ class DeterministicDraftValidator:
                 continue
 
             resolved_dependencies.append(
-                _resolved_dependency(
+                resolved_dependency := _resolved_dependency(
                     dependency,
                     resolved,
                     target_kind=target_kind,
                     target_local_id=target_local_id,
                 )
             )
+            if resolved_dependency.is_historical and (
+                resolved_dependency.relation in _VALIDITY_BEARING_SOURCE_RELATIONS
+                or resolved_dependency.materiality is Materiality.CRITICAL
+            ):
+                resolved_dependencies.pop()
+                findings.append(
+                    _finding(
+                        sequence=len(findings),
+                        stage=ValidationStage.TEMPORAL,
+                        code="HISTORICAL_AUTHORITY_NOT_ALLOWED",
+                        message=(
+                            "historical sources may be read for context but cannot "
+                            "be compiled as current validity-bearing authority"
+                        ),
+                        source_ref=dependency.source_ref,
+                        claim_local_id=(
+                            target_local_id if target_kind == "CLAIM" else None
+                        ),
+                    )
+                )
 
         early_disposition = _disposition(findings)
         if early_disposition is None:
@@ -261,20 +289,27 @@ def _type_rule_findings(
     findings: list[ValidationFinding] = []
     for dependency in resolved_dependencies:
         valid_source = True
-        if dependency.relation is DependencyRelation.GOVERNED_BY:
+        code = "RELATION_SOURCE_TYPE_INVALID"
+        if dependency.relation is DependencyRelation.AUTHORIZES:
+            valid_source = False
+            code = "SOURCE_RELATION_NOT_ALLOWED"
+        elif dependency.relation is DependencyRelation.GOVERNED_BY:
             valid_source = dependency.source_type == "POLICY"
-        elif dependency.relation is DependencyRelation.AUTHORIZES:
-            valid_source = dependency.source_type == "HUMAN_APPROVAL"
         if valid_source:
             continue
         findings.append(
             _finding(
                 sequence=sequence_start + len(findings),
                 stage=ValidationStage.TYPE_RULE,
-                code="RELATION_SOURCE_TYPE_INVALID",
+                code=code,
                 message=(
-                    f"{dependency.relation.value} is not allowed from "
-                    f"{dependency.source_type}"
+                    "AUTHORIZES is owned by runtime Decision-to-Action edges, "
+                    "not raw source fragments"
+                    if dependency.relation is DependencyRelation.AUTHORIZES
+                    else (
+                        f"{dependency.relation.value} is not allowed from "
+                        f"{dependency.source_type}"
+                    )
                 ),
                 source_ref=dependency.canonical_ref,
                 claim_local_id=(
@@ -295,8 +330,7 @@ def _claim_graph_findings(
     findings: list[ValidationFinding] = []
     claim_ids = {claim.claim_local_id for claim in draft.claims}
     graph = {
-        claim.claim_local_id: tuple(claim.derived_from_claims)
-        for claim in draft.claims
+        claim.claim_local_id: tuple(claim.derived_from_claims) for claim in draft.claims
     }
     for claim in draft.claims:
         for derived_id in claim.derived_from_claims:
@@ -364,17 +398,33 @@ def _support_findings(
     sequence_start: int,
 ) -> list[ValidationFinding]:
     findings: list[ValidationFinding] = []
-    supported_claim_ids = {
+    directly_supported_claim_ids = {
         dependency.target_local_id
         for dependency in resolved_dependencies
         if dependency.target_kind == "CLAIM"
+        and dependency.relation in _VALIDITY_BEARING_SOURCE_RELATIONS
+        and dependency.materiality is Materiality.CRITICAL
     }
+    supported_claim_ids = set(directly_supported_claim_ids)
+    pending = {
+        claim.claim_local_id: tuple(claim.derived_from_claims)
+        for claim in draft.claims
+        if claim.derived_from_claims
+    }
+    changed = True
+    while changed:
+        changed = False
+        for claim_id, source_claim_ids in pending.items():
+            if claim_id in supported_claim_ids:
+                continue
+            if any(source_id in supported_claim_ids for source_id in source_claim_ids):
+                supported_claim_ids.add(claim_id)
+                changed = True
     for claim in draft.claims:
         if (
             claim.materiality is Materiality.CRITICAL
             and claim.claim_type in {ClaimType.FACT, ClaimType.RULE}
             and claim.claim_local_id not in supported_claim_ids
-            and not claim.derived_from_claims
         ):
             findings.append(
                 _finding(
@@ -387,8 +437,15 @@ def _support_findings(
                 )
             )
 
-    has_critical_path = any(
-        dependency.materiality is Materiality.CRITICAL
+    critical_claim_ids = {
+        claim.claim_local_id
+        for claim in draft.claims
+        if claim.materiality is Materiality.CRITICAL
+    }
+    has_critical_path = bool(supported_claim_ids & critical_claim_ids) or any(
+        dependency.target_kind == "DECISION"
+        and dependency.relation in _VALIDITY_BEARING_SOURCE_RELATIONS
+        and dependency.materiality is Materiality.CRITICAL
         for dependency in resolved_dependencies
     )
     if context.risk_class.value == "HIGH" and not has_critical_path:

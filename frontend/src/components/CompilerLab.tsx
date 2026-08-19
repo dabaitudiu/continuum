@@ -77,7 +77,6 @@ export function CompilerLab({ api }: { api: ContinuumApi }) {
     setBusy('run')
     setError(null)
     setRetryIntent(null)
-    setView(null)
     try {
       setView(await api.runCompilerScenario(scenarioId, requestId()))
     } catch (caught) {
@@ -121,7 +120,8 @@ export function CompilerLab({ api }: { api: ContinuumApi }) {
         <div>
           <p className="eyebrow">SEMANTIC DEPENDENCY COMPILER / MODULE 01</p>
           <h1>Compile model judgment into runtime-safe state.</h1>
-          <p>Inspect exact source fragments, canonical claims, blocking findings, and the immutable acceptance boundary.</p>
+          <p className="compiler-lab__description">Inspect exact source fragments, canonical claims, blocking findings, and the immutable acceptance boundary.</p>
+          <p className="compiler-execution-mode">Execution mode: {view?.execution_mode ?? status?.execution_mode ?? 'DETERMINISTIC_REFERENCE'}</p>
         </div>
         <div className="compiler-lab__evidence" aria-label="Model evidence status">
           {evidence ? <EvidenceStrip evidence={evidence} /> : <span className="compiler-loading">Loading evidence register…</span>}
@@ -139,11 +139,12 @@ export function CompilerLab({ api }: { api: ContinuumApi }) {
       ) : null}
 
       <div className="compiler-stage-ruler" aria-label="Compilation stages">
-        <Stage number="01" label="SOURCE BOUND" state={view ? 'done' : 'active'} />
-        <Stage number="02" label="CLAIMS DRAFTED" state={view ? 'done' : 'waiting'} />
-        <Stage number="03" label="DETERMINISTIC CHECKS" state={result ? 'done' : 'waiting'} />
-        <Stage number="04" label="CRITIC GATE" state={result ? 'done' : 'waiting'} />
-        <Stage number="05" label={view?.runtime_receipt ? 'RUNTIME COMMITTED' : 'RUNTIME BOUNDARY'} state={view?.runtime_receipt ? 'done' : accepted ? 'active' : 'waiting'} />
+        <Stage number="01" label="REQUESTED" owner="COMPILER" state={view ? 'done' : 'active'} />
+        <Stage number="02" label="DRAFT_RECEIVED" owner="MODEL PROPOSAL" state={view ? 'done' : 'waiting'} />
+        <Stage number="03" label="VALIDATED" owner="COMPILER" state={result ? 'done' : 'waiting'} />
+        <Stage number="04" label="REVIEWED" owner="MODEL PROPOSAL" state={result ? 'done' : 'waiting'} />
+        <Stage number="05" label="COMPILED" owner="COMPILER" state={result ? 'done' : 'waiting'} />
+        <Stage number="06" label="RUNTIME_ACCEPTED" owner="RUNTIME" state={view?.runtime_receipt ? 'done' : accepted ? 'active' : 'waiting'} />
       </div>
 
       <div className="compiler-scenario-bar">
@@ -209,10 +210,10 @@ function EvidenceCell({ label, evidence }: { label: string; evidence: ProviderEv
   )
 }
 
-function Stage({ number, label, state }: { number: string; label: string; state: 'active' | 'done' | 'waiting' }) {
+function Stage({ number, label, owner, state }: { number: string; label: string; owner: string; state: 'active' | 'done' | 'waiting' }) {
   return (
     <div className={`compiler-stage stage-${state}`}>
-      <span>{number}</span><strong>{label}</strong><i />
+      <span>{number}</span><strong>{label}</strong><small>{owner}</small><i />
     </div>
   )
 }
@@ -327,6 +328,10 @@ function VerificationLedger({ view, busy, onAccept }: { view: CompilerLabViewDto
   const findings = [...(result?.validation_findings ?? []), ...(result?.critic_findings ?? [])]
   const contradictions = result?.contradictions ?? []
   const canAccept = result?.status === 'ACCEPTED' && !view?.runtime_receipt
+  const blockerCount = result?.status === 'ACCEPTED'
+    ? findings.filter((finding) => finding.blocking).length
+    : findings.filter((finding) => finding.severity === 'CRITICAL' || finding.blocking).length
+      + contradictions.filter((item) => item.severity === 'CRITICAL' && item.resolution === 'UNRESOLVED').length
   return (
     <aside className="verification-ledger" aria-label="Verification ledger">
       <PanelHeader index="C" title="VERIFICATION LEDGER" detail="Deterministic acceptance gate" />
@@ -340,7 +345,7 @@ function VerificationLedger({ view, busy, onAccept }: { view: CompilerLabViewDto
             <div><dt>COMPILER</dt><dd>{result.compiler_version}</dd></div>
             <div><dt>POLICY</dt><dd>{result.validation_policy_version}</dd></div>
             <div><dt>CLAIMS</dt><dd>{result.canonical_claims.length}</dd></div>
-            <div><dt>BLOCKERS</dt><dd>{findings.filter((finding) => finding.severity === 'CRITICAL' || finding.blocking).length + contradictions.filter((item) => item.severity === 'CRITICAL').length}</dd></div>
+            <div><dt>BLOCKERS</dt><dd>{blockerCount}</dd></div>
           </dl>
           <section className="ledger-section">
             <h3>FINDINGS</h3>

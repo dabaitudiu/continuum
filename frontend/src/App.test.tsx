@@ -541,6 +541,10 @@ describe('App', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Compiler Lab' }))
 
     expect(await screen.findByText('SEMANTIC DEPENDENCY COMPILER / MODULE 01')).toBeVisible()
+    expect(screen.getByText('Execution mode: DETERMINISTIC_REFERENCE')).toBeVisible()
+    for (const stage of ['REQUESTED', 'DRAFT_RECEIVED', 'VALIDATED', 'REVIEWED', 'COMPILED', 'RUNTIME_ACCEPTED']) {
+      expect(screen.getByText(stage)).toBeVisible()
+    }
     expect(screen.getByText('OPENAI EVIDENCE')).toBeVisible()
     expect(screen.getByText('KEY NOT CONFIGURED')).toBeVisible()
     expect(screen.getByText('$0.00 / $10.00 CUMULATIVE CAP')).toBeVisible()
@@ -614,5 +618,34 @@ describe('App', () => {
     expect(await screen.findByText('RUNTIME ACCEPTED')).toBeVisible()
     expect(api.acceptCompilerScenario).toHaveBeenCalledTimes(2)
     expect(api.runCompilerScenario).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the previous compilation visible when a rerun fails', async () => {
+    const compiled = compilerViewFixture()
+    const api = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(control('CREATED')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+      getCompilerLabStatus: vi.fn().mockResolvedValue(compilerStatusFixture()),
+      runCompilerScenario: vi.fn()
+        .mockResolvedValueOnce(compiled)
+        .mockRejectedValueOnce(new Error('Compilation service unavailable')),
+      acceptCompilerScenario: vi.fn(),
+    } as unknown as ContinuumApi
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Compiler Lab' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Run reference compilation' }))
+    expect(await screen.findByText('Compilation disposition: ACCEPTED')).toBeVisible()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run reference compilation' }))
+
+    expect(await screen.findByText('Compilation service unavailable')).toBeVisible()
+    expect(screen.getByText('Compilation disposition: ACCEPTED')).toBeVisible()
+    expect(screen.getByText('a'.repeat(64))).toBeVisible()
   })
 })

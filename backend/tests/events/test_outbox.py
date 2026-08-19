@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
-from typing import Any
 
 import pytest
-
-from app.events.outbox import GooglePubSubOutboxPublisher, OutboxRelay
+from app.events.outbox import GooglePubSubOutboxPublisher, OutboxRelay, OutboxSweeper
 from app.repository.runtime_memory import InMemoryRuntimeRepository
 from app.runtime.entities import OutboxMessage
 from tests.repository.runtime_contract import (
@@ -143,3 +141,22 @@ def test_relay_leaves_message_pending_when_publish_fails() -> None:
         relay.drain("m-1")
 
     assert repository.load("m-1").outbox[0].published_at is None
+
+
+def test_independent_sweeper_retries_pending_outbox_without_command_replay() -> None:
+    repository = repository_with_outbox()
+    publisher = RecordingPublisher(fail_on="outbox:request-1")
+    sweeper = OutboxSweeper(
+        repository,
+        OutboxRelay(repository, publisher),
+    )
+
+    failed = sweeper.sweep()
+    publisher.fail_on = None
+    retried = sweeper.sweep()
+
+    assert failed.failed_mission_ids == ["m-1"]
+    assert failed.published_messages == 0
+    assert retried.failed_mission_ids == []
+    assert retried.published_messages == 1
+    assert repository.load("m-1").outbox[0].published_at is not None

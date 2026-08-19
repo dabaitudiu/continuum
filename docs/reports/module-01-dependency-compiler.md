@@ -1,16 +1,16 @@
 # Module 01 — Semantic Dependency Compiler Benchmark
 
-Generated: `2026-08-19T05:04:37.793431+00:00`
+Generated: `2026-08-19T05:43:12.369477+00:00`
 
 > `deterministic_reference` validates corpus/metric/runner plumbing only. It is not live-model acceptance evidence.
 
-| Evidence lane | Baseline | Status | Recall | Precision | Contradiction | Stale escape | Unnecessary | Determinism | Cost USD |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| deterministic_reference | document-level | FAIL | 100.00% | 43.75% | 0.00% | 0.00% | 100.00% | 100.00% | 0 |
-| deterministic_reference | single-pass | FAIL | 78.57% | 73.33% | 0.00% | 14.29% | 66.67% | 100.00% | 0 |
-| deterministic_reference | full-pipeline | PASS | 100.00% | 100.00% | 100.00% | 0.00% | 0.00% | 100.00% | 0 |
-| live_openai | full-pipeline | BLOCKED | — | — | — | — | — | — | — |
-| live_gemini | full-pipeline | BLOCKED | — | — | — | — | — | — | — |
+| Evidence lane | Baseline | Status | Recall | Precision | Contradiction | Critical severity | Outcome | Block gate | Stale escape | Unnecessary | Determinism | Cost USD |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| deterministic_reference | document-level | FAIL | 100.00% | 43.75% | 0.00% | 0.00% | 90.00% | 90.00% | 0.00% | 100.00% | 100.00% | 0 |
+| deterministic_reference | single-pass | FAIL | 78.57% | 73.33% | 0.00% | 0.00% | 90.00% | 90.00% | 16.67% | 75.00% | 100.00% | 0 |
+| deterministic_reference | full-pipeline | PASS | 100.00% | 100.00% | 100.00% | 100.00% | 100.00% | 100.00% | 0.00% | 0.00% | 100.00% | 0 |
+| live_openai | full-pipeline | BLOCKED | — | — | — | — | — | — | — | — | — | — |
+| live_gemini | full-pipeline | BLOCKED | — | — | — | — | — | — | — | — | — | — |
 
 ## Blocked evidence
 

@@ -38,13 +38,17 @@ Examples:
 - `AUTHORIZES` should originate from a valid decision in runtime, not raw text.
 - `DERIVED_FROM` between claims must form an allowed graph.
 
+Raw source fragments may never emit `AUTHORIZES`; that relation is reserved for deterministic Runtime `Decision → Action` edges.
+
 ### V6 Claim support
 
-Every critical FACT/RULE claim must have source or derived-claim support.
+Every critical FACT/RULE claim must have a reachable positive, `CRITICAL` source path. `CONTRADICTED_BY`, `CONTEXTUAL`, unrelated critical edges, and derived chains whose root has no valid source path do not count as support.
 
 ### V7 Decision support
 
-High-risk outcomes must have at least one critical dependency path. “APPROVED with zero critical dependencies” is invalid.
+High-risk outcomes must have at least one complete critical source → claim → decision path, or a direct validity-bearing source → decision edge. “APPROVED with an unrelated/negative critical edge” is invalid.
+
+`allow_historical=True` grants read access only. A historical ref that is critical or validity-bearing is rejected as stale authority; it may remain explicit non-validity-bearing context.
 
 ## Canonicalization
 

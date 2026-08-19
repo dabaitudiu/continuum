@@ -18,10 +18,15 @@ class EvaluationRecord(FrozenModel):
     required_critical_refs: tuple[str, ...] = ()
     known_source_refs: tuple[str, ...] = ()
     expected_blocking_contradictions: tuple[tuple[str, str], ...] = ()
+    allowed_outcomes: tuple[str, ...]
+    must_block: bool
     expected_stale_after_mutation: bool
     predicted_critical_refs: tuple[str, ...] = ()
     accepted_canonical_refs: tuple[str, ...] = ()
     detected_contradictions: tuple[tuple[str, str], ...] = ()
+    detected_contradiction_severities: tuple[tuple[str, str, str], ...] = ()
+    predicted_outcome: str
+    compilation_disposition: str
     predicted_stale_after_mutation: bool
     repeat_compilation_hashes: tuple[str, ...] = ()
 
@@ -47,6 +52,12 @@ class MetricCounts(FrozenModel):
     accepted_canonical: int = Field(ge=0)
     detected_blocking_contradictions: int = Field(ge=0)
     expected_blocking_contradictions: int = Field(ge=0)
+    detected_critical_contradictions: int = Field(ge=0)
+    expected_critical_contradictions: int = Field(ge=0)
+    compliant_outcomes: int = Field(ge=0)
+    evaluated_outcomes: int = Field(ge=0)
+    compliant_blocking_dispositions: int = Field(ge=0)
+    evaluated_blocking_dispositions: int = Field(ge=0)
     stale_escapes: int = Field(ge=0)
     expected_stale: int = Field(ge=0)
     unnecessary_invalidations: int = Field(ge=0)
@@ -60,6 +71,9 @@ class MetricSnapshot(FrozenModel):
     critical_precision: float = Field(ge=0.0, le=1.0)
     unsupported_reference_rate: float = Field(ge=0.0, le=1.0)
     contradiction_recall: float = Field(ge=0.0, le=1.0)
+    contradiction_severity_recall: float = Field(ge=0.0, le=1.0)
+    outcome_compliance: float = Field(ge=0.0, le=1.0)
+    blocking_disposition_compliance: float = Field(ge=0.0, le=1.0)
     stale_escape_rate: float = Field(ge=0.0, le=1.0)
     unnecessary_invalidation_rate: float = Field(ge=0.0, le=1.0)
     compilation_determinism: float = Field(ge=0.0, le=1.0)
@@ -94,6 +108,12 @@ def measure(records: list[EvaluationRecord]) -> MetricSnapshot:
     accepted_canonical = 0
     detected_blocking_contradictions = 0
     expected_blocking_contradictions = 0
+    detected_critical_contradictions = 0
+    expected_critical_contradictions = 0
+    compliant_outcomes = 0
+    evaluated_outcomes = 0
+    compliant_blocking_dispositions = 0
+    evaluated_blocking_dispositions = 0
     stale_escapes = 0
     expected_stale = 0
     unnecessary_invalidations = 0
@@ -127,6 +147,23 @@ def measure(records: list[EvaluationRecord]) -> MetricSnapshot:
         }
         detected_blocking_contradictions += len(expected_pairs & detected_pairs)
         expected_blocking_contradictions += len(expected_pairs)
+        detected_critical_pairs = {
+            _pair(source_a, source_b)
+            for source_a, source_b, severity in record.detected_contradiction_severities
+            if severity == "CRITICAL"
+        }
+        detected_critical_contradictions += len(
+            expected_pairs & detected_critical_pairs
+        )
+        expected_critical_contradictions += len(expected_pairs)
+
+        evaluated_outcomes += 1
+        if record.predicted_outcome in record.allowed_outcomes:
+            compliant_outcomes += 1
+        evaluated_blocking_dispositions += 1
+        did_block = record.compilation_disposition != "ACCEPTED"
+        if did_block is record.must_block:
+            compliant_blocking_dispositions += 1
 
         if record.expected_stale_after_mutation:
             expected_stale += 1
@@ -150,6 +187,12 @@ def measure(records: list[EvaluationRecord]) -> MetricSnapshot:
         accepted_canonical=accepted_canonical,
         detected_blocking_contradictions=detected_blocking_contradictions,
         expected_blocking_contradictions=expected_blocking_contradictions,
+        detected_critical_contradictions=detected_critical_contradictions,
+        expected_critical_contradictions=expected_critical_contradictions,
+        compliant_outcomes=compliant_outcomes,
+        evaluated_outcomes=evaluated_outcomes,
+        compliant_blocking_dispositions=compliant_blocking_dispositions,
+        evaluated_blocking_dispositions=evaluated_blocking_dispositions,
         stale_escapes=stale_escapes,
         expected_stale=expected_stale,
         unnecessary_invalidations=unnecessary_invalidations,
@@ -173,6 +216,21 @@ def measure(records: list[EvaluationRecord]) -> MetricSnapshot:
             detected_blocking_contradictions,
             expected_blocking_contradictions,
             empty=1.0,
+        ),
+        contradiction_severity_recall=_ratio(
+            detected_critical_contradictions,
+            expected_critical_contradictions,
+            empty=1.0,
+        ),
+        outcome_compliance=_ratio(
+            compliant_outcomes,
+            evaluated_outcomes,
+            empty=0.0,
+        ),
+        blocking_disposition_compliance=_ratio(
+            compliant_blocking_dispositions,
+            evaluated_blocking_dispositions,
+            empty=0.0,
         ),
         stale_escape_rate=_ratio(stale_escapes, expected_stale, empty=0.0),
         unnecessary_invalidation_rate=_ratio(
@@ -207,6 +265,17 @@ def evaluate_gate(metrics: MetricSnapshot) -> GateResult:
             0.0,
         ),
         _minimum("contradiction_recall", metrics.contradiction_recall, 0.90),
+        _minimum(
+            "contradiction_severity_recall",
+            metrics.contradiction_severity_recall,
+            0.90,
+        ),
+        _exact("outcome_compliance", metrics.outcome_compliance, 1.0),
+        _exact(
+            "blocking_disposition_compliance",
+            metrics.blocking_disposition_compliance,
+            1.0,
+        ),
         _maximum_exclusive("stale_escape_rate", metrics.stale_escape_rate, 0.02),
         _maximum_exclusive(
             "unnecessary_invalidation_rate",

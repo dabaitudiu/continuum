@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.compiler.benchmark.cli import main
+from app.compiler.benchmark.cli import _reasoner_error_evidence, main
 from app.compiler.benchmark.corpus import load_corpus
 from app.compiler.benchmark.report import write_report_bundle
 from app.compiler.benchmark.runner import (
@@ -16,7 +16,10 @@ from app.compiler.benchmark.runner import (
     RunConfiguration,
     SinglePassReferenceSubject,
     blocked_evidence_run,
+    evaluate_runtime_mutation,
 )
+from app.compiler.models import CompilationDisposition
+from app.compiler.reasoner import ReasonerError
 
 
 def _configuration(
@@ -78,6 +81,9 @@ def test_full_pipeline_reference_improves_recall_and_contradiction_detection() -
     assert full.metrics is not None
     assert full.metrics.critical_recall > single.metrics.critical_recall
     assert full.metrics.contradiction_recall > single.metrics.contradiction_recall
+    assert full.metrics.outcome_compliance == 1.0
+    assert full.metrics.blocking_disposition_compliance == 1.0
+    assert full.metrics.contradiction_severity_recall == 1.0
     assert full.gate is not None and full.gate.passed
     assert full.status is EvidenceStatus.PASS
 
@@ -99,6 +105,43 @@ def test_variance_protocol_runs_three_times_for_balanced_thirty_case_subset() ->
     assert run.configuration.reasoner_prompt_version == "reasoner-v1"
 
 
+def test_mutation_metric_is_read_from_runtime_not_subject_self_report() -> None:
+    case = next(
+        case
+        for case in load_corpus().cases
+        if case.mutation.expected_stale_decision_ids
+    )
+    prediction = FullPipelineReferenceSubject().predict(case, run_index=0)
+    lied = prediction.model_copy(update={"predicted_stale_after_mutation": False})
+
+    assert evaluate_runtime_mutation(case, lied)
+
+
+def test_gate_rejects_a_subject_with_non_deterministic_compilation_hashes() -> None:
+    class NonDeterministicSubject(FullPipelineReferenceSubject):
+        def predict(self, case, *, run_index):  # type: ignore[no-untyped-def]
+            prediction = super().predict(case, run_index=run_index)
+            if (
+                prediction.compilation_disposition
+                is not CompilationDisposition.ACCEPTED
+            ):
+                return prediction
+            return prediction.model_copy(
+                update={"repeat_compilation_hashes": ("first", "second")}
+            )
+
+    run = BenchmarkRunner(load_corpus()).run(
+        NonDeterministicSubject(),
+        _configuration(BaselineKind.FULL_PIPELINE),
+    )
+
+    assert run.gate is not None and not run.gate.passed
+    determinism = next(
+        row for row in run.gate.rows if row.metric == "compilation_determinism"
+    )
+    assert not determinism.passed
+
+
 def test_missing_live_credentials_are_blocked_evidence_not_a_pass() -> None:
     run = blocked_evidence_run(
         _configuration(
@@ -112,6 +155,20 @@ def test_missing_live_credentials_are_blocked_evidence_not_a_pass() -> None:
     assert run.metrics is None
     assert run.gate is None
     assert "OPENAI_API_KEY" in (run.blocked_reason or "")
+
+
+def test_executed_model_schema_failure_is_fail_not_blocked() -> None:
+    run = _reasoner_error_evidence(
+        _configuration(
+            BaselineKind.FULL_PIPELINE,
+            lane=EvidenceLane.LIVE_OPENAI,
+        ),
+        ReasonerError("MODEL_SCHEMA_INVALID", "typed output was invalid"),
+    )
+
+    assert run.status is EvidenceStatus.FAIL
+    assert run.blocked_reason is None
+    assert "MODEL_SCHEMA_INVALID" in (run.failure_reason or "")
 
 
 def test_report_bundle_separates_evidence_lanes_and_records_configuration(
