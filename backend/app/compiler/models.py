@@ -262,6 +262,59 @@ class CriticFinding(FrozenModel):
     claim_local_id: str | None = Field(default=None, max_length=128)
 
 
+class MissingDependencyProposal(FrozenModel):
+    candidate_ref: str = Field(min_length=1, max_length=2048)
+    severity: Materiality
+    why: str = Field(min_length=1, max_length=2000)
+    claim_local_id: str | None = Field(default=None, max_length=128)
+
+
+class UnsupportedClaimProposal(FrozenModel):
+    claim_local_id: str = Field(min_length=1, max_length=128)
+    severity: Materiality
+    why: str = Field(min_length=1, max_length=2000)
+
+
+class IrrelevantDependencyProposal(FrozenModel):
+    source_ref: str = Field(min_length=1, max_length=2048)
+    why: str = Field(min_length=1, max_length=2000)
+
+
+class ContradictionProposal(FrozenModel):
+    claim_or_topic: str = Field(min_length=1, max_length=1000)
+    source_ref_a: str = Field(min_length=1, max_length=2048)
+    source_ref_b: str = Field(min_length=1, max_length=2048)
+    severity: Materiality
+    source_a_supports_outcome: bool
+    source_b_supports_outcome: bool
+
+
+class CriticProposal(FrozenModel):
+    missing_dependencies: list[MissingDependencyProposal] = Field(
+        default_factory=list,
+        max_length=100,
+    )
+    unsupported_claims: list[UnsupportedClaimProposal] = Field(
+        default_factory=list,
+        max_length=100,
+    )
+    irrelevant_dependencies: list[IrrelevantDependencyProposal] = Field(
+        default_factory=list,
+        max_length=100,
+    )
+    possible_contradictions: list[ContradictionProposal] = Field(
+        default_factory=list,
+        max_length=100,
+    )
+
+
+class CriticOutcome(FrozenModel):
+    """Critic proposal plus transport-observed metadata attached by trusted code."""
+
+    proposal: CriticProposal
+    model_metadata: ModelMetadata
+
+
 class ContradictionFinding(FrozenModel):
     finding_id: str = Field(min_length=1, max_length=256)
     claim_or_topic: str = Field(min_length=1, max_length=1000)
@@ -336,6 +389,7 @@ class CriticReview(FrozenModel):
     findings: list[CriticFinding] = Field(default_factory=list)
     contradictions: list[ContradictionFinding] = Field(default_factory=list)
     disposition: CompilationDisposition | None = None
+    model_metadata: ModelMetadata | None = None
 
 
 class CanonicalCompilation(FrozenModel):
@@ -367,6 +421,7 @@ class CompilationResult(FrozenModel):
     validation_policy_version: str = Field(min_length=1, max_length=128)
     compilation_hash: str | None = None
     model_metadata: ModelMetadata | None = None
+    critic_model_metadata: ModelMetadata | None = None
 
     @field_validator("compilation_hash")
     @classmethod

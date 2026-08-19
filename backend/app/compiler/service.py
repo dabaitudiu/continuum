@@ -86,6 +86,7 @@ class CompilerService:
             validation_policy_version=self._validation_policy_version,
             compilation_hash=canonical.compilation_hash,
             model_metadata=draft.model_metadata,
+            critic_model_metadata=review.model_metadata,
         )
 
     def _blocked_result(
@@ -106,4 +107,5 @@ class CompilerService:
             compiler_version=self._compiler_version,
             validation_policy_version=self._validation_policy_version,
             model_metadata=draft.model_metadata,
+            critic_model_metadata=None if review is None else review.model_metadata,
         )
