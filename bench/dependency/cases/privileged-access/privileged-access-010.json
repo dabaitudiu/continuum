@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-010",
+  "title": "Avery Chen — device compliance — narrow-clause",
+  "domain": "privileged-access",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Avery Chen for privileged access. Determine whether the proposed outcome is justified by the current evidence, including device compliance and any material security training requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.scope",
+      "artifact_id": "benchmark:privileged-access-010:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-010-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Avery Chen.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.binding_clause",
+      "artifact_id": "benchmark:privileged-access-010:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-010-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that the requesting device is compliant.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.appendix",
+      "artifact_id": "benchmark:privileged-access-010:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-010-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses security training for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.scope",
+      "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-010:wide-policy@v13!benchmark:privileged-access-010:wide-policy%40revision:d52a0c86df4f9d7014e919669c02eabf9e7e65e5636beac019ce85e875cd9f66%40representation:sha256:8857c0ff0df18793d8b6e6252a5df073689430f8a801f1a36ed7829dca968da2#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Avery Chen: device compliance changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-010"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

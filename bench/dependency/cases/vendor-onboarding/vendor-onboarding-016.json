@@ -1,0 +1,90 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-016",
+  "title": "Nimbus CRM — penetration test — conflicting-sources",
+  "domain": "vendor-onboarding",
+  "case_class": "conflicting-sources",
+  "adversarial_tags": [
+    "contradictory-authority"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including penetration test and any material retention clause requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-016:primary@v13!benchmark:vendor-onboarding-016:primary%40revision:973334ede9707307f1c1ac5829cad19e51c6c3fef4989cd5cf604bfb6ed1942b%40representation:sha256:e880f5b63784c9aa8933d2b655e8a073a1ce07d7c0125e01a12c1b67dd8c5f51#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-016:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-016-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Nimbus CRM, authoritative evidence confirms that the penetration test is less than twelve months old.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-016:opposing-authority@v13!benchmark:vendor-onboarding-016:opposing-authority%40revision:0b3b5de109d28cf629503d2002e724e4c96e7d82b4ab2d9d7c51aef990668c4f%40representation:sha256:c23718f50427bf0fcf3ff8ac09f5713a9a1bfe4f9e4b59a8129662a79ff24dfc#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-016:opposing-authority",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-016-opposing-authority",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "An equally ranked current authority states that penetration test is waived for Nimbus CRM.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-016:distractor@v1!benchmark:vendor-onboarding-016:distractor%40revision:e86c62dbe7a390441bf2f82afc2a40eeac67217b8f1c907809776b8b3f500b75%40representation:sha256:6f9f42ada4e56c7bf7a4b786a007b63f899fc19cfe8812568522b776b63d02f7#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-016:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-016-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions penetration test, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-016:primary@v13!benchmark:vendor-onboarding-016:primary%40revision:973334ede9707307f1c1ac5829cad19e51c6c3fef4989cd5cf604bfb6ed1942b%40representation:sha256:e880f5b63784c9aa8933d2b655e8a073a1ce07d7c0125e01a12c1b67dd8c5f51#$.clause",
+      "benchmark:vendor-onboarding-016:opposing-authority@v13!benchmark:vendor-onboarding-016:opposing-authority%40revision:0b3b5de109d28cf629503d2002e724e4c96e7d82b4ab2d9d7c51aef990668c4f%40representation:sha256:c23718f50427bf0fcf3ff8ac09f5713a9a1bfe4f9e4b59a8129662a79ff24dfc#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-016:distractor@v1!benchmark:vendor-onboarding-016:distractor%40revision:e86c62dbe7a390441bf2f82afc2a40eeac67217b8f1c907809776b8b3f500b75%40representation:sha256:6f9f42ada4e56c7bf7a4b786a007b63f899fc19cfe8812568522b776b63d02f7#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "NEEDS_HUMAN_REVIEW"
+      ],
+      "must_block": true
+    },
+    "blocking_contradictions": [
+      {
+        "source_ref_a": "benchmark:vendor-onboarding-016:primary@v13!benchmark:vendor-onboarding-016:primary%40revision:973334ede9707307f1c1ac5829cad19e51c6c3fef4989cd5cf604bfb6ed1942b%40representation:sha256:e880f5b63784c9aa8933d2b655e8a073a1ce07d7c0125e01a12c1b67dd8c5f51#$.clause",
+        "source_ref_b": "benchmark:vendor-onboarding-016:opposing-authority@v13!benchmark:vendor-onboarding-016:opposing-authority%40revision:0b3b5de109d28cf629503d2002e724e4c96e7d82b4ab2d9d7c51aef990668c4f%40representation:sha256:c23718f50427bf0fcf3ff8ac09f5713a9a1bfe4f9e4b59a8129662a79ff24dfc#$.clause",
+        "topic": "penetration test"
+      }
+    ]
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-016:primary@v13!benchmark:vendor-onboarding-016:primary%40revision:973334ede9707307f1c1ac5829cad19e51c6c3fef4989cd5cf604bfb6ed1942b%40representation:sha256:e880f5b63784c9aa8933d2b655e8a073a1ce07d7c0125e01a12c1b67dd8c5f51#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: penetration test changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-016"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-013",
+  "title": "Identity Gateway — security scan — critical-omission",
+  "domain": "production-release",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including security scan and any material migration backup requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-013:primary@v13!benchmark:production-release-013:primary%40revision:ee37c072e36105c8e2b8ebe664377528826ac7bb3c43a5ddd17fdbf410a03aa7%40representation:sha256:8d203a2a52f0d69f5558c1ea16d0f014b66525277baab24310e52534d23517a9#$.clause",
+      "artifact_id": "benchmark:production-release-013:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-013-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Identity Gateway, authoritative evidence confirms that the current security scan has no critical finding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-013:support@r7!benchmark:production-release-013:support%40revision:0830a95bac91e9d92f0fd4c96c0e6aad6a4b2252ceeca6961dc924a423ab6a5e%40representation:sha256:6a789a15798fbe2c9ff0f6b6f0fd259d2577610a392f9bb642e902edd5fee97c#$.clause",
+      "artifact_id": "benchmark:production-release-013:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-013-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Identity Gateway confirms that a verified pre-migration backup exists.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-013:distractor@v1!benchmark:production-release-013:distractor%40revision:4b6f069ec94032176c5551ad2f8de01715ca956b4cf7273d86bf5cdb8cd9e84f%40representation:sha256:851fae89c03ad2dc87c3b38933091c6cd17a425d7dba43ae2ca7dce4deca77c2#$.clause",
+      "artifact_id": "benchmark:production-release-013:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-013-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security scan, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-013:primary@v13!benchmark:production-release-013:primary%40revision:ee37c072e36105c8e2b8ebe664377528826ac7bb3c43a5ddd17fdbf410a03aa7%40representation:sha256:8d203a2a52f0d69f5558c1ea16d0f014b66525277baab24310e52534d23517a9#$.clause",
+      "benchmark:production-release-013:support@r7!benchmark:production-release-013:support%40revision:0830a95bac91e9d92f0fd4c96c0e6aad6a4b2252ceeca6961dc924a423ab6a5e%40representation:sha256:6a789a15798fbe2c9ff0f6b6f0fd259d2577610a392f9bb642e902edd5fee97c#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-013:distractor@v1!benchmark:production-release-013:distractor%40revision:4b6f069ec94032176c5551ad2f8de01715ca956b4cf7273d86bf5cdb8cd9e84f%40representation:sha256:851fae89c03ad2dc87c3b38933091c6cd17a425d7dba43ae2ca7dce4deca77c2#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-013:primary@v13!benchmark:production-release-013:primary%40revision:ee37c072e36105c8e2b8ebe664377528826ac7bb3c43a5ddd17fdbf410a03aa7%40representation:sha256:8d203a2a52f0d69f5558c1ea16d0f014b66525277baab24310e52534d23517a9#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: security scan changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-013"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

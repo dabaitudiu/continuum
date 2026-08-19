@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-004",
+  "title": "Avery Chen — MFA enrollment — irrelevant-distractor",
+  "domain": "privileged-access",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Avery Chen for privileged access. Determine whether the proposed outcome is justified by the current evidence, including MFA enrollment and any material separation of duties requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-004:primary@v13!benchmark:privileged-access-004:primary%40revision:0ee46f9607743b7c436b03436e7788b1f65e030cf1e82161d8aebea7255b4b06%40representation:sha256:02ae9650aeb58e1ca2f2082573792602847edac1e0b80352579c0b17a91f914f#$.clause",
+      "artifact_id": "benchmark:privileged-access-004:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-004-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Avery Chen, authoritative evidence confirms that phishing-resistant MFA is enrolled.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-004:support@r7!benchmark:privileged-access-004:support%40revision:12253cb0459cfdbf7224ccc58b0c3f777455ed267e2c98a16860407ef613795d%40representation:sha256:8c3612519c6f87a56ced16ede222bda2d46f830a4738dc6a3c9863a46d12d60b#$.clause",
+      "artifact_id": "benchmark:privileged-access-004:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-004-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Avery Chen confirms that the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-004:distractor@v1!benchmark:privileged-access-004:distractor%40revision:81316d54b6ee2cf4d8420b274726b2f60e21a09db4c531565bab9436bef09f9d%40representation:sha256:2befdeecb101765bd4f9eebc4d7f0458110941577b8bffbbef9f6f4d756ce7f6#$.clause",
+      "artifact_id": "benchmark:privileged-access-004:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-004-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions MFA enrollment, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-004:distractor-two@v1!benchmark:privileged-access-004:distractor-two%40revision:2ddb44a26d203ef3f28b841dcdf3419b99255374c4bc37c387efb12d7db0ffab%40representation:sha256:02c99fe5b15cb6a97321120df21e8841d995c8ab9245057e55d2c90056a6d64a#$.clause",
+      "artifact_id": "benchmark:privileged-access-004:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-004-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses separation of duties without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-004:primary@v13!benchmark:privileged-access-004:primary%40revision:0ee46f9607743b7c436b03436e7788b1f65e030cf1e82161d8aebea7255b4b06%40representation:sha256:02ae9650aeb58e1ca2f2082573792602847edac1e0b80352579c0b17a91f914f#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-004:support@r7!benchmark:privileged-access-004:support%40revision:12253cb0459cfdbf7224ccc58b0c3f777455ed267e2c98a16860407ef613795d%40representation:sha256:8c3612519c6f87a56ced16ede222bda2d46f830a4738dc6a3c9863a46d12d60b#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-004:distractor@v1!benchmark:privileged-access-004:distractor%40revision:81316d54b6ee2cf4d8420b274726b2f60e21a09db4c531565bab9436bef09f9d%40representation:sha256:2befdeecb101765bd4f9eebc4d7f0458110941577b8bffbbef9f6f4d756ce7f6#$.clause",
+      "benchmark:privileged-access-004:distractor-two@v1!benchmark:privileged-access-004:distractor-two%40revision:2ddb44a26d203ef3f28b841dcdf3419b99255374c4bc37c387efb12d7db0ffab%40representation:sha256:02c99fe5b15cb6a97321120df21e8841d995c8ab9245057e55d2c90056a6d64a#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-004:distractor@v1!benchmark:privileged-access-004:distractor%40revision:81316d54b6ee2cf4d8420b274726b2f60e21a09db4c531565bab9436bef09f9d%40representation:sha256:2befdeecb101765bd4f9eebc4d7f0458110941577b8bffbbef9f6f4d756ce7f6#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Avery Chen: MFA enrollment changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-004"
+    ]
+  }
+}

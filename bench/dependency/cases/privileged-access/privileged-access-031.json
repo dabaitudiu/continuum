@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-031",
+  "title": "Jordan Lim — role eligibility — clean-positive",
+  "domain": "privileged-access",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including role eligibility and any material separation of duties requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-031:primary@v13!benchmark:privileged-access-031:primary%40revision:9b0a0820f19d2e31b5207857f549dfea1b5128c271c4e2214c6502423a89bb86%40representation:sha256:cbde6c966ada2ffc3ebca4a209045280dc2ce191c0fe4fac8df79533c236c36a#$.clause",
+      "artifact_id": "benchmark:privileged-access-031:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-031-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Jordan Lim, authoritative evidence confirms that the requested role is eligible for privileged access.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-031:support@r7!benchmark:privileged-access-031:support%40revision:479043a3a35fa7d02fbcfe50b769dd2c433e83fece59141420ea4d1c9d611b6e%40representation:sha256:90b0dbaeff8c5c3fbebf385ca5381fdd4bd0d3d28e485e15f6fd3e376d58231d#$.clause",
+      "artifact_id": "benchmark:privileged-access-031:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-031-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Jordan Lim confirms that the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-031:distractor@v1!benchmark:privileged-access-031:distractor%40revision:68c53359e800431872e13edc68de91e332bcf236ef006207bbfaf07931e5ac41%40representation:sha256:1b4e79e7203e08048652791080fab3f4cf9b65c0f980cc695ee65f99db1fb7bc#$.clause",
+      "artifact_id": "benchmark:privileged-access-031:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-031-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions role eligibility, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-031:primary@v13!benchmark:privileged-access-031:primary%40revision:9b0a0820f19d2e31b5207857f549dfea1b5128c271c4e2214c6502423a89bb86%40representation:sha256:cbde6c966ada2ffc3ebca4a209045280dc2ce191c0fe4fac8df79533c236c36a#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-031:support@r7!benchmark:privileged-access-031:support%40revision:479043a3a35fa7d02fbcfe50b769dd2c433e83fece59141420ea4d1c9d611b6e%40representation:sha256:90b0dbaeff8c5c3fbebf385ca5381fdd4bd0d3d28e485e15f6fd3e376d58231d#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-031:distractor@v1!benchmark:privileged-access-031:distractor%40revision:68c53359e800431872e13edc68de91e332bcf236ef006207bbfaf07931e5ac41%40representation:sha256:1b4e79e7203e08048652791080fab3f4cf9b65c0f980cc695ee65f99db1fb7bc#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-031:primary@v13!benchmark:privileged-access-031:primary%40revision:9b0a0820f19d2e31b5207857f549dfea1b5128c271c4e2214c6502423a89bb86%40representation:sha256:cbde6c966ada2ffc3ebca4a209045280dc2ce191c0fe4fac8df79533c236c36a#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: role eligibility changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-031"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

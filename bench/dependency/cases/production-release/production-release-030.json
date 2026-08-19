@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-030",
+  "title": "Search Indexer — incident freeze — narrow-clause",
+  "domain": "production-release",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Search Indexer for production release. Determine whether the proposed outcome is justified by the current evidence, including incident freeze and any material release permission requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.scope",
+      "artifact_id": "benchmark:production-release-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Search Indexer.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.binding_clause",
+      "artifact_id": "benchmark:production-release-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that no active severity-one incident freeze applies.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.appendix",
+      "artifact_id": "benchmark:production-release-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses release permission for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.scope",
+      "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-030:wide-policy@v13!benchmark:production-release-030:wide-policy%40revision:7f214c813208daaa8da68c1936f46d7fa4cc3363c93a9b67f6dcb9c7f04b5127%40representation:sha256:8ca8d12d7517750959180b88a9d2d23d971537052615b50d9ec0e147bfe6e119#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Search Indexer: incident freeze changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-030"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

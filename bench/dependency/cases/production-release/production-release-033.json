@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-033",
+  "title": "Billing Worker — security scan — critical-omission",
+  "domain": "production-release",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including security scan and any material canary metrics requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-033:primary@v13!benchmark:production-release-033:primary%40revision:ea7f8905233894457d7c1d966021cedc7a073264201831fc411294bab0ef3d85%40representation:sha256:a851bf24cfc80f637342cf9f08a7b83754d7912d44408f40563aeb803d1cec1a#$.clause",
+      "artifact_id": "benchmark:production-release-033:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-033-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Billing Worker, authoritative evidence confirms that the current security scan has no critical finding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-033:support@r7!benchmark:production-release-033:support%40revision:dad19bbe639fb087e32d4f80a080cad29f62cce56c7e4f145d1f223b518a5974%40representation:sha256:216ab510167623956d0b2671e8065faa75acaa4e387af30eb71e14c853aaec4c#$.clause",
+      "artifact_id": "benchmark:production-release-033:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-033-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Billing Worker confirms that canary health metrics meet the release threshold.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-033:distractor@v1!benchmark:production-release-033:distractor%40revision:76dfa0ffc010a06d3c4ddfdb5e5087f13f4aed3f005e2f6bd5e611686be00622%40representation:sha256:9b6341202b4c3d18398c32f70bb231066a5ae64ab159e494ee6b2b374dcc312f#$.clause",
+      "artifact_id": "benchmark:production-release-033:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-033-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security scan, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-033:primary@v13!benchmark:production-release-033:primary%40revision:ea7f8905233894457d7c1d966021cedc7a073264201831fc411294bab0ef3d85%40representation:sha256:a851bf24cfc80f637342cf9f08a7b83754d7912d44408f40563aeb803d1cec1a#$.clause",
+      "benchmark:production-release-033:support@r7!benchmark:production-release-033:support%40revision:dad19bbe639fb087e32d4f80a080cad29f62cce56c7e4f145d1f223b518a5974%40representation:sha256:216ab510167623956d0b2671e8065faa75acaa4e387af30eb71e14c853aaec4c#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-033:distractor@v1!benchmark:production-release-033:distractor%40revision:76dfa0ffc010a06d3c4ddfdb5e5087f13f4aed3f005e2f6bd5e611686be00622%40representation:sha256:9b6341202b4c3d18398c32f70bb231066a5ae64ab159e494ee6b2b374dcc312f#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-033:primary@v13!benchmark:production-release-033:primary%40revision:ea7f8905233894457d7c1d966021cedc7a073264201831fc411294bab0ef3d85%40representation:sha256:a851bf24cfc80f637342cf9f08a7b83754d7912d44408f40563aeb803d1cec1a#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: security scan changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-033"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

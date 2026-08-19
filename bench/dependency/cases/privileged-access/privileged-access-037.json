@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-037",
+  "title": "Jordan Lim — separation of duties — near-duplicate",
+  "domain": "privileged-access",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including separation of duties and any material security training requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-037:near-policy@v13!benchmark:privileged-access-037:near-policy%40revision:e746bf35aa458bd516bd67ebd3c593f8c04ba29d5814b83ad7a69031f5a25525%40representation:sha256:6489255cb645b8146ff4e9733d5dc87e0470827ccb4e1ee70947ca4e6183d199#$.binding_clause",
+      "artifact_id": "benchmark:privileged-access-037:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-037-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Jordan Lim: the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-037:near-policy@v13!benchmark:privileged-access-037:near-policy%40revision:e746bf35aa458bd516bd67ebd3c593f8c04ba29d5814b83ad7a69031f5a25525%40representation:sha256:6489255cb645b8146ff4e9733d5dc87e0470827ccb4e1ee70947ca4e6183d199#$.near_match",
+      "artifact_id": "benchmark:privileged-access-037:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-037-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: separation of duties may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-037:support@r7!benchmark:privileged-access-037:support%40revision:15b75ad38f177012bd9144cf724c8cc02d0d64792887ea3af4b723c2544cef41%40representation:sha256:4e01386a52e4648835ed3ec3d8e553cb986d37caad7c1bc818128d8c3f912604#$.clause",
+      "artifact_id": "benchmark:privileged-access-037:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-037-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Jordan Lim confirms that privileged-access training is current.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-037:near-policy@v13!benchmark:privileged-access-037:near-policy%40revision:e746bf35aa458bd516bd67ebd3c593f8c04ba29d5814b83ad7a69031f5a25525%40representation:sha256:6489255cb645b8146ff4e9733d5dc87e0470827ccb4e1ee70947ca4e6183d199#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-037:support@r7!benchmark:privileged-access-037:support%40revision:15b75ad38f177012bd9144cf724c8cc02d0d64792887ea3af4b723c2544cef41%40representation:sha256:4e01386a52e4648835ed3ec3d8e553cb986d37caad7c1bc818128d8c3f912604#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-037:near-policy@v13!benchmark:privileged-access-037:near-policy%40revision:e746bf35aa458bd516bd67ebd3c593f8c04ba29d5814b83ad7a69031f5a25525%40representation:sha256:6489255cb645b8146ff4e9733d5dc87e0470827ccb4e1ee70947ca4e6183d199#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-037:near-policy@v13!benchmark:privileged-access-037:near-policy%40revision:e746bf35aa458bd516bd67ebd3c593f8c04ba29d5814b83ad7a69031f5a25525%40representation:sha256:6489255cb645b8146ff4e9733d5dc87e0470827ccb4e1ee70947ca4e6183d199#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: separation of duties changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-037"
+    ]
+  }
+}

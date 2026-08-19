@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-037",
+  "title": "Billing Worker — migration backup — near-duplicate",
+  "domain": "production-release",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including migration backup and any material security scan requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-037:near-policy@v13!benchmark:production-release-037:near-policy%40revision:0d4483a846bd29d3bdd90d23bc428785bcc41764dfca894127c1ef9528ca0e16%40representation:sha256:cd8241e597923ce4ace625a5546632ef0ee9e6a24bf68c3f8a86db207e29d8cb#$.binding_clause",
+      "artifact_id": "benchmark:production-release-037:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-037-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Billing Worker: a verified pre-migration backup exists.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-037:near-policy@v13!benchmark:production-release-037:near-policy%40revision:0d4483a846bd29d3bdd90d23bc428785bcc41764dfca894127c1ef9528ca0e16%40representation:sha256:cd8241e597923ce4ace625a5546632ef0ee9e6a24bf68c3f8a86db207e29d8cb#$.near_match",
+      "artifact_id": "benchmark:production-release-037:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-037-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: migration backup may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-037:support@r7!benchmark:production-release-037:support%40revision:23d1276134c0dddb4b8f56e5cdacf27189ed9b83fc212e3fbaa4f29d7238de11%40representation:sha256:b8657030684a1fbe3407454e3932c26ced045ab9709718bf69e27c5e41019493#$.clause",
+      "artifact_id": "benchmark:production-release-037:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-037-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Billing Worker confirms that the current security scan has no critical finding.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-037:near-policy@v13!benchmark:production-release-037:near-policy%40revision:0d4483a846bd29d3bdd90d23bc428785bcc41764dfca894127c1ef9528ca0e16%40representation:sha256:cd8241e597923ce4ace625a5546632ef0ee9e6a24bf68c3f8a86db207e29d8cb#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-037:support@r7!benchmark:production-release-037:support%40revision:23d1276134c0dddb4b8f56e5cdacf27189ed9b83fc212e3fbaa4f29d7238de11%40representation:sha256:b8657030684a1fbe3407454e3932c26ced045ab9709718bf69e27c5e41019493#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-037:near-policy@v13!benchmark:production-release-037:near-policy%40revision:0d4483a846bd29d3bdd90d23bc428785bcc41764dfca894127c1ef9528ca0e16%40representation:sha256:cd8241e597923ce4ace625a5546632ef0ee9e6a24bf68c3f8a86db207e29d8cb#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-037:near-policy@v13!benchmark:production-release-037:near-policy%40revision:0d4483a846bd29d3bdd90d23bc428785bcc41764dfca894127c1ef9528ca0e16%40representation:sha256:cd8241e597923ce4ace625a5546632ef0ee9e6a24bf68c3f8a86db207e29d8cb#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: migration backup changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:production-release-037"
+    ]
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-003",
+  "title": "Avery Chen — security training — critical-omission",
+  "domain": "privileged-access",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": true,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Avery Chen for privileged access. Determine whether the proposed outcome is justified by the current evidence, including security training and any material identity verification requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-003:primary@v13!benchmark:privileged-access-003:primary%40revision:879aad7c5c05f2b54a8b4b91d3c3f653ce04f745d45e9becdec214a06d339b89%40representation:sha256:75b731fec00d079c2f94afd01043a78ec4ea9b3313713c867faecf83cdcb3277#$.clause",
+      "artifact_id": "benchmark:privileged-access-003:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-003-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Avery Chen, authoritative evidence confirms that privileged-access training is current.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-003:support@r7!benchmark:privileged-access-003:support%40revision:a526ba34f273b64ef733b7b1b43039a8cb97cb5365086b9f25e7c3097c3512ee%40representation:sha256:1c9eb8842f70d7dc0f8fe204cfcc2d9637ead70059853c6bda7e9df5f51d23a9#$.clause",
+      "artifact_id": "benchmark:privileged-access-003:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-003-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Avery Chen confirms that the requester's identity is verified.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-003:distractor@v1!benchmark:privileged-access-003:distractor%40revision:45387d7301396480c150bbfd9467e4fd63f31a1ab67167c9913eb12c4551cf52%40representation:sha256:2cbe8465c38d57dec24b4250714eb933a4d250394e269a32133f376968ba591d#$.clause",
+      "artifact_id": "benchmark:privileged-access-003:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-003-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security training, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-003:primary@v13!benchmark:privileged-access-003:primary%40revision:879aad7c5c05f2b54a8b4b91d3c3f653ce04f745d45e9becdec214a06d339b89%40representation:sha256:75b731fec00d079c2f94afd01043a78ec4ea9b3313713c867faecf83cdcb3277#$.clause",
+      "benchmark:privileged-access-003:support@r7!benchmark:privileged-access-003:support%40revision:a526ba34f273b64ef733b7b1b43039a8cb97cb5365086b9f25e7c3097c3512ee%40representation:sha256:1c9eb8842f70d7dc0f8fe204cfcc2d9637ead70059853c6bda7e9df5f51d23a9#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-003:distractor@v1!benchmark:privileged-access-003:distractor%40revision:45387d7301396480c150bbfd9467e4fd63f31a1ab67167c9913eb12c4551cf52%40representation:sha256:2cbe8465c38d57dec24b4250714eb933a4d250394e269a32133f376968ba591d#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-003:primary@v13!benchmark:privileged-access-003:primary%40revision:879aad7c5c05f2b54a8b4b91d3c3f653ce04f745d45e9becdec214a06d339b89%40representation:sha256:75b731fec00d079c2f94afd01043a78ec4ea9b3313713c867faecf83cdcb3277#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Avery Chen: security training changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-003"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

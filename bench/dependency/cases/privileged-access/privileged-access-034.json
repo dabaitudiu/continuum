@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-034",
+  "title": "Jordan Lim — MFA enrollment — irrelevant-distractor",
+  "domain": "privileged-access",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including MFA enrollment and any material device compliance requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-034:primary@v13!benchmark:privileged-access-034:primary%40revision:4f03d01917418f515ec53155260384d2c302ad29efdf11822dfd5953df2f5aa0%40representation:sha256:bb7f5bdd0f5af72e41dec00b844c0ea064dfb8cc57ca3969adca47b0b7dd79fc#$.clause",
+      "artifact_id": "benchmark:privileged-access-034:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-034-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Jordan Lim, authoritative evidence confirms that phishing-resistant MFA is enrolled.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-034:support@r7!benchmark:privileged-access-034:support%40revision:80d3cfbe53c901955da895d512d8aed3dd2bb9b1ce84a0fb5faef1632c5e7c4f%40representation:sha256:94f664c35b15270010de9487c380b88ef014b97dd18e2ba0cff48e0ca65b153f#$.clause",
+      "artifact_id": "benchmark:privileged-access-034:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-034-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Jordan Lim confirms that the requesting device is compliant.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-034:distractor@v1!benchmark:privileged-access-034:distractor%40revision:aff5e05fac0e91208a16205aba4c2cb9c375f47452703df5ec64e627dfef1df6%40representation:sha256:2f9e3663e62958d6eed71cf7a25476d37791e435b093d0b2cdaa752f59bd3e1a#$.clause",
+      "artifact_id": "benchmark:privileged-access-034:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-034-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions MFA enrollment, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-034:distractor-two@v1!benchmark:privileged-access-034:distractor-two%40revision:47e18be56b34dc8139a6e202b21152ff1787cd6b2d012e9a7a2600aac76f9a07%40representation:sha256:14c23eaa6cf67e5a0cf1041898397f8629a2e9528dd3526a4b5cca43a4f0bdc2#$.clause",
+      "artifact_id": "benchmark:privileged-access-034:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-034-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses device compliance without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-034:primary@v13!benchmark:privileged-access-034:primary%40revision:4f03d01917418f515ec53155260384d2c302ad29efdf11822dfd5953df2f5aa0%40representation:sha256:bb7f5bdd0f5af72e41dec00b844c0ea064dfb8cc57ca3969adca47b0b7dd79fc#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-034:support@r7!benchmark:privileged-access-034:support%40revision:80d3cfbe53c901955da895d512d8aed3dd2bb9b1ce84a0fb5faef1632c5e7c4f%40representation:sha256:94f664c35b15270010de9487c380b88ef014b97dd18e2ba0cff48e0ca65b153f#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-034:distractor@v1!benchmark:privileged-access-034:distractor%40revision:aff5e05fac0e91208a16205aba4c2cb9c375f47452703df5ec64e627dfef1df6%40representation:sha256:2f9e3663e62958d6eed71cf7a25476d37791e435b093d0b2cdaa752f59bd3e1a#$.clause",
+      "benchmark:privileged-access-034:distractor-two@v1!benchmark:privileged-access-034:distractor-two%40revision:47e18be56b34dc8139a6e202b21152ff1787cd6b2d012e9a7a2600aac76f9a07%40representation:sha256:14c23eaa6cf67e5a0cf1041898397f8629a2e9528dd3526a4b5cca43a4f0bdc2#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-034:distractor@v1!benchmark:privileged-access-034:distractor%40revision:aff5e05fac0e91208a16205aba4c2cb9c375f47452703df5ec64e627dfef1df6%40representation:sha256:2f9e3663e62958d6eed71cf7a25476d37791e435b093d0b2cdaa752f59bd3e1a#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: MFA enrollment changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-034"
+    ]
+  }
+}

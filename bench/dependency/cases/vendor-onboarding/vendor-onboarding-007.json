@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-007",
+  "title": "Acme Analytics — encryption control — near-duplicate",
+  "domain": "vendor-onboarding",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including encryption control and any material retention clause requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-007:near-policy@v13!benchmark:vendor-onboarding-007:near-policy%40revision:5e156e8087a66284783613de5dd9ed9db0864d8dd6df47bb6c9c0bd153e0e40e%40representation:sha256:b2773b85dd7505a8f88dc36d9370aedd6dcb5004e64c31dfcf81742b924fdfed#$.binding_clause",
+      "artifact_id": "benchmark:vendor-onboarding-007:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-007-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Acme Analytics: customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-007:near-policy@v13!benchmark:vendor-onboarding-007:near-policy%40revision:5e156e8087a66284783613de5dd9ed9db0864d8dd6df47bb6c9c0bd153e0e40e%40representation:sha256:b2773b85dd7505a8f88dc36d9370aedd6dcb5004e64c31dfcf81742b924fdfed#$.near_match",
+      "artifact_id": "benchmark:vendor-onboarding-007:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-007-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: encryption control may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-007:support@r7!benchmark:vendor-onboarding-007:support%40revision:0f757b85045906d7ae9db51d2e50f7c4ef0a428a12eaf74716085551ea9ec97f%40representation:sha256:008d4c3fc0021941186b97d8486269c94aa7518bd2e6253ec6114a524647c32d#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-007:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-007-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Acme Analytics confirms that the contract contains the approved retention clause.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-007:near-policy@v13!benchmark:vendor-onboarding-007:near-policy%40revision:5e156e8087a66284783613de5dd9ed9db0864d8dd6df47bb6c9c0bd153e0e40e%40representation:sha256:b2773b85dd7505a8f88dc36d9370aedd6dcb5004e64c31dfcf81742b924fdfed#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-007:support@r7!benchmark:vendor-onboarding-007:support%40revision:0f757b85045906d7ae9db51d2e50f7c4ef0a428a12eaf74716085551ea9ec97f%40representation:sha256:008d4c3fc0021941186b97d8486269c94aa7518bd2e6253ec6114a524647c32d#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-007:near-policy@v13!benchmark:vendor-onboarding-007:near-policy%40revision:5e156e8087a66284783613de5dd9ed9db0864d8dd6df47bb6c9c0bd153e0e40e%40representation:sha256:b2773b85dd7505a8f88dc36d9370aedd6dcb5004e64c31dfcf81742b924fdfed#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-007:near-policy@v13!benchmark:vendor-onboarding-007:near-policy%40revision:5e156e8087a66284783613de5dd9ed9db0864d8dd6df47bb6c9c0bd153e0e40e%40representation:sha256:b2773b85dd7505a8f88dc36d9370aedd6dcb5004e64c31dfcf81742b924fdfed#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: encryption control changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-007"
+    ]
+  }
+}

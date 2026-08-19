@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-012",
+  "title": "Identity Gateway — change ticket — clean-negative",
+  "domain": "production-release",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including change ticket and any material maintenance window requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-012:primary@r13!benchmark:production-release-012:primary%40revision:a33582e03b4266966f0f62e571ca0815ff03208cb849e35200873c6bc59e1e2f%40representation:sha256:d9fb670f0f27c13d78b1245f11552927e40ccad16f74412606b669f9235f2f8d#$.clause",
+      "artifact_id": "benchmark:production-release-012:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-012-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Identity Gateway, the authoritative record states that the change ticket is approved is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-012:support@r7!benchmark:production-release-012:support%40revision:22fbe3a7bf2e5a3d2f9de8425cc269687aecdf27a07d9ba3a5af3598caf95467%40representation:sha256:7757bd109c6b7909e1b4b470be6753b1c13517f527eeb4f4a7656b0b3ba0c6a7#$.clause",
+      "artifact_id": "benchmark:production-release-012:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-012-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Identity Gateway confirms that deployment is inside the approved maintenance window.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-012:distractor@v1!benchmark:production-release-012:distractor%40revision:c43eb87c0ee0bf3c0e76477cf54af95493b958b15a90d6fafa412d55745ba5b7%40representation:sha256:798c68e57bebcdf8d6a89055c91d4c2c9bfaef576156445ec6bfe76402c4c828#$.clause",
+      "artifact_id": "benchmark:production-release-012:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-012-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions change ticket, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-012:primary@r13!benchmark:production-release-012:primary%40revision:a33582e03b4266966f0f62e571ca0815ff03208cb849e35200873c6bc59e1e2f%40representation:sha256:d9fb670f0f27c13d78b1245f11552927e40ccad16f74412606b669f9235f2f8d#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-012:support@r7!benchmark:production-release-012:support%40revision:22fbe3a7bf2e5a3d2f9de8425cc269687aecdf27a07d9ba3a5af3598caf95467%40representation:sha256:7757bd109c6b7909e1b4b470be6753b1c13517f527eeb4f4a7656b0b3ba0c6a7#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-012:distractor@v1!benchmark:production-release-012:distractor%40revision:c43eb87c0ee0bf3c0e76477cf54af95493b958b15a90d6fafa412d55745ba5b7%40representation:sha256:798c68e57bebcdf8d6a89055c91d4c2c9bfaef576156445ec6bfe76402c4c828#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-012:primary@r13!benchmark:production-release-012:primary%40revision:a33582e03b4266966f0f62e571ca0815ff03208cb849e35200873c6bc59e1e2f%40representation:sha256:d9fb670f0f27c13d78b1245f11552927e40ccad16f74412606b669f9235f2f8d#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: change ticket changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-012"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

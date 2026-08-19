@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-011",
+  "title": "Morgan Lee — role eligibility — clean-positive",
+  "domain": "privileged-access",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Morgan Lee for privileged access. Determine whether the proposed outcome is justified by the current evidence, including role eligibility and any material access expiry requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-011:primary@v13!benchmark:privileged-access-011:primary%40revision:6c21d028065f88504184362d2fb3838b51b495f7f4a6ef2907294722677e75ac%40representation:sha256:1c6ea10d30c01d2d976969cfa5fe1b27361588d928e65b9da94648c66d2a0f8d#$.clause",
+      "artifact_id": "benchmark:privileged-access-011:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-011-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Morgan Lee, authoritative evidence confirms that the requested role is eligible for privileged access.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-011:support@r7!benchmark:privileged-access-011:support%40revision:16ae72a90734cdc7df5bed062901f69ba40a1e1c7431a18382b5753907516b03%40representation:sha256:844fda85600608cb7eefda6ba4786c242b3862dab6be42a376aba86b41571ab3#$.clause",
+      "artifact_id": "benchmark:privileged-access-011:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-011-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Morgan Lee confirms that requested access expires within eight hours.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-011:distractor@v1!benchmark:privileged-access-011:distractor%40revision:7ee21d8b258be855a69f8140793561316c30348181db486ba78e654a5e4bc4c2%40representation:sha256:4a472efe4fa0759a5fbe8474d553a32fe4780b8b5a53e4405a0fbf7969045e6a#$.clause",
+      "artifact_id": "benchmark:privileged-access-011:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-011-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions role eligibility, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-011:primary@v13!benchmark:privileged-access-011:primary%40revision:6c21d028065f88504184362d2fb3838b51b495f7f4a6ef2907294722677e75ac%40representation:sha256:1c6ea10d30c01d2d976969cfa5fe1b27361588d928e65b9da94648c66d2a0f8d#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-011:support@r7!benchmark:privileged-access-011:support%40revision:16ae72a90734cdc7df5bed062901f69ba40a1e1c7431a18382b5753907516b03%40representation:sha256:844fda85600608cb7eefda6ba4786c242b3862dab6be42a376aba86b41571ab3#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-011:distractor@v1!benchmark:privileged-access-011:distractor%40revision:7ee21d8b258be855a69f8140793561316c30348181db486ba78e654a5e4bc4c2%40representation:sha256:4a472efe4fa0759a5fbe8474d553a32fe4780b8b5a53e4405a0fbf7969045e6a#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-011:primary@v13!benchmark:privileged-access-011:primary%40revision:6c21d028065f88504184362d2fb3838b51b495f7f4a6ef2907294722677e75ac%40representation:sha256:1c6ea10d30c01d2d976969cfa5fe1b27361588d928e65b9da94648c66d2a0f8d#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Morgan Lee: role eligibility changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-011"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

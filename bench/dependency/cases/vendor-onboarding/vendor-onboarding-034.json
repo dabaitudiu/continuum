@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-034",
+  "title": "Beacon AI — Singapore residency — irrelevant-distractor",
+  "domain": "vendor-onboarding",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including Singapore residency and any material retention clause requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-034:primary@v13!benchmark:vendor-onboarding-034:primary%40revision:aea1fe85b89f9572de49e37122865b6b794ece811c3698dcedef8457f6692cef%40representation:sha256:923fdf91e1e0337b6187f78ffa8aea7c6d5ffcae90fa2e98ddc36e6ac8794aae#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-034:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-034-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Beacon AI, authoritative evidence confirms that regulated data remains in Singapore.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-034:support@r7!benchmark:vendor-onboarding-034:support%40revision:d87f761b71f490d7e7a6cb17182a04e40b7b0b38bebaa7b361b5102998efff3a%40representation:sha256:632e841144ad8d9be37a861c73f3c8ebc6cea395cd36d0230c2915ec875b6c6a#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-034:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-034-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Beacon AI confirms that the contract contains the approved retention clause.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-034:distractor@v1!benchmark:vendor-onboarding-034:distractor%40revision:cf057e05980cd36d55ea97a4bd2b85fb7ae1a1ab4e34ac0c0b178ffcee5194dd%40representation:sha256:6e7c4b81bebb063253cc92f0ab0934a3b74fe1413a7a1c03ef949db48d8fc982#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-034:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-034-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions Singapore residency, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-034:distractor-two@v1!benchmark:vendor-onboarding-034:distractor-two%40revision:7397a8b33fa5d400baafc3719b7d40911fb800d54336789d73236b311bb2a0bd%40representation:sha256:e062f340874309d1212df7333a5e537612b6028a8ad28f7888f45426ff25bde3#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-034:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-034-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses retention clause without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-034:primary@v13!benchmark:vendor-onboarding-034:primary%40revision:aea1fe85b89f9572de49e37122865b6b794ece811c3698dcedef8457f6692cef%40representation:sha256:923fdf91e1e0337b6187f78ffa8aea7c6d5ffcae90fa2e98ddc36e6ac8794aae#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-034:support@r7!benchmark:vendor-onboarding-034:support%40revision:d87f761b71f490d7e7a6cb17182a04e40b7b0b38bebaa7b361b5102998efff3a%40representation:sha256:632e841144ad8d9be37a861c73f3c8ebc6cea395cd36d0230c2915ec875b6c6a#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-034:distractor@v1!benchmark:vendor-onboarding-034:distractor%40revision:cf057e05980cd36d55ea97a4bd2b85fb7ae1a1ab4e34ac0c0b178ffcee5194dd%40representation:sha256:6e7c4b81bebb063253cc92f0ab0934a3b74fe1413a7a1c03ef949db48d8fc982#$.clause",
+      "benchmark:vendor-onboarding-034:distractor-two@v1!benchmark:vendor-onboarding-034:distractor-two%40revision:7397a8b33fa5d400baafc3719b7d40911fb800d54336789d73236b311bb2a0bd%40representation:sha256:e062f340874309d1212df7333a5e537612b6028a8ad28f7888f45426ff25bde3#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-034:distractor@v1!benchmark:vendor-onboarding-034:distractor%40revision:cf057e05980cd36d55ea97a4bd2b85fb7ae1a1ab4e34ac0c0b178ffcee5194dd%40representation:sha256:6e7c4b81bebb063253cc92f0ab0934a3b74fe1413a7a1c03ef949db48d8fc982#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: Singapore residency changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-034"
+    ]
+  }
+}

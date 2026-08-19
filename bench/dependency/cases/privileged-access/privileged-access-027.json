@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-027",
+  "title": "Riley Tan — separation of duties — near-duplicate",
+  "domain": "privileged-access",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including separation of duties and any material manager approval requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-027:near-policy@v13!benchmark:privileged-access-027:near-policy%40revision:67095d7b9fecd3ae0898efd224dc439d28023f5e644b01c635ca9a157300c5f7%40representation:sha256:3bc9eac9e0af753a5d3ba4be6a1f58ad518708c7295d0e1a0839dd97b8dadc38#$.binding_clause",
+      "artifact_id": "benchmark:privileged-access-027:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-027-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Riley Tan: the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-027:near-policy@v13!benchmark:privileged-access-027:near-policy%40revision:67095d7b9fecd3ae0898efd224dc439d28023f5e644b01c635ca9a157300c5f7%40representation:sha256:3bc9eac9e0af753a5d3ba4be6a1f58ad518708c7295d0e1a0839dd97b8dadc38#$.near_match",
+      "artifact_id": "benchmark:privileged-access-027:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-027-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: separation of duties may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-027:support@r7!benchmark:privileged-access-027:support%40revision:95fbf1d3e2c84597fb1cef5a932d8fadba968bd1b140d777d7a6da76ad745c52%40representation:sha256:6a72747dbd845bacf93c69aacb0f1b99ef90267790728c28130fa63dd99a5cb0#$.clause",
+      "artifact_id": "benchmark:privileged-access-027:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-027-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Riley Tan confirms that the current manager approved the request.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-027:near-policy@v13!benchmark:privileged-access-027:near-policy%40revision:67095d7b9fecd3ae0898efd224dc439d28023f5e644b01c635ca9a157300c5f7%40representation:sha256:3bc9eac9e0af753a5d3ba4be6a1f58ad518708c7295d0e1a0839dd97b8dadc38#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-027:support@r7!benchmark:privileged-access-027:support%40revision:95fbf1d3e2c84597fb1cef5a932d8fadba968bd1b140d777d7a6da76ad745c52%40representation:sha256:6a72747dbd845bacf93c69aacb0f1b99ef90267790728c28130fa63dd99a5cb0#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-027:near-policy@v13!benchmark:privileged-access-027:near-policy%40revision:67095d7b9fecd3ae0898efd224dc439d28023f5e644b01c635ca9a157300c5f7%40representation:sha256:3bc9eac9e0af753a5d3ba4be6a1f58ad518708c7295d0e1a0839dd97b8dadc38#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-027:near-policy@v13!benchmark:privileged-access-027:near-policy%40revision:67095d7b9fecd3ae0898efd224dc439d28023f5e644b01c635ca9a157300c5f7%40representation:sha256:3bc9eac9e0af753a5d3ba4be6a1f58ad518708c7295d0e1a0839dd97b8dadc38#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: separation of duties changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-027"
+    ]
+  }
+}

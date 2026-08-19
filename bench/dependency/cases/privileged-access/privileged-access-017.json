@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-017",
+  "title": "Morgan Lee — separation of duties — near-duplicate",
+  "domain": "privileged-access",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Morgan Lee for privileged access. Determine whether the proposed outcome is justified by the current evidence, including separation of duties and any material role eligibility requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-017:near-policy@v13!benchmark:privileged-access-017:near-policy%40revision:ffba6c100e10e8d10e125af5e69dfd1c3f969bc601ea74a62cdb521a3d0b2e6e%40representation:sha256:ae45c4be53d43473f07da30603142ef35cd1cc3b876948dca898c32fde30b257#$.binding_clause",
+      "artifact_id": "benchmark:privileged-access-017:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-017-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Morgan Lee: the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-017:near-policy@v13!benchmark:privileged-access-017:near-policy%40revision:ffba6c100e10e8d10e125af5e69dfd1c3f969bc601ea74a62cdb521a3d0b2e6e%40representation:sha256:ae45c4be53d43473f07da30603142ef35cd1cc3b876948dca898c32fde30b257#$.near_match",
+      "artifact_id": "benchmark:privileged-access-017:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-017-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: separation of duties may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-017:support@r7!benchmark:privileged-access-017:support%40revision:9d47e1ba7e358eed33824e4b0d500ece519fc9a853b4e9f65dbc240b12d4fe2b%40representation:sha256:bbb056c2ad9a1239fb5e58834a062df97c592fc4247c4f37a0617276f63c66d1#$.clause",
+      "artifact_id": "benchmark:privileged-access-017:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-017-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Morgan Lee confirms that the requested role is eligible for privileged access.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-017:near-policy@v13!benchmark:privileged-access-017:near-policy%40revision:ffba6c100e10e8d10e125af5e69dfd1c3f969bc601ea74a62cdb521a3d0b2e6e%40representation:sha256:ae45c4be53d43473f07da30603142ef35cd1cc3b876948dca898c32fde30b257#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-017:support@r7!benchmark:privileged-access-017:support%40revision:9d47e1ba7e358eed33824e4b0d500ece519fc9a853b4e9f65dbc240b12d4fe2b%40representation:sha256:bbb056c2ad9a1239fb5e58834a062df97c592fc4247c4f37a0617276f63c66d1#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-017:near-policy@v13!benchmark:privileged-access-017:near-policy%40revision:ffba6c100e10e8d10e125af5e69dfd1c3f969bc601ea74a62cdb521a3d0b2e6e%40representation:sha256:ae45c4be53d43473f07da30603142ef35cd1cc3b876948dca898c32fde30b257#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-017:near-policy@v13!benchmark:privileged-access-017:near-policy%40revision:ffba6c100e10e8d10e125af5e69dfd1c3f969bc601ea74a62cdb521a3d0b2e6e%40representation:sha256:ae45c4be53d43473f07da30603142ef35cd1cc3b876948dca898c32fde30b257#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Morgan Lee: separation of duties changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-017"
+    ]
+  }
+}

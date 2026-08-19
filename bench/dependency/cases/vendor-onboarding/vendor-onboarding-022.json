@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-022",
+  "title": "Orchid Payments — SOC 2 evidence — clean-negative",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including SOC 2 evidence and any material encryption control requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-022:primary@r13!benchmark:vendor-onboarding-022:primary%40revision:2d08ce6c619acb264a199d8a5c72c5362dc4d671cc858d050fba68b425570d28%40representation:sha256:10e0465606659ce118bb701dca42986b94b48535090a7dce7f8d60275124c892#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-022:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-022-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Orchid Payments, the authoritative record states that a current SOC 2 Type II report is verified is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-022:support@r7!benchmark:vendor-onboarding-022:support%40revision:6b303d50d09fa693e8634846b040a3d81d48f5f5c8f4161ab1190cc0ac312e5b%40representation:sha256:0fe23ac6df29516370eed87d18fb7a0c280b3a483c3ccf6002920d062bf74a83#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-022:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-022-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Orchid Payments confirms that customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-022:distractor@v1!benchmark:vendor-onboarding-022:distractor%40revision:5f490944c1985294146c56206a0a7cb79c5b4a3d9054c2a7ab59eab08d701c49%40representation:sha256:670176609481673537c3f9f52ccf6f1ff602da4b755610e32123ab5825881ca8#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-022:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-022-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions SOC 2 evidence, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-022:primary@r13!benchmark:vendor-onboarding-022:primary%40revision:2d08ce6c619acb264a199d8a5c72c5362dc4d671cc858d050fba68b425570d28%40representation:sha256:10e0465606659ce118bb701dca42986b94b48535090a7dce7f8d60275124c892#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-022:support@r7!benchmark:vendor-onboarding-022:support%40revision:6b303d50d09fa693e8634846b040a3d81d48f5f5c8f4161ab1190cc0ac312e5b%40representation:sha256:0fe23ac6df29516370eed87d18fb7a0c280b3a483c3ccf6002920d062bf74a83#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-022:distractor@v1!benchmark:vendor-onboarding-022:distractor%40revision:5f490944c1985294146c56206a0a7cb79c5b4a3d9054c2a7ab59eab08d701c49%40representation:sha256:670176609481673537c3f9f52ccf6f1ff602da4b755610e32123ab5825881ca8#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-022:primary@r13!benchmark:vendor-onboarding-022:primary%40revision:2d08ce6c619acb264a199d8a5c72c5362dc4d671cc858d050fba68b425570d28%40representation:sha256:10e0465606659ce118bb701dca42986b94b48535090a7dce7f8d60275124c892#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: SOC 2 evidence changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-022"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

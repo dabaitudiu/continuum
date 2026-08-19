@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-022",
+  "title": "Riley Tan — manager approval — clean-negative",
+  "domain": "privileged-access",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including manager approval and any material separation of duties requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-022:primary@r13!benchmark:privileged-access-022:primary%40revision:0d5b223ceb1a72d6fcf161348ff2cb69405c6113b97239403a69d9245426ad70%40representation:sha256:28c9b757bc0cdaf176857bcbbfee7f286e92ce7dd512a8400567d70d42ed4678#$.clause",
+      "artifact_id": "benchmark:privileged-access-022:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-022-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Riley Tan, the authoritative record states that the current manager approved the request is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-022:support@r7!benchmark:privileged-access-022:support%40revision:1ad9b7468cc94fcffb53f016ea38723ead2d9d7c47fe5ec785177a5bd3fe9ca7%40representation:sha256:cef7b922e4b0da95f1f61c5af743d9c10ab9f83463dd883a7852791135dd14e1#$.clause",
+      "artifact_id": "benchmark:privileged-access-022:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-022-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Riley Tan confirms that the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-022:distractor@v1!benchmark:privileged-access-022:distractor%40revision:c174052568a2655bce18eaeb9b352e81ac54aa0e5d2e83f93f8fa2d627d63551%40representation:sha256:ad042fc27f47fee38a9c7ed4afe66f367f537c0975c693b17b62ee51468bda3c#$.clause",
+      "artifact_id": "benchmark:privileged-access-022:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-022-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions manager approval, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-022:primary@r13!benchmark:privileged-access-022:primary%40revision:0d5b223ceb1a72d6fcf161348ff2cb69405c6113b97239403a69d9245426ad70%40representation:sha256:28c9b757bc0cdaf176857bcbbfee7f286e92ce7dd512a8400567d70d42ed4678#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-022:support@r7!benchmark:privileged-access-022:support%40revision:1ad9b7468cc94fcffb53f016ea38723ead2d9d7c47fe5ec785177a5bd3fe9ca7%40representation:sha256:cef7b922e4b0da95f1f61c5af743d9c10ab9f83463dd883a7852791135dd14e1#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-022:distractor@v1!benchmark:privileged-access-022:distractor%40revision:c174052568a2655bce18eaeb9b352e81ac54aa0e5d2e83f93f8fa2d627d63551%40representation:sha256:ad042fc27f47fee38a9c7ed4afe66f367f537c0975c693b17b62ee51468bda3c#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-022:primary@r13!benchmark:privileged-access-022:primary%40revision:0d5b223ceb1a72d6fcf161348ff2cb69405c6113b97239403a69d9245426ad70%40representation:sha256:28c9b757bc0cdaf176857bcbbfee7f286e92ce7dd512a8400567d70d42ed4678#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: manager approval changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-022"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

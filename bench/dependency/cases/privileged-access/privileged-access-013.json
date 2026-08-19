@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-013",
+  "title": "Morgan Lee — security training — critical-omission",
+  "domain": "privileged-access",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Morgan Lee for privileged access. Determine whether the proposed outcome is justified by the current evidence, including security training and any material separation of duties requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-013:primary@v13!benchmark:privileged-access-013:primary%40revision:f405fd39ecb0cc4eae3585daa274f4cf49cc597796300a9d9975a2f6cd07a9df%40representation:sha256:963f9f05416879a0af96710fccbea4fff244001d7e787c4dbb79e40bf4f4576c#$.clause",
+      "artifact_id": "benchmark:privileged-access-013:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-013-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Morgan Lee, authoritative evidence confirms that privileged-access training is current.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-013:support@r7!benchmark:privileged-access-013:support%40revision:dd5a9d95fa6e853efbf0c7d667565bf6fb7d93bc4e0359ebe53b4bfda7900243%40representation:sha256:356606d7c3501303b52c9458c77e2b68ab6d8b1f36130c993072a20f915a4af0#$.clause",
+      "artifact_id": "benchmark:privileged-access-013:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-013-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Morgan Lee confirms that the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-013:distractor@v1!benchmark:privileged-access-013:distractor%40revision:e7c17c30e72a96ed3b37fc6033e71af4692bccc8f3bbd2741329c3bfbe869a89%40representation:sha256:1e0518587f544fa97398c2f6ba397a00810198877699520ccc2c9918ce64e4ff#$.clause",
+      "artifact_id": "benchmark:privileged-access-013:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-013-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security training, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-013:primary@v13!benchmark:privileged-access-013:primary%40revision:f405fd39ecb0cc4eae3585daa274f4cf49cc597796300a9d9975a2f6cd07a9df%40representation:sha256:963f9f05416879a0af96710fccbea4fff244001d7e787c4dbb79e40bf4f4576c#$.clause",
+      "benchmark:privileged-access-013:support@r7!benchmark:privileged-access-013:support%40revision:dd5a9d95fa6e853efbf0c7d667565bf6fb7d93bc4e0359ebe53b4bfda7900243%40representation:sha256:356606d7c3501303b52c9458c77e2b68ab6d8b1f36130c993072a20f915a4af0#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-013:distractor@v1!benchmark:privileged-access-013:distractor%40revision:e7c17c30e72a96ed3b37fc6033e71af4692bccc8f3bbd2741329c3bfbe869a89%40representation:sha256:1e0518587f544fa97398c2f6ba397a00810198877699520ccc2c9918ce64e4ff#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-013:primary@v13!benchmark:privileged-access-013:primary%40revision:f405fd39ecb0cc4eae3585daa274f4cf49cc597796300a9d9975a2f6cd07a9df%40representation:sha256:963f9f05416879a0af96710fccbea4fff244001d7e787c4dbb79e40bf4f4576c#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Morgan Lee: security training changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-013"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

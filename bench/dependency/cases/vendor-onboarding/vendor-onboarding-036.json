@@ -1,0 +1,90 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-036",
+  "title": "Beacon AI — penetration test — conflicting-sources",
+  "domain": "vendor-onboarding",
+  "case_class": "conflicting-sources",
+  "adversarial_tags": [
+    "contradictory-authority"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including penetration test and any material SOC 2 evidence requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-036:primary@v13!benchmark:vendor-onboarding-036:primary%40revision:a5df700491cb41c341c30f5f91ddb32f202ade986901ca6f35bbf3fbf32d8308%40representation:sha256:d46fc31949af4d78d16818a407d37267663a5e8d79258c1f10909025fadc60a4#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-036:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-036-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Beacon AI, authoritative evidence confirms that the penetration test is less than twelve months old.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-036:opposing-authority@v13!benchmark:vendor-onboarding-036:opposing-authority%40revision:2bef7f1974c7728942c12d76ebd395ed294bea912f6682aba5c3607989247f82%40representation:sha256:09b2915df3befe57cc00fb2919f113cf743ad181013b59592bb93a470c5e7dbb#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-036:opposing-authority",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-036-opposing-authority",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "An equally ranked current authority states that penetration test is waived for Beacon AI.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-036:distractor@v1!benchmark:vendor-onboarding-036:distractor%40revision:f37e36cb929aff98f282104aedeee2082a625baff3130ec4cfde5745ec2b6623%40representation:sha256:9b4d7e45a83862b8d09c37d36a0a89eab5a250a7fa958fb9fdbad672096e0d46#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-036:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-036-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions penetration test, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-036:primary@v13!benchmark:vendor-onboarding-036:primary%40revision:a5df700491cb41c341c30f5f91ddb32f202ade986901ca6f35bbf3fbf32d8308%40representation:sha256:d46fc31949af4d78d16818a407d37267663a5e8d79258c1f10909025fadc60a4#$.clause",
+      "benchmark:vendor-onboarding-036:opposing-authority@v13!benchmark:vendor-onboarding-036:opposing-authority%40revision:2bef7f1974c7728942c12d76ebd395ed294bea912f6682aba5c3607989247f82%40representation:sha256:09b2915df3befe57cc00fb2919f113cf743ad181013b59592bb93a470c5e7dbb#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-036:distractor@v1!benchmark:vendor-onboarding-036:distractor%40revision:f37e36cb929aff98f282104aedeee2082a625baff3130ec4cfde5745ec2b6623%40representation:sha256:9b4d7e45a83862b8d09c37d36a0a89eab5a250a7fa958fb9fdbad672096e0d46#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "NEEDS_HUMAN_REVIEW"
+      ],
+      "must_block": true
+    },
+    "blocking_contradictions": [
+      {
+        "source_ref_a": "benchmark:vendor-onboarding-036:primary@v13!benchmark:vendor-onboarding-036:primary%40revision:a5df700491cb41c341c30f5f91ddb32f202ade986901ca6f35bbf3fbf32d8308%40representation:sha256:d46fc31949af4d78d16818a407d37267663a5e8d79258c1f10909025fadc60a4#$.clause",
+        "source_ref_b": "benchmark:vendor-onboarding-036:opposing-authority@v13!benchmark:vendor-onboarding-036:opposing-authority%40revision:2bef7f1974c7728942c12d76ebd395ed294bea912f6682aba5c3607989247f82%40representation:sha256:09b2915df3befe57cc00fb2919f113cf743ad181013b59592bb93a470c5e7dbb#$.clause",
+        "topic": "penetration test"
+      }
+    ]
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-036:primary@v13!benchmark:vendor-onboarding-036:primary%40revision:a5df700491cb41c341c30f5f91ddb32f202ade986901ca6f35bbf3fbf32d8308%40representation:sha256:d46fc31949af4d78d16818a407d37267663a5e8d79258c1f10909025fadc60a4#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: penetration test changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-036"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

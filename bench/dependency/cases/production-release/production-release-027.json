@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-027",
+  "title": "Search Indexer — migration backup — near-duplicate",
+  "domain": "production-release",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Search Indexer for production release. Determine whether the proposed outcome is justified by the current evidence, including migration backup and any material change ticket requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-027:near-policy@v13!benchmark:production-release-027:near-policy%40revision:c45d618e5de4f4014418f6bfee0936abd4f2cfa5938d62408fc008a39866e7a1%40representation:sha256:846d3bac8819b2d896ad65791443ab352f7a97be6ff76aa15c6acfc7a8b49464#$.binding_clause",
+      "artifact_id": "benchmark:production-release-027:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-027-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Search Indexer: a verified pre-migration backup exists.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-027:near-policy@v13!benchmark:production-release-027:near-policy%40revision:c45d618e5de4f4014418f6bfee0936abd4f2cfa5938d62408fc008a39866e7a1%40representation:sha256:846d3bac8819b2d896ad65791443ab352f7a97be6ff76aa15c6acfc7a8b49464#$.near_match",
+      "artifact_id": "benchmark:production-release-027:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-027-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: migration backup may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-027:support@r7!benchmark:production-release-027:support%40revision:cabc335569bb0461cd432301e8816f8a78386f9a99bc59e2a0ed07802ace64d9%40representation:sha256:948c45283f2c4207a9204f4a9d78e4cd9430d04b3cfdf599820f74837f5e428f#$.clause",
+      "artifact_id": "benchmark:production-release-027:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-027-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Search Indexer confirms that the change ticket is approved.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-027:near-policy@v13!benchmark:production-release-027:near-policy%40revision:c45d618e5de4f4014418f6bfee0936abd4f2cfa5938d62408fc008a39866e7a1%40representation:sha256:846d3bac8819b2d896ad65791443ab352f7a97be6ff76aa15c6acfc7a8b49464#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-027:support@r7!benchmark:production-release-027:support%40revision:cabc335569bb0461cd432301e8816f8a78386f9a99bc59e2a0ed07802ace64d9%40representation:sha256:948c45283f2c4207a9204f4a9d78e4cd9430d04b3cfdf599820f74837f5e428f#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-027:near-policy@v13!benchmark:production-release-027:near-policy%40revision:c45d618e5de4f4014418f6bfee0936abd4f2cfa5938d62408fc008a39866e7a1%40representation:sha256:846d3bac8819b2d896ad65791443ab352f7a97be6ff76aa15c6acfc7a8b49464#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-027:near-policy@v13!benchmark:production-release-027:near-policy%40revision:c45d618e5de4f4014418f6bfee0936abd4f2cfa5938d62408fc008a39866e7a1%40representation:sha256:846d3bac8819b2d896ad65791443ab352f7a97be6ff76aa15c6acfc7a8b49464#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Search Indexer: migration backup changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:production-release-027"
+    ]
+  }
+}

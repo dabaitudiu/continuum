@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-011",
+  "title": "Identity Gateway — test report — clean-positive",
+  "domain": "production-release",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including test report and any material release permission requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-011:primary@v13!benchmark:production-release-011:primary%40revision:c9e57a523d257940146002f97894bbbb91b2edf460ddc9e9b63c54e4ecc7ba8f%40representation:sha256:c2e6bf08522517f0bfebdee07044d0ee55ca2e7bc7a0a4ebf5c724e7f2724b88#$.clause",
+      "artifact_id": "benchmark:production-release-011:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-011-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Identity Gateway, authoritative evidence confirms that the current release test suite passed.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-011:support@r7!benchmark:production-release-011:support%40revision:1d6c0159924d6b1522a49f9c810e00de66813560268c71c3425004f9a59bb5ef%40representation:sha256:d9acf0d37e1317690d5ea21c51e3be3f31ad6d130bfe30610933d99b16a18ef5#$.clause",
+      "artifact_id": "benchmark:production-release-011:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-011-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Identity Gateway confirms that the release manager authorized production deployment.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-011:distractor@v1!benchmark:production-release-011:distractor%40revision:65d678a36dfe782d812e8134e13b296c71a129d2472de88be704cbd9053a4e3c%40representation:sha256:bee13dffbd36ecaa2176d8810dbbe42651f174be8f2b0dccffbe5f85db7790ef#$.clause",
+      "artifact_id": "benchmark:production-release-011:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-011-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions test report, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-011:primary@v13!benchmark:production-release-011:primary%40revision:c9e57a523d257940146002f97894bbbb91b2edf460ddc9e9b63c54e4ecc7ba8f%40representation:sha256:c2e6bf08522517f0bfebdee07044d0ee55ca2e7bc7a0a4ebf5c724e7f2724b88#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-011:support@r7!benchmark:production-release-011:support%40revision:1d6c0159924d6b1522a49f9c810e00de66813560268c71c3425004f9a59bb5ef%40representation:sha256:d9acf0d37e1317690d5ea21c51e3be3f31ad6d130bfe30610933d99b16a18ef5#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-011:distractor@v1!benchmark:production-release-011:distractor%40revision:65d678a36dfe782d812e8134e13b296c71a129d2472de88be704cbd9053a4e3c%40representation:sha256:bee13dffbd36ecaa2176d8810dbbe42651f174be8f2b0dccffbe5f85db7790ef#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-011:primary@v13!benchmark:production-release-011:primary%40revision:c9e57a523d257940146002f97894bbbb91b2edf460ddc9e9b63c54e4ecc7ba8f%40representation:sha256:c2e6bf08522517f0bfebdee07044d0ee55ca2e7bc7a0a4ebf5c724e7f2724b88#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: test report changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-011"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

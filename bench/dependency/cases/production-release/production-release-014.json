@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-014",
+  "title": "Identity Gateway — rollback plan — irrelevant-distractor",
+  "domain": "production-release",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including rollback plan and any material SLO guardrail requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-014:primary@v13!benchmark:production-release-014:primary%40revision:dcdee187ee2f391ebb04622abc93cb9e677b15276f0cc47a47a789f8f410b981%40representation:sha256:4ba55eb1f952bfa8470c55b8896e2060236e735e2ee77752bf4c847b716d5418#$.clause",
+      "artifact_id": "benchmark:production-release-014:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-014-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Identity Gateway, authoritative evidence confirms that a tested rollback plan is attached.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-014:support@r7!benchmark:production-release-014:support%40revision:45821a71a5b9a74e1e750e7b811c9ca49660bbfb84693e6691ca095c8843b468%40representation:sha256:9d4495cab13c7e829e06c065fbf00b0307009c43dd97055c575923c3b6789ea6#$.clause",
+      "artifact_id": "benchmark:production-release-014:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-014-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Identity Gateway confirms that projected error budget remains within the SLO guardrail.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-014:distractor@v1!benchmark:production-release-014:distractor%40revision:7237c9ca16cf3d9ba6099a314db7736f13c6d49f06eb7e3ba365e948402e8ae4%40representation:sha256:000ab92ca23e5af06e8eb5e01a74505c3e8d8bad60ef316d616cdf4a7c5c6d0f#$.clause",
+      "artifact_id": "benchmark:production-release-014:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-014-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions rollback plan, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-014:distractor-two@v1!benchmark:production-release-014:distractor-two%40revision:42a479961f1e96dbd9475b4898bab0e2e512113236d23fbbd884513575588817%40representation:sha256:95524f06497ca6ee4efada542be845a92afe91196a5e3002b3bc0332cca1b818#$.clause",
+      "artifact_id": "benchmark:production-release-014:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-014-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses SLO guardrail without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-014:primary@v13!benchmark:production-release-014:primary%40revision:dcdee187ee2f391ebb04622abc93cb9e677b15276f0cc47a47a789f8f410b981%40representation:sha256:4ba55eb1f952bfa8470c55b8896e2060236e735e2ee77752bf4c847b716d5418#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-014:support@r7!benchmark:production-release-014:support%40revision:45821a71a5b9a74e1e750e7b811c9ca49660bbfb84693e6691ca095c8843b468%40representation:sha256:9d4495cab13c7e829e06c065fbf00b0307009c43dd97055c575923c3b6789ea6#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-014:distractor@v1!benchmark:production-release-014:distractor%40revision:7237c9ca16cf3d9ba6099a314db7736f13c6d49f06eb7e3ba365e948402e8ae4%40representation:sha256:000ab92ca23e5af06e8eb5e01a74505c3e8d8bad60ef316d616cdf4a7c5c6d0f#$.clause",
+      "benchmark:production-release-014:distractor-two@v1!benchmark:production-release-014:distractor-two%40revision:42a479961f1e96dbd9475b4898bab0e2e512113236d23fbbd884513575588817%40representation:sha256:95524f06497ca6ee4efada542be845a92afe91196a5e3002b3bc0332cca1b818#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-014:distractor@v1!benchmark:production-release-014:distractor%40revision:7237c9ca16cf3d9ba6099a314db7736f13c6d49f06eb7e3ba365e948402e8ae4%40representation:sha256:000ab92ca23e5af06e8eb5e01a74505c3e8d8bad60ef316d616cdf4a7c5c6d0f#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: rollback plan changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:production-release-014"
+    ]
+  }
+}

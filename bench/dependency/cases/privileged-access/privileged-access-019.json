@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-019",
+  "title": "Morgan Lee — break-glass justification — multiple-dependencies",
+  "domain": "privileged-access",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Morgan Lee for privileged access. Determine whether the proposed outcome is justified by the current evidence, including break-glass justification and any material security training and access expiry requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-019:primary@v13!benchmark:privileged-access-019:primary%40revision:918a3bd364fdffb643a8def41e512418487b52f39fc9a4746c99f501745135fb%40representation:sha256:f81313d1f4b45e5b513b68ab62a21eef92ba0f24b66c284f9f297ad830af301e#$.clause",
+      "artifact_id": "benchmark:privileged-access-019:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-019-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Morgan Lee, authoritative evidence confirms that the break-glass justification is documented.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-019:support@r7!benchmark:privileged-access-019:support%40revision:d7550eb5d38307fb2cd77d4df182f2a870d8c29130bda296dc2efc9a03c2a97b%40representation:sha256:4f316a6695a3debb40183b9021e1ff95a5908931277a13e61dcf4fe4ef3a6cc4#$.clause",
+      "artifact_id": "benchmark:privileged-access-019:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-019-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Morgan Lee confirms that privileged-access training is current.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-019:third-critical@r9!benchmark:privileged-access-019:third-critical%40revision:88cb728819bf3973d83bbdfa810b99996dddbfedec278330ee8197dc209f486e%40representation:sha256:04e0b8402d98f7b8252d694c52b4d3b69ebc580d67efb286b13731f4c859d90b#$.clause",
+      "artifact_id": "benchmark:privileged-access-019:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-019-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that requested access expires within eight hours for Morgan Lee.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-019:distractor@v1!benchmark:privileged-access-019:distractor%40revision:3ef7639a50cbe065e37ead460b7400e9d9bb4266b19cd9c139b0c2b8c9141f07%40representation:sha256:071278a7e88a674a525a171c36da4036d37c4df9516cc217e1fbf89780a7ffe3#$.clause",
+      "artifact_id": "benchmark:privileged-access-019:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-019-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions break-glass justification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-019:primary@v13!benchmark:privileged-access-019:primary%40revision:918a3bd364fdffb643a8def41e512418487b52f39fc9a4746c99f501745135fb%40representation:sha256:f81313d1f4b45e5b513b68ab62a21eef92ba0f24b66c284f9f297ad830af301e#$.clause",
+      "benchmark:privileged-access-019:support@r7!benchmark:privileged-access-019:support%40revision:d7550eb5d38307fb2cd77d4df182f2a870d8c29130bda296dc2efc9a03c2a97b%40representation:sha256:4f316a6695a3debb40183b9021e1ff95a5908931277a13e61dcf4fe4ef3a6cc4#$.clause",
+      "benchmark:privileged-access-019:third-critical@r9!benchmark:privileged-access-019:third-critical%40revision:88cb728819bf3973d83bbdfa810b99996dddbfedec278330ee8197dc209f486e%40representation:sha256:04e0b8402d98f7b8252d694c52b4d3b69ebc580d67efb286b13731f4c859d90b#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-019:distractor@v1!benchmark:privileged-access-019:distractor%40revision:3ef7639a50cbe065e37ead460b7400e9d9bb4266b19cd9c139b0c2b8c9141f07%40representation:sha256:071278a7e88a674a525a171c36da4036d37c4df9516cc217e1fbf89780a7ffe3#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-019:primary@v13!benchmark:privileged-access-019:primary%40revision:918a3bd364fdffb643a8def41e512418487b52f39fc9a4746c99f501745135fb%40representation:sha256:f81313d1f4b45e5b513b68ab62a21eef92ba0f24b66c284f9f297ad830af301e#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Morgan Lee: break-glass justification changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-019"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

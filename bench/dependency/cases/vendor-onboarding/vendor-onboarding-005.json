@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-005",
+  "title": "Acme Analytics — data processing agreement — obsolete-revision",
+  "domain": "vendor-onboarding",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data processing agreement and any material subprocessor review requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-005:versioned-policy@v12!benchmark:vendor-onboarding-005:versioned-policy%40revision:fda004e5589a3b08b9eabc0cd9d29d83802acaf0ea303fb93855eebd286f126b%40representation:sha256:8f11b68aa47d4045dc7bf705348582457e00b0d7fdff2898a310e6b7c2feb99a#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-005:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-005-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: data processing agreement is optional for Acme Analytics.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-005:versioned-policy@v13!benchmark:vendor-onboarding-005:versioned-policy%40revision:5943c96ce8be8b2a90fd29e966816583f2094c5c0488e85321ba852ce3b2a02a%40representation:sha256:9e81f7c19d48dcddd71374f42b52157f9698f9efa6b52851b83a1fd9e4e379d7#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-005:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-005-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the DPA is signed by Legal for Acme Analytics.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-005:distractor@v1!benchmark:vendor-onboarding-005:distractor%40revision:90138000ee827d2bd7ea3a17bdc5f14c260b2b96c04adef79d42b0d58e274e1c%40representation:sha256:411aa8513847ba96ed7e8f8c06fa6f5bb25650dae8f647289e033a4f6478aad9#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-005:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-005-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data processing agreement, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-005:versioned-policy@v13!benchmark:vendor-onboarding-005:versioned-policy%40revision:5943c96ce8be8b2a90fd29e966816583f2094c5c0488e85321ba852ce3b2a02a%40representation:sha256:9e81f7c19d48dcddd71374f42b52157f9698f9efa6b52851b83a1fd9e4e379d7#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-005:versioned-policy@v12!benchmark:vendor-onboarding-005:versioned-policy%40revision:fda004e5589a3b08b9eabc0cd9d29d83802acaf0ea303fb93855eebd286f126b%40representation:sha256:8f11b68aa47d4045dc7bf705348582457e00b0d7fdff2898a310e6b7c2feb99a#$.clause",
+      "benchmark:vendor-onboarding-005:distractor@v1!benchmark:vendor-onboarding-005:distractor%40revision:90138000ee827d2bd7ea3a17bdc5f14c260b2b96c04adef79d42b0d58e274e1c%40representation:sha256:411aa8513847ba96ed7e8f8c06fa6f5bb25650dae8f647289e033a4f6478aad9#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-005:versioned-policy@v13!benchmark:vendor-onboarding-005:versioned-policy%40revision:5943c96ce8be8b2a90fd29e966816583f2094c5c0488e85321ba852ce3b2a02a%40representation:sha256:9e81f7c19d48dcddd71374f42b52157f9698f9efa6b52851b83a1fd9e4e379d7#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: data processing agreement changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-005"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

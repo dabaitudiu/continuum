@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-019",
+  "title": "Identity Gateway — canary metrics — multiple-dependencies",
+  "domain": "production-release",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including canary metrics and any material security scan and release permission requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-019:primary@v13!benchmark:production-release-019:primary%40revision:da03083d9f1a17162f61c919f95e8ba6be29f212e419a68b59fd0fa57d6b8723%40representation:sha256:567512a64b8ddaa37ddba74a1d23854e48e0c6315341ca225aa475844539362b#$.clause",
+      "artifact_id": "benchmark:production-release-019:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-019-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Identity Gateway, authoritative evidence confirms that canary health metrics meet the release threshold.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-019:support@r7!benchmark:production-release-019:support%40revision:254b4c055041e13ff231d40dbaf65c485a3081cded30ee83c39030350ec772dc%40representation:sha256:4166a95aedf9b19077e0c4c7a5903c6a9205b94bbac7eeae8f3240dc6d10360e#$.clause",
+      "artifact_id": "benchmark:production-release-019:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-019-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Identity Gateway confirms that the current security scan has no critical finding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-019:third-critical@r9!benchmark:production-release-019:third-critical%40revision:73ffa10392830d7cd456ace266d296edb4e1d40d66b8dc075c6b5f92219a368c%40representation:sha256:692c0545ccff37e6d355aed5dc3daa4c5374519b9f2b8b477abfa1cb89a9e609#$.clause",
+      "artifact_id": "benchmark:production-release-019:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-019-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that the release manager authorized production deployment for Identity Gateway.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-019:distractor@v1!benchmark:production-release-019:distractor%40revision:ab3f174766ce055f51f51aa0918c6bba39b4c5691dd359d61d635c58469fe310%40representation:sha256:e926cfb426e0679dfe3e88123f606784d10b94ca0206d068a9937620e0b40424#$.clause",
+      "artifact_id": "benchmark:production-release-019:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-019-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions canary metrics, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-019:primary@v13!benchmark:production-release-019:primary%40revision:da03083d9f1a17162f61c919f95e8ba6be29f212e419a68b59fd0fa57d6b8723%40representation:sha256:567512a64b8ddaa37ddba74a1d23854e48e0c6315341ca225aa475844539362b#$.clause",
+      "benchmark:production-release-019:support@r7!benchmark:production-release-019:support%40revision:254b4c055041e13ff231d40dbaf65c485a3081cded30ee83c39030350ec772dc%40representation:sha256:4166a95aedf9b19077e0c4c7a5903c6a9205b94bbac7eeae8f3240dc6d10360e#$.clause",
+      "benchmark:production-release-019:third-critical@r9!benchmark:production-release-019:third-critical%40revision:73ffa10392830d7cd456ace266d296edb4e1d40d66b8dc075c6b5f92219a368c%40representation:sha256:692c0545ccff37e6d355aed5dc3daa4c5374519b9f2b8b477abfa1cb89a9e609#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-019:distractor@v1!benchmark:production-release-019:distractor%40revision:ab3f174766ce055f51f51aa0918c6bba39b4c5691dd359d61d635c58469fe310%40representation:sha256:e926cfb426e0679dfe3e88123f606784d10b94ca0206d068a9937620e0b40424#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-019:primary@v13!benchmark:production-release-019:primary%40revision:da03083d9f1a17162f61c919f95e8ba6be29f212e419a68b59fd0fa57d6b8723%40representation:sha256:567512a64b8ddaa37ddba74a1d23854e48e0c6315341ca225aa475844539362b#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: canary metrics changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-019"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

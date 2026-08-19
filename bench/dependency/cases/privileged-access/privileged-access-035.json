@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-035",
+  "title": "Jordan Lim — access expiry — obsolete-revision",
+  "domain": "privileged-access",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including access expiry and any material role eligibility requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-035:versioned-policy@v12!benchmark:privileged-access-035:versioned-policy%40revision:b2fc2a7482b9f8c76b3732f74c6b840dd6055c6a0ba7a53492d17fb47f74fd82%40representation:sha256:5f93893a85e2097146065c6359547c8b0f90bd2bed183170df9e1ec97809140a#$.clause",
+      "artifact_id": "benchmark:privileged-access-035:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-035-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: access expiry is optional for Jordan Lim.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:privileged-access-035:versioned-policy@v13!benchmark:privileged-access-035:versioned-policy%40revision:6f2ef2a45bf5d149240190227774d55c4f99e6f52b8bbba756bebf3e544471dc%40representation:sha256:f156a464c86fb8c893801e5d9137fc2b422675383d454c908d9205f6bf93dcfd#$.clause",
+      "artifact_id": "benchmark:privileged-access-035:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-035-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: requested access expires within eight hours for Jordan Lim.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-035:distractor@v1!benchmark:privileged-access-035:distractor%40revision:5d918e42548c011bbdb5feb61b89cdc552653a80e47e01dacc43baf7d9300b0f%40representation:sha256:8e04aeb0b7dd0bb7c2dbd95661cb71a6199ccc1acf1c9103369b1c11ab8914bc#$.clause",
+      "artifact_id": "benchmark:privileged-access-035:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-035-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions access expiry, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-035:versioned-policy@v13!benchmark:privileged-access-035:versioned-policy%40revision:6f2ef2a45bf5d149240190227774d55c4f99e6f52b8bbba756bebf3e544471dc%40representation:sha256:f156a464c86fb8c893801e5d9137fc2b422675383d454c908d9205f6bf93dcfd#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-035:versioned-policy@v12!benchmark:privileged-access-035:versioned-policy%40revision:b2fc2a7482b9f8c76b3732f74c6b840dd6055c6a0ba7a53492d17fb47f74fd82%40representation:sha256:5f93893a85e2097146065c6359547c8b0f90bd2bed183170df9e1ec97809140a#$.clause",
+      "benchmark:privileged-access-035:distractor@v1!benchmark:privileged-access-035:distractor%40revision:5d918e42548c011bbdb5feb61b89cdc552653a80e47e01dacc43baf7d9300b0f%40representation:sha256:8e04aeb0b7dd0bb7c2dbd95661cb71a6199ccc1acf1c9103369b1c11ab8914bc#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-035:versioned-policy@v13!benchmark:privileged-access-035:versioned-policy%40revision:6f2ef2a45bf5d149240190227774d55c4f99e6f52b8bbba756bebf3e544471dc%40representation:sha256:f156a464c86fb8c893801e5d9137fc2b422675383d454c908d9205f6bf93dcfd#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: access expiry changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-035"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

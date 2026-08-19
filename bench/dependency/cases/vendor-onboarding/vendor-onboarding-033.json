@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-033",
+  "title": "Beacon AI — data classification — critical-omission",
+  "domain": "vendor-onboarding",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data classification and any material financial approval requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-033:primary@v13!benchmark:vendor-onboarding-033:primary%40revision:107cb0bac7a66a389adc38ea16c08970159386dcbc873c034088cc523e1b4365%40representation:sha256:bd90a6de07171d460ee27e3d2a1e7d862127eeeff3d973d1e4d33930e815304e#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-033:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-033-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Beacon AI, authoritative evidence confirms that handled data is classified before onboarding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-033:support@r7!benchmark:vendor-onboarding-033:support%40revision:3a3b7275aac657feb70bebfa90bfeeff061e48e6dd8934932064791960c301d7%40representation:sha256:735279d6ca48c555251203d3183efa2e1454a75f87c5b1028802d9365ca9bf7b#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-033:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-033-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Beacon AI confirms that annual spend has Finance approval.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-033:distractor@v1!benchmark:vendor-onboarding-033:distractor%40revision:628140972ce8e9f10f4e1f24738f85f464d58654aab59d6488e3acb7e8e79495%40representation:sha256:ba450fa0074796b6be025f8da707fbbb67643b7d7a9229acbb9d62fa9df7938f#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-033:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-033-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data classification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-033:primary@v13!benchmark:vendor-onboarding-033:primary%40revision:107cb0bac7a66a389adc38ea16c08970159386dcbc873c034088cc523e1b4365%40representation:sha256:bd90a6de07171d460ee27e3d2a1e7d862127eeeff3d973d1e4d33930e815304e#$.clause",
+      "benchmark:vendor-onboarding-033:support@r7!benchmark:vendor-onboarding-033:support%40revision:3a3b7275aac657feb70bebfa90bfeeff061e48e6dd8934932064791960c301d7%40representation:sha256:735279d6ca48c555251203d3183efa2e1454a75f87c5b1028802d9365ca9bf7b#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-033:distractor@v1!benchmark:vendor-onboarding-033:distractor%40revision:628140972ce8e9f10f4e1f24738f85f464d58654aab59d6488e3acb7e8e79495%40representation:sha256:ba450fa0074796b6be025f8da707fbbb67643b7d7a9229acbb9d62fa9df7938f#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-033:primary@v13!benchmark:vendor-onboarding-033:primary%40revision:107cb0bac7a66a389adc38ea16c08970159386dcbc873c034088cc523e1b4365%40representation:sha256:bd90a6de07171d460ee27e3d2a1e7d862127eeeff3d973d1e4d33930e815304e#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: data classification changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-033"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

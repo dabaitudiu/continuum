@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-001",
+  "title": "Acme Analytics — security questionnaire — clean-positive",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including security questionnaire and any material Singapore residency requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-001:primary@v13!benchmark:vendor-onboarding-001:primary%40revision:dc662d261bf08d2953bf95cea7df0e58b04f8bc882de77625113aa65aaee887d%40representation:sha256:ad94b4e051d4f54b4524d0d5d866bbbec2b933604a8d5db9bf6b63b1ffebb825#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-001:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-001-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Acme Analytics, authoritative evidence confirms that the current security questionnaire is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-001:support@r7!benchmark:vendor-onboarding-001:support%40revision:03e0c825e3f44b1d358b0aa897f88e3c3b2dcd6b2dc348ed30b75edd23350d4c%40representation:sha256:2b8c9bb1580804960583329ffc322d70aa65c231776e913e97bb7cd85d73efbd#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-001:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-001-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Acme Analytics confirms that regulated data remains in Singapore.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-001:distractor@v1!benchmark:vendor-onboarding-001:distractor%40revision:cd6ed95870b24294b28f929d7aee3b63628ada86a0e17e74d2c8130d6f4ba60f%40representation:sha256:0944ab419178e8bb7c43964603557497be33d9e7b7b38287f82196eb225de185#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-001:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-001-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security questionnaire, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-001:primary@v13!benchmark:vendor-onboarding-001:primary%40revision:dc662d261bf08d2953bf95cea7df0e58b04f8bc882de77625113aa65aaee887d%40representation:sha256:ad94b4e051d4f54b4524d0d5d866bbbec2b933604a8d5db9bf6b63b1ffebb825#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-001:support@r7!benchmark:vendor-onboarding-001:support%40revision:03e0c825e3f44b1d358b0aa897f88e3c3b2dcd6b2dc348ed30b75edd23350d4c%40representation:sha256:2b8c9bb1580804960583329ffc322d70aa65c231776e913e97bb7cd85d73efbd#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-001:distractor@v1!benchmark:vendor-onboarding-001:distractor%40revision:cd6ed95870b24294b28f929d7aee3b63628ada86a0e17e74d2c8130d6f4ba60f%40representation:sha256:0944ab419178e8bb7c43964603557497be33d9e7b7b38287f82196eb225de185#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-001:primary@v13!benchmark:vendor-onboarding-001:primary%40revision:dc662d261bf08d2953bf95cea7df0e58b04f8bc882de77625113aa65aaee887d%40representation:sha256:ad94b4e051d4f54b4524d0d5d866bbbec2b933604a8d5db9bf6b63b1ffebb825#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: security questionnaire changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-001"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-039",
+  "title": "Billing Worker — canary metrics — multiple-dependencies",
+  "domain": "production-release",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including canary metrics and any material release permission and migration backup requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-039:primary@v13!benchmark:production-release-039:primary%40revision:8736f42d8e075481817f10918dd2c42e6518a2d972202a79621ba68bbb0cde25%40representation:sha256:a831017c60682395394999e7ce873cf2e2f765145a18e9624c3c88c138e1d3ec#$.clause",
+      "artifact_id": "benchmark:production-release-039:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-039-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Billing Worker, authoritative evidence confirms that canary health metrics meet the release threshold.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-039:support@r7!benchmark:production-release-039:support%40revision:33550941a5cc70115e6f8d0a53f653818b73f861e15a96ee3d5c99b6a66c9d19%40representation:sha256:4b8f08de14831beb1c41530bf460fdbb5c42aab5c45036455c4bb40725bb13d1#$.clause",
+      "artifact_id": "benchmark:production-release-039:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-039-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Billing Worker confirms that the release manager authorized production deployment.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-039:third-critical@r9!benchmark:production-release-039:third-critical%40revision:67520b4f35f9b8b38f6928888b9e64b33d40ebffe589ad09a9e2ff4c63b37500%40representation:sha256:e4cf256b030a7974b86c16380f04b8a049cfe5dc096bd981b5f4aa4a169bcb24#$.clause",
+      "artifact_id": "benchmark:production-release-039:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-039-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that a verified pre-migration backup exists for Billing Worker.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-039:distractor@v1!benchmark:production-release-039:distractor%40revision:8c2a6fae75549a7cb25aee7586a094490fd150f87bae89b242475be5032d138a%40representation:sha256:da08508cfbc3f1e729889bd2fec4a060ea531d4f1cee4ab30199c966fab384f8#$.clause",
+      "artifact_id": "benchmark:production-release-039:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-039-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions canary metrics, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-039:primary@v13!benchmark:production-release-039:primary%40revision:8736f42d8e075481817f10918dd2c42e6518a2d972202a79621ba68bbb0cde25%40representation:sha256:a831017c60682395394999e7ce873cf2e2f765145a18e9624c3c88c138e1d3ec#$.clause",
+      "benchmark:production-release-039:support@r7!benchmark:production-release-039:support%40revision:33550941a5cc70115e6f8d0a53f653818b73f861e15a96ee3d5c99b6a66c9d19%40representation:sha256:4b8f08de14831beb1c41530bf460fdbb5c42aab5c45036455c4bb40725bb13d1#$.clause",
+      "benchmark:production-release-039:third-critical@r9!benchmark:production-release-039:third-critical%40revision:67520b4f35f9b8b38f6928888b9e64b33d40ebffe589ad09a9e2ff4c63b37500%40representation:sha256:e4cf256b030a7974b86c16380f04b8a049cfe5dc096bd981b5f4aa4a169bcb24#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-039:distractor@v1!benchmark:production-release-039:distractor%40revision:8c2a6fae75549a7cb25aee7586a094490fd150f87bae89b242475be5032d138a%40representation:sha256:da08508cfbc3f1e729889bd2fec4a060ea531d4f1cee4ab30199c966fab384f8#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-039:primary@v13!benchmark:production-release-039:primary%40revision:8736f42d8e075481817f10918dd2c42e6518a2d972202a79621ba68bbb0cde25%40representation:sha256:a831017c60682395394999e7ce873cf2e2f765145a18e9624c3c88c138e1d3ec#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: canary metrics changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-039"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

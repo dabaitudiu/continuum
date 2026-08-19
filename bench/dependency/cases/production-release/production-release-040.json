@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-040",
+  "title": "Billing Worker — incident freeze — narrow-clause",
+  "domain": "production-release",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including incident freeze and any material maintenance window requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.scope",
+      "artifact_id": "benchmark:production-release-040:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-040-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Billing Worker.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.binding_clause",
+      "artifact_id": "benchmark:production-release-040:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-040-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that no active severity-one incident freeze applies.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.appendix",
+      "artifact_id": "benchmark:production-release-040:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-040-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses maintenance window for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.scope",
+      "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-040:wide-policy@v13!benchmark:production-release-040:wide-policy%40revision:90526a4bf51b8ca8cd6ae21ba67d414d1e5173fc31598ac879b70c63bcf928fd%40representation:sha256:ebeae00b8aae48860fb8885175d1ce6f19b10b381a0a6f78fe2a760cfa239f9d#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: incident freeze changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-040"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

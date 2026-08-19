@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-025",
+  "title": "Riley Tan — access expiry — obsolete-revision",
+  "domain": "privileged-access",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including access expiry and any material device compliance requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-025:versioned-policy@v12!benchmark:privileged-access-025:versioned-policy%40revision:9df6590068ddd6174072120e65330bdda50d54131c570d9afed24efeee060268%40representation:sha256:3d811104c802287b41dd0ba8afb27abfdf5c85a0c784aee1ff632be204a05050#$.clause",
+      "artifact_id": "benchmark:privileged-access-025:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-025-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: access expiry is optional for Riley Tan.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:privileged-access-025:versioned-policy@v13!benchmark:privileged-access-025:versioned-policy%40revision:776707ce918e1df246c955b312516ec5bbaee826c88f0d4614dfde261d5899a8%40representation:sha256:34febd8aa114ef1bddc7e1b31b2534f2f350d3d099235c4f437b8e61ba913523#$.clause",
+      "artifact_id": "benchmark:privileged-access-025:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-025-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: requested access expires within eight hours for Riley Tan.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-025:distractor@v1!benchmark:privileged-access-025:distractor%40revision:886fd3cae2709941ed580240f7eb71cf1ec14c8d7914726e3e4f41527a4696ad%40representation:sha256:3b53e8efee22ac0b0ec6c8caaba224882a0f1a8abc188a7e28d0245a72d85046#$.clause",
+      "artifact_id": "benchmark:privileged-access-025:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-025-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions access expiry, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-025:versioned-policy@v13!benchmark:privileged-access-025:versioned-policy%40revision:776707ce918e1df246c955b312516ec5bbaee826c88f0d4614dfde261d5899a8%40representation:sha256:34febd8aa114ef1bddc7e1b31b2534f2f350d3d099235c4f437b8e61ba913523#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-025:versioned-policy@v12!benchmark:privileged-access-025:versioned-policy%40revision:9df6590068ddd6174072120e65330bdda50d54131c570d9afed24efeee060268%40representation:sha256:3d811104c802287b41dd0ba8afb27abfdf5c85a0c784aee1ff632be204a05050#$.clause",
+      "benchmark:privileged-access-025:distractor@v1!benchmark:privileged-access-025:distractor%40revision:886fd3cae2709941ed580240f7eb71cf1ec14c8d7914726e3e4f41527a4696ad%40representation:sha256:3b53e8efee22ac0b0ec6c8caaba224882a0f1a8abc188a7e28d0245a72d85046#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-025:versioned-policy@v13!benchmark:privileged-access-025:versioned-policy%40revision:776707ce918e1df246c955b312516ec5bbaee826c88f0d4614dfde261d5899a8%40representation:sha256:34febd8aa114ef1bddc7e1b31b2534f2f350d3d099235c4f437b8e61ba913523#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: access expiry changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-025"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

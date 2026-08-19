@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-001",
+  "title": "Ledger API — test report — clean-positive",
+  "domain": "production-release",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including test report and any material rollback plan requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-001:primary@v13!benchmark:production-release-001:primary%40revision:ff86a4fc4c3ee702cc2de9e3ac2599534245bb37dbd38f21d85bed58d6b88f7c%40representation:sha256:de98a89846dcb5f802f4501b174de0c59042fa54698f3db87ef41d264e6e83c0#$.clause",
+      "artifact_id": "benchmark:production-release-001:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-001-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Ledger API, authoritative evidence confirms that the current release test suite passed.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-001:support@r7!benchmark:production-release-001:support%40revision:05d60cde74888d52d7be06de7826d4ca76e225f3b6dd06b7f9384d50b2e497f2%40representation:sha256:261a464f66074d0664048589abb1abac38c852f1a2ad6c1a8239743028948d11#$.clause",
+      "artifact_id": "benchmark:production-release-001:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-001-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Ledger API confirms that a tested rollback plan is attached.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-001:distractor@v1!benchmark:production-release-001:distractor%40revision:a8e2a2f287b2ea697e66f74e7c03833406c4d7f0515e73d460e2508c19689348%40representation:sha256:fa662c6eb90a0d805038ad26fdc3f7a0bd187682b3d312b02349adb041848eb5#$.clause",
+      "artifact_id": "benchmark:production-release-001:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-001-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions test report, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-001:primary@v13!benchmark:production-release-001:primary%40revision:ff86a4fc4c3ee702cc2de9e3ac2599534245bb37dbd38f21d85bed58d6b88f7c%40representation:sha256:de98a89846dcb5f802f4501b174de0c59042fa54698f3db87ef41d264e6e83c0#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-001:support@r7!benchmark:production-release-001:support%40revision:05d60cde74888d52d7be06de7826d4ca76e225f3b6dd06b7f9384d50b2e497f2%40representation:sha256:261a464f66074d0664048589abb1abac38c852f1a2ad6c1a8239743028948d11#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-001:distractor@v1!benchmark:production-release-001:distractor%40revision:a8e2a2f287b2ea697e66f74e7c03833406c4d7f0515e73d460e2508c19689348%40representation:sha256:fa662c6eb90a0d805038ad26fdc3f7a0bd187682b3d312b02349adb041848eb5#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-001:primary@v13!benchmark:production-release-001:primary%40revision:ff86a4fc4c3ee702cc2de9e3ac2599534245bb37dbd38f21d85bed58d6b88f7c%40representation:sha256:de98a89846dcb5f802f4501b174de0c59042fa54698f3db87ef41d264e6e83c0#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: test report changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-001"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

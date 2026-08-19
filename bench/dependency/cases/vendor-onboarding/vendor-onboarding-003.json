@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-003",
+  "title": "Acme Analytics — data classification — critical-omission",
+  "domain": "vendor-onboarding",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data classification and any material penetration test requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-003:primary@v13!benchmark:vendor-onboarding-003:primary%40revision:4af4d10630caa618e93bb75f09a227d0cc67d78ea869ea7727c562779dee435d%40representation:sha256:a1df62c57b15c1bb41ab2a6d1db15a820e09f5f43871c468d1a4eff33f4d1285#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-003:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-003-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Acme Analytics, authoritative evidence confirms that handled data is classified before onboarding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-003:support@r7!benchmark:vendor-onboarding-003:support%40revision:e04e871f6700811754d9f9543faaba52987a49d5fbd4581aadeef3c268d46bf0%40representation:sha256:780d7d756269d41ff05d3ce91c4ab0fa16ace73fcb8ba77def41ec8161092ab0#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-003:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-003-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Acme Analytics confirms that the penetration test is less than twelve months old.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-003:distractor@v1!benchmark:vendor-onboarding-003:distractor%40revision:a04d6ee85584b3fc039bc3624001f3ce39fe6046cdddb4e879cbc86bfa572888%40representation:sha256:c884b1909c3f83a8c6e6fc69a95376f6f62f8f3156c22a263829a8f04b3405fe#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-003:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-003-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data classification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-003:primary@v13!benchmark:vendor-onboarding-003:primary%40revision:4af4d10630caa618e93bb75f09a227d0cc67d78ea869ea7727c562779dee435d%40representation:sha256:a1df62c57b15c1bb41ab2a6d1db15a820e09f5f43871c468d1a4eff33f4d1285#$.clause",
+      "benchmark:vendor-onboarding-003:support@r7!benchmark:vendor-onboarding-003:support%40revision:e04e871f6700811754d9f9543faaba52987a49d5fbd4581aadeef3c268d46bf0%40representation:sha256:780d7d756269d41ff05d3ce91c4ab0fa16ace73fcb8ba77def41ec8161092ab0#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-003:distractor@v1!benchmark:vendor-onboarding-003:distractor%40revision:a04d6ee85584b3fc039bc3624001f3ce39fe6046cdddb4e879cbc86bfa572888%40representation:sha256:c884b1909c3f83a8c6e6fc69a95376f6f62f8f3156c22a263829a8f04b3405fe#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-003:primary@v13!benchmark:vendor-onboarding-003:primary%40revision:4af4d10630caa618e93bb75f09a227d0cc67d78ea869ea7727c562779dee435d%40representation:sha256:a1df62c57b15c1bb41ab2a6d1db15a820e09f5f43871c468d1a4eff33f4d1285#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: data classification changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-003"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

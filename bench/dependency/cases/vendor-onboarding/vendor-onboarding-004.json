@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-004",
+  "title": "Acme Analytics — Singapore residency — irrelevant-distractor",
+  "domain": "vendor-onboarding",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including Singapore residency and any material encryption control requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-004:primary@v13!benchmark:vendor-onboarding-004:primary%40revision:4e62903de662f7ec90880af961e527b06e40f571207e7fb5d53a227a453725f1%40representation:sha256:87b212c6f033023ad6e9ecb94c3ed25df56ca59f8a67eb0a6f214fd36e9c4a48#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-004:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-004-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Acme Analytics, authoritative evidence confirms that regulated data remains in Singapore.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-004:support@r7!benchmark:vendor-onboarding-004:support%40revision:7633ad3cf9f0bef7abfba3082edba7c8fa742b6ea1d510b8aaf087e79e768769%40representation:sha256:239c54a65efce0da634f7311488d56eb65f45c685287e3a1bb0a7724b520c20b#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-004:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-004-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Acme Analytics confirms that customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-004:distractor@v1!benchmark:vendor-onboarding-004:distractor%40revision:81ebd352482d087a04934f7ce65ec0b84ea0e917e82281196b6da858369e00ff%40representation:sha256:9725ac44b0935d374302fd0dbdf66afe05fd5dd711a06e6e6210e9c8a9148a98#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-004:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-004-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions Singapore residency, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-004:distractor-two@v1!benchmark:vendor-onboarding-004:distractor-two%40revision:2d7fa8b19ac953ac272812abb5a6d791beebaef82759d74a48aaa2d58bac81db%40representation:sha256:bc2c01be7b553fba21abad2b1f063f44822e88c1c4bbe23ef6a4d68e1def2106#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-004:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-004-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses encryption control without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-004:primary@v13!benchmark:vendor-onboarding-004:primary%40revision:4e62903de662f7ec90880af961e527b06e40f571207e7fb5d53a227a453725f1%40representation:sha256:87b212c6f033023ad6e9ecb94c3ed25df56ca59f8a67eb0a6f214fd36e9c4a48#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-004:support@r7!benchmark:vendor-onboarding-004:support%40revision:7633ad3cf9f0bef7abfba3082edba7c8fa742b6ea1d510b8aaf087e79e768769%40representation:sha256:239c54a65efce0da634f7311488d56eb65f45c685287e3a1bb0a7724b520c20b#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-004:distractor@v1!benchmark:vendor-onboarding-004:distractor%40revision:81ebd352482d087a04934f7ce65ec0b84ea0e917e82281196b6da858369e00ff%40representation:sha256:9725ac44b0935d374302fd0dbdf66afe05fd5dd711a06e6e6210e9c8a9148a98#$.clause",
+      "benchmark:vendor-onboarding-004:distractor-two@v1!benchmark:vendor-onboarding-004:distractor-two%40revision:2d7fa8b19ac953ac272812abb5a6d791beebaef82759d74a48aaa2d58bac81db%40representation:sha256:bc2c01be7b553fba21abad2b1f063f44822e88c1c4bbe23ef6a4d68e1def2106#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-004:distractor@v1!benchmark:vendor-onboarding-004:distractor%40revision:81ebd352482d087a04934f7ce65ec0b84ea0e917e82281196b6da858369e00ff%40representation:sha256:9725ac44b0935d374302fd0dbdf66afe05fd5dd711a06e6e6210e9c8a9148a98#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: Singapore residency changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-004"
+    ]
+  }
+}

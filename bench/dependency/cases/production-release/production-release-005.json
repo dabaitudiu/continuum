@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-005",
+  "title": "Ledger API — release permission — obsolete-revision",
+  "domain": "production-release",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including release permission and any material SLO guardrail requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-005:versioned-policy@v12!benchmark:production-release-005:versioned-policy%40revision:42dfe29570d1d1ca5fd1cf3b63a43ef1d4fc52bb8f0fcd31a2f12222f65505d4%40representation:sha256:c64c25bc35793bd5c096ae86f84917d838fae2eb4d76c46b788ea58a9ef172d2#$.clause",
+      "artifact_id": "benchmark:production-release-005:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-005-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: release permission is optional for Ledger API.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:production-release-005:versioned-policy@v13!benchmark:production-release-005:versioned-policy%40revision:65db5eadaf7e94d3ead7f8bdd93b9d20b93401ad0e0e3251c1adca6737860a4b%40representation:sha256:fc212fc4eae369c893161e57c02f9d9cb4422ebd06f8bad979eae8e090863015#$.clause",
+      "artifact_id": "benchmark:production-release-005:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-005-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the release manager authorized production deployment for Ledger API.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-005:distractor@v1!benchmark:production-release-005:distractor%40revision:117d5158bb20322205da3c34d446665c2502d532fdefab6914319ac0152a6faa%40representation:sha256:36c5d93fd6b92b8290a15ee7c21f32cf439844e7d996bd8919fee83dd5272b83#$.clause",
+      "artifact_id": "benchmark:production-release-005:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-005-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions release permission, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-005:versioned-policy@v13!benchmark:production-release-005:versioned-policy%40revision:65db5eadaf7e94d3ead7f8bdd93b9d20b93401ad0e0e3251c1adca6737860a4b%40representation:sha256:fc212fc4eae369c893161e57c02f9d9cb4422ebd06f8bad979eae8e090863015#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-005:versioned-policy@v12!benchmark:production-release-005:versioned-policy%40revision:42dfe29570d1d1ca5fd1cf3b63a43ef1d4fc52bb8f0fcd31a2f12222f65505d4%40representation:sha256:c64c25bc35793bd5c096ae86f84917d838fae2eb4d76c46b788ea58a9ef172d2#$.clause",
+      "benchmark:production-release-005:distractor@v1!benchmark:production-release-005:distractor%40revision:117d5158bb20322205da3c34d446665c2502d532fdefab6914319ac0152a6faa%40representation:sha256:36c5d93fd6b92b8290a15ee7c21f32cf439844e7d996bd8919fee83dd5272b83#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-005:versioned-policy@v13!benchmark:production-release-005:versioned-policy%40revision:65db5eadaf7e94d3ead7f8bdd93b9d20b93401ad0e0e3251c1adca6737860a4b%40representation:sha256:fc212fc4eae369c893161e57c02f9d9cb4422ebd06f8bad979eae8e090863015#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: release permission changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-005"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

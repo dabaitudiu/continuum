@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-011",
+  "title": "Nimbus CRM — security questionnaire — clean-positive",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including security questionnaire and any material data processing agreement requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-011:primary@v13!benchmark:vendor-onboarding-011:primary%40revision:bac56d291ba62fc0967744b7e99aba15728dee856d902be006fd040520b3082c%40representation:sha256:7e6d37b33feea7785dd41c6512543fd9ec96a66cedafacae3159c6c884bfcfc5#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-011:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-011-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Nimbus CRM, authoritative evidence confirms that the current security questionnaire is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-011:support@r7!benchmark:vendor-onboarding-011:support%40revision:810f48351a80d0e33102bbb236595c9c411d50bb16814de173f5f89232851b0b%40representation:sha256:a8042502c74d3784e65b73b00d6c71a85acd54300eb1e48ec1e474db69bf1676#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-011:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-011-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Nimbus CRM confirms that the DPA is signed by Legal.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-011:distractor@v1!benchmark:vendor-onboarding-011:distractor%40revision:604616af8ef9855a2b4f7ff0637cbc21b1732b46a214b5ec0f27ae7d50596117%40representation:sha256:497e564821835db00a01b185ebed69396d4272d73377812dad26582b036cd69a#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-011:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-011-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security questionnaire, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-011:primary@v13!benchmark:vendor-onboarding-011:primary%40revision:bac56d291ba62fc0967744b7e99aba15728dee856d902be006fd040520b3082c%40representation:sha256:7e6d37b33feea7785dd41c6512543fd9ec96a66cedafacae3159c6c884bfcfc5#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-011:support@r7!benchmark:vendor-onboarding-011:support%40revision:810f48351a80d0e33102bbb236595c9c411d50bb16814de173f5f89232851b0b%40representation:sha256:a8042502c74d3784e65b73b00d6c71a85acd54300eb1e48ec1e474db69bf1676#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-011:distractor@v1!benchmark:vendor-onboarding-011:distractor%40revision:604616af8ef9855a2b4f7ff0637cbc21b1732b46a214b5ec0f27ae7d50596117%40representation:sha256:497e564821835db00a01b185ebed69396d4272d73377812dad26582b036cd69a#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-011:primary@v13!benchmark:vendor-onboarding-011:primary%40revision:bac56d291ba62fc0967744b7e99aba15728dee856d902be006fd040520b3082c%40representation:sha256:7e6d37b33feea7785dd41c6512543fd9ec96a66cedafacae3159c6c884bfcfc5#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: security questionnaire changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-011"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-033",
+  "title": "Jordan Lim — security training — critical-omission",
+  "domain": "privileged-access",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including security training and any material break-glass justification requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-033:primary@v13!benchmark:privileged-access-033:primary%40revision:48f8fb48b2b1fb6124d333122a4c754848e85390f3809fdeb37e0f78ba859d6e%40representation:sha256:26237e8912703323908ddb7bc0bd35a552f8e49c4bf831f00987ccbd332873e0#$.clause",
+      "artifact_id": "benchmark:privileged-access-033:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-033-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Jordan Lim, authoritative evidence confirms that privileged-access training is current.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-033:support@r7!benchmark:privileged-access-033:support%40revision:b650dc3c7035c3ee3e2cd0beaad97f23d20955c41366eed7907bd3531a6e794c%40representation:sha256:7a11079d18931bedd18b71421245700377ea9e1d276eda72624480724b466869#$.clause",
+      "artifact_id": "benchmark:privileged-access-033:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-033-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Jordan Lim confirms that the break-glass justification is documented.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-033:distractor@v1!benchmark:privileged-access-033:distractor%40revision:90cf69d812105979a1ebb73bb243ac98e00bd88ecb18881ed4104a7464210d05%40representation:sha256:ae3119194c09fe1c13acdbc4679e5746bca79e742b2f48e70047d0fa70d41d9f#$.clause",
+      "artifact_id": "benchmark:privileged-access-033:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-033-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security training, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-033:primary@v13!benchmark:privileged-access-033:primary%40revision:48f8fb48b2b1fb6124d333122a4c754848e85390f3809fdeb37e0f78ba859d6e%40representation:sha256:26237e8912703323908ddb7bc0bd35a552f8e49c4bf831f00987ccbd332873e0#$.clause",
+      "benchmark:privileged-access-033:support@r7!benchmark:privileged-access-033:support%40revision:b650dc3c7035c3ee3e2cd0beaad97f23d20955c41366eed7907bd3531a6e794c%40representation:sha256:7a11079d18931bedd18b71421245700377ea9e1d276eda72624480724b466869#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-033:distractor@v1!benchmark:privileged-access-033:distractor%40revision:90cf69d812105979a1ebb73bb243ac98e00bd88ecb18881ed4104a7464210d05%40representation:sha256:ae3119194c09fe1c13acdbc4679e5746bca79e742b2f48e70047d0fa70d41d9f#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-033:primary@v13!benchmark:privileged-access-033:primary%40revision:48f8fb48b2b1fb6124d333122a4c754848e85390f3809fdeb37e0f78ba859d6e%40representation:sha256:26237e8912703323908ddb7bc0bd35a552f8e49c4bf831f00987ccbd332873e0#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: security training changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-033"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-027",
+  "title": "Orchid Payments — encryption control — near-duplicate",
+  "domain": "vendor-onboarding",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including encryption control and any material SOC 2 evidence requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-027:near-policy@v13!benchmark:vendor-onboarding-027:near-policy%40revision:672a62302736d7693b3e96c9fbe73ce1490d28642343f195754974a1c19f9d5a%40representation:sha256:d3962835abbfe7ef8a8c47b05178f6643a9a08e9e4df697fb4b33932d5955685#$.binding_clause",
+      "artifact_id": "benchmark:vendor-onboarding-027:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-027-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Orchid Payments: customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-027:near-policy@v13!benchmark:vendor-onboarding-027:near-policy%40revision:672a62302736d7693b3e96c9fbe73ce1490d28642343f195754974a1c19f9d5a%40representation:sha256:d3962835abbfe7ef8a8c47b05178f6643a9a08e9e4df697fb4b33932d5955685#$.near_match",
+      "artifact_id": "benchmark:vendor-onboarding-027:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-027-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: encryption control may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-027:support@r7!benchmark:vendor-onboarding-027:support%40revision:1580fd5dd900415e512b8467e21ae6f5d92b4eeb6343d59280c649ba1733907b%40representation:sha256:49969c61ff1d5e5de7db258356ac281e60950ddb184ebf709908a153f2206807#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-027:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-027-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Orchid Payments confirms that a current SOC 2 Type II report is verified.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-027:near-policy@v13!benchmark:vendor-onboarding-027:near-policy%40revision:672a62302736d7693b3e96c9fbe73ce1490d28642343f195754974a1c19f9d5a%40representation:sha256:d3962835abbfe7ef8a8c47b05178f6643a9a08e9e4df697fb4b33932d5955685#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-027:support@r7!benchmark:vendor-onboarding-027:support%40revision:1580fd5dd900415e512b8467e21ae6f5d92b4eeb6343d59280c649ba1733907b%40representation:sha256:49969c61ff1d5e5de7db258356ac281e60950ddb184ebf709908a153f2206807#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-027:near-policy@v13!benchmark:vendor-onboarding-027:near-policy%40revision:672a62302736d7693b3e96c9fbe73ce1490d28642343f195754974a1c19f9d5a%40representation:sha256:d3962835abbfe7ef8a8c47b05178f6643a9a08e9e4df697fb4b33932d5955685#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-027:near-policy@v13!benchmark:vendor-onboarding-027:near-policy%40revision:672a62302736d7693b3e96c9fbe73ce1490d28642343f195754974a1c19f9d5a%40representation:sha256:d3962835abbfe7ef8a8c47b05178f6643a9a08e9e4df697fb4b33932d5955685#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: encryption control changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-027"
+    ]
+  }
+}

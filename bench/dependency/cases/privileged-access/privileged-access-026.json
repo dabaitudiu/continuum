@@ -1,0 +1,90 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-026",
+  "title": "Riley Tan — identity verification — conflicting-sources",
+  "domain": "privileged-access",
+  "case_class": "conflicting-sources",
+  "adversarial_tags": [
+    "contradictory-authority"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including identity verification and any material role eligibility requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-026:primary@v13!benchmark:privileged-access-026:primary%40revision:7e5755af5e49c46c52a00a12c1ea7cfce201233c5754823a77cf1486e4d0013e%40representation:sha256:daeba37a1a4f815d70752ab95f8360c7bbab2d8afce3f65c5fe63738e4c7733b#$.clause",
+      "artifact_id": "benchmark:privileged-access-026:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-026-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Riley Tan, authoritative evidence confirms that the requester's identity is verified.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-026:opposing-authority@v13!benchmark:privileged-access-026:opposing-authority%40revision:75b8194badfd23dbfa9cb035fd2d1a33aa2edf263be3385f32c0e67e681234c8%40representation:sha256:c4d2b52d7da0f3b216f0a77da97136c915a8c77f152b426c2741e7a9020bae04#$.clause",
+      "artifact_id": "benchmark:privileged-access-026:opposing-authority",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-026-opposing-authority",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "An equally ranked current authority states that identity verification is waived for Riley Tan.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-026:distractor@v1!benchmark:privileged-access-026:distractor%40revision:be63c9badfcf7296356d401ef0c88c9cdf0f92ad549579b2001b237561466587%40representation:sha256:169261c35ac25aa0108f12e8f835170fe6a061252cead65809a656a656818e8b#$.clause",
+      "artifact_id": "benchmark:privileged-access-026:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-026-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions identity verification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-026:primary@v13!benchmark:privileged-access-026:primary%40revision:7e5755af5e49c46c52a00a12c1ea7cfce201233c5754823a77cf1486e4d0013e%40representation:sha256:daeba37a1a4f815d70752ab95f8360c7bbab2d8afce3f65c5fe63738e4c7733b#$.clause",
+      "benchmark:privileged-access-026:opposing-authority@v13!benchmark:privileged-access-026:opposing-authority%40revision:75b8194badfd23dbfa9cb035fd2d1a33aa2edf263be3385f32c0e67e681234c8%40representation:sha256:c4d2b52d7da0f3b216f0a77da97136c915a8c77f152b426c2741e7a9020bae04#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-026:distractor@v1!benchmark:privileged-access-026:distractor%40revision:be63c9badfcf7296356d401ef0c88c9cdf0f92ad549579b2001b237561466587%40representation:sha256:169261c35ac25aa0108f12e8f835170fe6a061252cead65809a656a656818e8b#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "NEEDS_HUMAN_REVIEW"
+      ],
+      "must_block": true
+    },
+    "blocking_contradictions": [
+      {
+        "source_ref_a": "benchmark:privileged-access-026:primary@v13!benchmark:privileged-access-026:primary%40revision:7e5755af5e49c46c52a00a12c1ea7cfce201233c5754823a77cf1486e4d0013e%40representation:sha256:daeba37a1a4f815d70752ab95f8360c7bbab2d8afce3f65c5fe63738e4c7733b#$.clause",
+        "source_ref_b": "benchmark:privileged-access-026:opposing-authority@v13!benchmark:privileged-access-026:opposing-authority%40revision:75b8194badfd23dbfa9cb035fd2d1a33aa2edf263be3385f32c0e67e681234c8%40representation:sha256:c4d2b52d7da0f3b216f0a77da97136c915a8c77f152b426c2741e7a9020bae04#$.clause",
+        "topic": "identity verification"
+      }
+    ]
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-026:primary@v13!benchmark:privileged-access-026:primary%40revision:7e5755af5e49c46c52a00a12c1ea7cfce201233c5754823a77cf1486e4d0013e%40representation:sha256:daeba37a1a4f815d70752ab95f8360c7bbab2d8afce3f65c5fe63738e4c7733b#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: identity verification changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-026"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

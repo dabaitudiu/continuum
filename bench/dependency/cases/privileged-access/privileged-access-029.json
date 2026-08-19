@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-029",
+  "title": "Riley Tan — break-glass justification — multiple-dependencies",
+  "domain": "privileged-access",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including break-glass justification and any material MFA enrollment and identity verification requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-029:primary@v13!benchmark:privileged-access-029:primary%40revision:fc5720ed01921dc5d3288295593bb53dec0f6e18afed133ffcc1cba3e4a90344%40representation:sha256:408ec3aa42a49b8e9336a2bb5a738e41ae59986a1d0fea2c8e33a6ae09e71426#$.clause",
+      "artifact_id": "benchmark:privileged-access-029:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-029-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Riley Tan, authoritative evidence confirms that the break-glass justification is documented.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-029:support@r7!benchmark:privileged-access-029:support%40revision:1580bd6d8d6282db8c1234e53ea550d62148d97d93aceb6e4cfe478e3bfb0318%40representation:sha256:6fcbf8bcad62923a371435e7480bad6b37c717bad020000b9c36d3315c251d36#$.clause",
+      "artifact_id": "benchmark:privileged-access-029:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-029-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Riley Tan confirms that phishing-resistant MFA is enrolled.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-029:third-critical@r9!benchmark:privileged-access-029:third-critical%40revision:b023c9719a28936cf7888cba9f0a01991b1a166645f903fdd8c1825c88c0c13b%40representation:sha256:f0e4906da3dcf30f184f0a9f58e154d6a7e215764cfbdc075aa8b7cde20f6807#$.clause",
+      "artifact_id": "benchmark:privileged-access-029:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-029-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that the requester's identity is verified for Riley Tan.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-029:distractor@v1!benchmark:privileged-access-029:distractor%40revision:6a0c865917bd1da2dfcb1b982e7a2ad312193227255b70f598e60fc667a2e75c%40representation:sha256:4b43ff385f0ef6518b3f1fc2067cd93eb56bf0aacd1a213a6fcb78df5f358730#$.clause",
+      "artifact_id": "benchmark:privileged-access-029:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-029-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions break-glass justification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-029:primary@v13!benchmark:privileged-access-029:primary%40revision:fc5720ed01921dc5d3288295593bb53dec0f6e18afed133ffcc1cba3e4a90344%40representation:sha256:408ec3aa42a49b8e9336a2bb5a738e41ae59986a1d0fea2c8e33a6ae09e71426#$.clause",
+      "benchmark:privileged-access-029:support@r7!benchmark:privileged-access-029:support%40revision:1580bd6d8d6282db8c1234e53ea550d62148d97d93aceb6e4cfe478e3bfb0318%40representation:sha256:6fcbf8bcad62923a371435e7480bad6b37c717bad020000b9c36d3315c251d36#$.clause",
+      "benchmark:privileged-access-029:third-critical@r9!benchmark:privileged-access-029:third-critical%40revision:b023c9719a28936cf7888cba9f0a01991b1a166645f903fdd8c1825c88c0c13b%40representation:sha256:f0e4906da3dcf30f184f0a9f58e154d6a7e215764cfbdc075aa8b7cde20f6807#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-029:distractor@v1!benchmark:privileged-access-029:distractor%40revision:6a0c865917bd1da2dfcb1b982e7a2ad312193227255b70f598e60fc667a2e75c%40representation:sha256:4b43ff385f0ef6518b3f1fc2067cd93eb56bf0aacd1a213a6fcb78df5f358730#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-029:primary@v13!benchmark:privileged-access-029:primary%40revision:fc5720ed01921dc5d3288295593bb53dec0f6e18afed133ffcc1cba3e4a90344%40representation:sha256:408ec3aa42a49b8e9336a2bb5a738e41ae59986a1d0fea2c8e33a6ae09e71426#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: break-glass justification changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-029"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-039",
+  "title": "Jordan Lim — break-glass justification — multiple-dependencies",
+  "domain": "privileged-access",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including break-glass justification and any material access expiry and separation of duties requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-039:primary@v13!benchmark:privileged-access-039:primary%40revision:8d93c56762576f02acc976387014752ca826abc2267c6db07097db84c00e6b0a%40representation:sha256:c4908b144d92ceab4a9cc8065b5561f4da6968534294ba6b4f5defdd77ccdfc8#$.clause",
+      "artifact_id": "benchmark:privileged-access-039:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-039-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Jordan Lim, authoritative evidence confirms that the break-glass justification is documented.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-039:support@r7!benchmark:privileged-access-039:support%40revision:c5259033768512ff713892cf4e1c89a954d30eb14034fddd6de071fe87f7910c%40representation:sha256:0ea94c76bec5bc67b50ae7147e799edf3901014b17240e52a3786a57720583b4#$.clause",
+      "artifact_id": "benchmark:privileged-access-039:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-039-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Jordan Lim confirms that requested access expires within eight hours.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-039:third-critical@r9!benchmark:privileged-access-039:third-critical%40revision:350105e0db320ac7e6996bef75d34dca975fdf76b5c81fc7ef4ec43f8d5ad045%40representation:sha256:087ec5822f74a45e393a6709c58f028d0542cc41b9420c93478d86a3030c6f42#$.clause",
+      "artifact_id": "benchmark:privileged-access-039:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-039-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that the role creates no separation-of-duties conflict for Jordan Lim.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-039:distractor@v1!benchmark:privileged-access-039:distractor%40revision:7ba04be7b34dc74b50f9b6836f024601676a2419249205c909bd7dae8fc04346%40representation:sha256:8bc1e096c55466204d68fe0ec1dce112ca2f23bba8d072b7f0834a782ecb67fb#$.clause",
+      "artifact_id": "benchmark:privileged-access-039:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-039-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions break-glass justification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-039:primary@v13!benchmark:privileged-access-039:primary%40revision:8d93c56762576f02acc976387014752ca826abc2267c6db07097db84c00e6b0a%40representation:sha256:c4908b144d92ceab4a9cc8065b5561f4da6968534294ba6b4f5defdd77ccdfc8#$.clause",
+      "benchmark:privileged-access-039:support@r7!benchmark:privileged-access-039:support%40revision:c5259033768512ff713892cf4e1c89a954d30eb14034fddd6de071fe87f7910c%40representation:sha256:0ea94c76bec5bc67b50ae7147e799edf3901014b17240e52a3786a57720583b4#$.clause",
+      "benchmark:privileged-access-039:third-critical@r9!benchmark:privileged-access-039:third-critical%40revision:350105e0db320ac7e6996bef75d34dca975fdf76b5c81fc7ef4ec43f8d5ad045%40representation:sha256:087ec5822f74a45e393a6709c58f028d0542cc41b9420c93478d86a3030c6f42#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-039:distractor@v1!benchmark:privileged-access-039:distractor%40revision:7ba04be7b34dc74b50f9b6836f024601676a2419249205c909bd7dae8fc04346%40representation:sha256:8bc1e096c55466204d68fe0ec1dce112ca2f23bba8d072b7f0834a782ecb67fb#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-039:primary@v13!benchmark:privileged-access-039:primary%40revision:8d93c56762576f02acc976387014752ca826abc2267c6db07097db84c00e6b0a%40representation:sha256:c4908b144d92ceab4a9cc8065b5561f4da6968534294ba6b4f5defdd77ccdfc8#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: break-glass justification changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-039"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

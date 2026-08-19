@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-002",
+  "title": "Acme Analytics — SOC 2 evidence — clean-negative",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including SOC 2 evidence and any material data processing agreement requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-002:primary@r13!benchmark:vendor-onboarding-002:primary%40revision:b8241afaa4c17fe533471143dbf8f937baef4d7cba21ccd3ceb2f9f06996e429%40representation:sha256:f45cd44e88a7373d109efcd2a886a0242f9e8a29842c87196751da6d4b26c3f9#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-002:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-002-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Acme Analytics, the authoritative record states that a current SOC 2 Type II report is verified is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-002:support@r7!benchmark:vendor-onboarding-002:support%40revision:6ad24086ac2dba00bd4ab9324444dd1e9fff63eb8b8945258acc9b656c79576a%40representation:sha256:4a4228d9fca7bf3c8ee7245f19220c0c3fecfec7b80b677ebb20b90695d6a5b6#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-002:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-002-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Acme Analytics confirms that the DPA is signed by Legal.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-002:distractor@v1!benchmark:vendor-onboarding-002:distractor%40revision:e7d6eafecca67507e0856b8e11d5269be58dc86af5685ec6f345661ae3a2f5ed%40representation:sha256:b54c9b08071b3d99a7a8bf83022db1188f95c065eb769c435562a582ba52ccb2#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-002:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-002-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions SOC 2 evidence, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-002:primary@r13!benchmark:vendor-onboarding-002:primary%40revision:b8241afaa4c17fe533471143dbf8f937baef4d7cba21ccd3ceb2f9f06996e429%40representation:sha256:f45cd44e88a7373d109efcd2a886a0242f9e8a29842c87196751da6d4b26c3f9#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-002:support@r7!benchmark:vendor-onboarding-002:support%40revision:6ad24086ac2dba00bd4ab9324444dd1e9fff63eb8b8945258acc9b656c79576a%40representation:sha256:4a4228d9fca7bf3c8ee7245f19220c0c3fecfec7b80b677ebb20b90695d6a5b6#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-002:distractor@v1!benchmark:vendor-onboarding-002:distractor%40revision:e7d6eafecca67507e0856b8e11d5269be58dc86af5685ec6f345661ae3a2f5ed%40representation:sha256:b54c9b08071b3d99a7a8bf83022db1188f95c065eb769c435562a582ba52ccb2#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-002:primary@r13!benchmark:vendor-onboarding-002:primary%40revision:b8241afaa4c17fe533471143dbf8f937baef4d7cba21ccd3ceb2f9f06996e429%40representation:sha256:f45cd44e88a7373d109efcd2a886a0242f9e8a29842c87196751da6d4b26c3f9#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: SOC 2 evidence changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-002"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

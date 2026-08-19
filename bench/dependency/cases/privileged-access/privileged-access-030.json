@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-030",
+  "title": "Riley Tan — device compliance — narrow-clause",
+  "domain": "privileged-access",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including device compliance and any material access expiry requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.scope",
+      "artifact_id": "benchmark:privileged-access-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Riley Tan.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.binding_clause",
+      "artifact_id": "benchmark:privileged-access-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that the requesting device is compliant.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.appendix",
+      "artifact_id": "benchmark:privileged-access-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses access expiry for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.scope",
+      "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-030:wide-policy@v13!benchmark:privileged-access-030:wide-policy%40revision:09560ea098e44bf505b799a9f1717850b8d22b07a804b69fe10bf7279b141dcc%40representation:sha256:f2e7afa15dc42550b74a167fd15da2988172d518c071333d5f35019cc6aab883#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: device compliance changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-030"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

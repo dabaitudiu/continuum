@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-030",
+  "title": "Orchid Payments — retention clause — narrow-clause",
+  "domain": "vendor-onboarding",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including retention clause and any material data processing agreement requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.scope",
+      "artifact_id": "benchmark:vendor-onboarding-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Orchid Payments.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.binding_clause",
+      "artifact_id": "benchmark:vendor-onboarding-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that the contract contains the approved retention clause.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.appendix",
+      "artifact_id": "benchmark:vendor-onboarding-030:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-030-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses data processing agreement for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.scope",
+      "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-030:wide-policy@v13!benchmark:vendor-onboarding-030:wide-policy%40revision:25c6a0a41d9315726902df211e7707653f80e5d22e313403c4d24b62f6ed169e%40representation:sha256:44574c7fd76c43d5ab506f2b2ad5519958de69a6bf6ff67f1e0f03b1b2a5619d#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: retention clause changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-030"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

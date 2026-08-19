@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-003",
+  "title": "Ledger API — security scan — critical-omission",
+  "domain": "production-release",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including security scan and any material maintenance window requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-003:primary@v13!benchmark:production-release-003:primary%40revision:1ff041c372c638d97336a633e630328d81d22f478e9b3e039e1c9d67ae6951b2%40representation:sha256:ff1818f91a5692fea1adf0adac8e99917877425011e0c2012c9e287090596d2e#$.clause",
+      "artifact_id": "benchmark:production-release-003:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-003-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Ledger API, authoritative evidence confirms that the current security scan has no critical finding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-003:support@r7!benchmark:production-release-003:support%40revision:416914971ef511892a501570d2a9ccccebe4828bdcd5e742a098161c63c633ac%40representation:sha256:a0ba9d1da757d3ca3b37d41b424967fed8dc1ada106bb29aea5bfdcbc7ff3872#$.clause",
+      "artifact_id": "benchmark:production-release-003:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-003-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Ledger API confirms that deployment is inside the approved maintenance window.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-003:distractor@v1!benchmark:production-release-003:distractor%40revision:4e660cdceda96d8e9069019d3812c32a143f8ddaef6dce04ffa6b82a4468da95%40representation:sha256:796cdbfb86d3640d9ed58ebaff26bc6bdb6ce7b5a817744f62ecf330c83ac895#$.clause",
+      "artifact_id": "benchmark:production-release-003:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-003-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security scan, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-003:primary@v13!benchmark:production-release-003:primary%40revision:1ff041c372c638d97336a633e630328d81d22f478e9b3e039e1c9d67ae6951b2%40representation:sha256:ff1818f91a5692fea1adf0adac8e99917877425011e0c2012c9e287090596d2e#$.clause",
+      "benchmark:production-release-003:support@r7!benchmark:production-release-003:support%40revision:416914971ef511892a501570d2a9ccccebe4828bdcd5e742a098161c63c633ac%40representation:sha256:a0ba9d1da757d3ca3b37d41b424967fed8dc1ada106bb29aea5bfdcbc7ff3872#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-003:distractor@v1!benchmark:production-release-003:distractor%40revision:4e660cdceda96d8e9069019d3812c32a143f8ddaef6dce04ffa6b82a4468da95%40representation:sha256:796cdbfb86d3640d9ed58ebaff26bc6bdb6ce7b5a817744f62ecf330c83ac895#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-003:primary@v13!benchmark:production-release-003:primary%40revision:1ff041c372c638d97336a633e630328d81d22f478e9b3e039e1c9d67ae6951b2%40representation:sha256:ff1818f91a5692fea1adf0adac8e99917877425011e0c2012c9e287090596d2e#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: security scan changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-003"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

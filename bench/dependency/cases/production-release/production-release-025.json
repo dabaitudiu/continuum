@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-025",
+  "title": "Search Indexer — release permission — obsolete-revision",
+  "domain": "production-release",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Search Indexer for production release. Determine whether the proposed outcome is justified by the current evidence, including release permission and any material incident freeze requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-025:versioned-policy@v12!benchmark:production-release-025:versioned-policy%40revision:f1a6f53d9d04b4b901a69794a44d64099827c89b9b77952dd34271cdf4dc5005%40representation:sha256:893bca5d41a131a9ffe1d48f87bfb5ed49b2028b4650c2be50d5ce7dbede55e9#$.clause",
+      "artifact_id": "benchmark:production-release-025:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-025-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: release permission is optional for Search Indexer.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:production-release-025:versioned-policy@v13!benchmark:production-release-025:versioned-policy%40revision:ad9a8f06286631e87b2a744c2f9173f443753e2e913c4f6d9f904ed04771b525%40representation:sha256:34833ba97568b4af65848a23625383e6af2c3a4d4f7ec2a1b3f8d586be001db2#$.clause",
+      "artifact_id": "benchmark:production-release-025:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-025-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the release manager authorized production deployment for Search Indexer.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-025:distractor@v1!benchmark:production-release-025:distractor%40revision:79cae4618d94135a53f41872e66a350deb97857255fb3131dfe2b7ba458cdc99%40representation:sha256:8b0453e35d1eb16ec1e6c389c1596410bb707a3f4760f24eda9d3287a79a0f7c#$.clause",
+      "artifact_id": "benchmark:production-release-025:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-025-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions release permission, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-025:versioned-policy@v13!benchmark:production-release-025:versioned-policy%40revision:ad9a8f06286631e87b2a744c2f9173f443753e2e913c4f6d9f904ed04771b525%40representation:sha256:34833ba97568b4af65848a23625383e6af2c3a4d4f7ec2a1b3f8d586be001db2#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-025:versioned-policy@v12!benchmark:production-release-025:versioned-policy%40revision:f1a6f53d9d04b4b901a69794a44d64099827c89b9b77952dd34271cdf4dc5005%40representation:sha256:893bca5d41a131a9ffe1d48f87bfb5ed49b2028b4650c2be50d5ce7dbede55e9#$.clause",
+      "benchmark:production-release-025:distractor@v1!benchmark:production-release-025:distractor%40revision:79cae4618d94135a53f41872e66a350deb97857255fb3131dfe2b7ba458cdc99%40representation:sha256:8b0453e35d1eb16ec1e6c389c1596410bb707a3f4760f24eda9d3287a79a0f7c#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-025:versioned-policy@v13!benchmark:production-release-025:versioned-policy%40revision:ad9a8f06286631e87b2a744c2f9173f443753e2e913c4f6d9f904ed04771b525%40representation:sha256:34833ba97568b4af65848a23625383e6af2c3a4d4f7ec2a1b3f8d586be001db2#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Search Indexer: release permission changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-025"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

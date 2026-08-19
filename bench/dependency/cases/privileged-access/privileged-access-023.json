@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-023",
+  "title": "Riley Tan — security training — critical-omission",
+  "domain": "privileged-access",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including security training and any material access ticket requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-023:primary@v13!benchmark:privileged-access-023:primary%40revision:d5f4e2fe26d90df711021c9894763fb9b5f80999f93fca4d0fbc416c071f4c69%40representation:sha256:42156140a36e8ed2c658eb466f2f767622020cdbc415a1f24532410c7605bf86#$.clause",
+      "artifact_id": "benchmark:privileged-access-023:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-023-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Riley Tan, authoritative evidence confirms that privileged-access training is current.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-023:support@r7!benchmark:privileged-access-023:support%40revision:73eccb2c0ab3af0ef1d15d5c358ae19013c4ad0e435babd65e2efaab474dc1d4%40representation:sha256:11dc925bc2d3e1342ff212ac32a7dd907ba60373683782842bdd35746dd1a218#$.clause",
+      "artifact_id": "benchmark:privileged-access-023:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-023-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Riley Tan confirms that the privileged-access ticket is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-023:distractor@v1!benchmark:privileged-access-023:distractor%40revision:81ed92454838186ebcbb3c8ed9294e819467805bb77e402cb32be435da429f11%40representation:sha256:f036d813c56d5f1b43f58db304787efad92eacf1086f20c31b72dbd5ebb99f27#$.clause",
+      "artifact_id": "benchmark:privileged-access-023:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-023-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security training, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-023:primary@v13!benchmark:privileged-access-023:primary%40revision:d5f4e2fe26d90df711021c9894763fb9b5f80999f93fca4d0fbc416c071f4c69%40representation:sha256:42156140a36e8ed2c658eb466f2f767622020cdbc415a1f24532410c7605bf86#$.clause",
+      "benchmark:privileged-access-023:support@r7!benchmark:privileged-access-023:support%40revision:73eccb2c0ab3af0ef1d15d5c358ae19013c4ad0e435babd65e2efaab474dc1d4%40representation:sha256:11dc925bc2d3e1342ff212ac32a7dd907ba60373683782842bdd35746dd1a218#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-023:distractor@v1!benchmark:privileged-access-023:distractor%40revision:81ed92454838186ebcbb3c8ed9294e819467805bb77e402cb32be435da429f11%40representation:sha256:f036d813c56d5f1b43f58db304787efad92eacf1086f20c31b72dbd5ebb99f27#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-023:primary@v13!benchmark:privileged-access-023:primary%40revision:d5f4e2fe26d90df711021c9894763fb9b5f80999f93fca4d0fbc416c071f4c69%40representation:sha256:42156140a36e8ed2c658eb466f2f767622020cdbc415a1f24532410c7605bf86#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: security training changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-023"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

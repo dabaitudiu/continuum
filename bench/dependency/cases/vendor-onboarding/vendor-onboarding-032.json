@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-032",
+  "title": "Beacon AI — SOC 2 evidence — clean-negative",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including SOC 2 evidence and any material subprocessor review requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-032:primary@r13!benchmark:vendor-onboarding-032:primary%40revision:6f1ab46ff255a0358160d3aa24f4c8f759a355d49812125750892e6f0c1ef5d3%40representation:sha256:28e2320af4e715445dd7bee42743e4c1a8a1bd011e69d220b3aefa3bea1706af#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-032:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-032-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Beacon AI, the authoritative record states that a current SOC 2 Type II report is verified is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-032:support@r7!benchmark:vendor-onboarding-032:support%40revision:e4b97e6440c821071d0326d17c677f0aa7479d87357b4b8cd629e7f4f67e1349%40representation:sha256:ee0ba7691153443690d211d012e5748bf02a462972c33542556501dfb42a2ba8#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-032:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-032-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Beacon AI confirms that all subprocessors are approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-032:distractor@v1!benchmark:vendor-onboarding-032:distractor%40revision:42dd12a3f17ab1274ef9e3720ec56e0faf5ddebd450f1801eb1bc63148cbf2f8%40representation:sha256:704e8132125f212515130aea173d6d3a28be3533057a2eac3c9d3bb9bf513a44#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-032:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-032-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions SOC 2 evidence, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-032:primary@r13!benchmark:vendor-onboarding-032:primary%40revision:6f1ab46ff255a0358160d3aa24f4c8f759a355d49812125750892e6f0c1ef5d3%40representation:sha256:28e2320af4e715445dd7bee42743e4c1a8a1bd011e69d220b3aefa3bea1706af#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-032:support@r7!benchmark:vendor-onboarding-032:support%40revision:e4b97e6440c821071d0326d17c677f0aa7479d87357b4b8cd629e7f4f67e1349%40representation:sha256:ee0ba7691153443690d211d012e5748bf02a462972c33542556501dfb42a2ba8#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-032:distractor@v1!benchmark:vendor-onboarding-032:distractor%40revision:42dd12a3f17ab1274ef9e3720ec56e0faf5ddebd450f1801eb1bc63148cbf2f8%40representation:sha256:704e8132125f212515130aea173d6d3a28be3533057a2eac3c9d3bb9bf513a44#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-032:primary@r13!benchmark:vendor-onboarding-032:primary%40revision:6f1ab46ff255a0358160d3aa24f4c8f759a355d49812125750892e6f0c1ef5d3%40representation:sha256:28e2320af4e715445dd7bee42743e4c1a8a1bd011e69d220b3aefa3bea1706af#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: SOC 2 evidence changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-032"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

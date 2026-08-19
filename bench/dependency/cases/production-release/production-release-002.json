@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-002",
+  "title": "Ledger API — change ticket — clean-negative",
+  "domain": "production-release",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including change ticket and any material release permission requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-002:primary@r13!benchmark:production-release-002:primary%40revision:d9a3ff5d3cdefa4f11fdfe8e4c4c04fc0a1cf3ec414361646069f7cb8629d366%40representation:sha256:d5768a9f0b79b11ff881ca596300d2fc32ac80ed599724eb6c5e6fda75601c09#$.clause",
+      "artifact_id": "benchmark:production-release-002:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-002-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Ledger API, the authoritative record states that the change ticket is approved is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-002:support@r7!benchmark:production-release-002:support%40revision:bd1a1282fe9a86325f6418a4e495ddeef48d230fac9ebc9911047968f27d63fa%40representation:sha256:0f18cb4a91eac9f38ab4c45c88a39f110b23af477926953c342151fce4ad9c20#$.clause",
+      "artifact_id": "benchmark:production-release-002:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-002-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Ledger API confirms that the release manager authorized production deployment.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-002:distractor@v1!benchmark:production-release-002:distractor%40revision:9155a22c04adc01c69f432abdef46a3875b750163f576cb19f4d456305f86c70%40representation:sha256:377ab74a461269a022592c4c0004798535715a14ea5104cb3c38c365074fb977#$.clause",
+      "artifact_id": "benchmark:production-release-002:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-002-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions change ticket, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-002:primary@r13!benchmark:production-release-002:primary%40revision:d9a3ff5d3cdefa4f11fdfe8e4c4c04fc0a1cf3ec414361646069f7cb8629d366%40representation:sha256:d5768a9f0b79b11ff881ca596300d2fc32ac80ed599724eb6c5e6fda75601c09#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-002:support@r7!benchmark:production-release-002:support%40revision:bd1a1282fe9a86325f6418a4e495ddeef48d230fac9ebc9911047968f27d63fa%40representation:sha256:0f18cb4a91eac9f38ab4c45c88a39f110b23af477926953c342151fce4ad9c20#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-002:distractor@v1!benchmark:production-release-002:distractor%40revision:9155a22c04adc01c69f432abdef46a3875b750163f576cb19f4d456305f86c70%40representation:sha256:377ab74a461269a022592c4c0004798535715a14ea5104cb3c38c365074fb977#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-002:primary@r13!benchmark:production-release-002:primary%40revision:d9a3ff5d3cdefa4f11fdfe8e4c4c04fc0a1cf3ec414361646069f7cb8629d366%40representation:sha256:d5768a9f0b79b11ff881ca596300d2fc32ac80ed599724eb6c5e6fda75601c09#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: change ticket changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-002"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

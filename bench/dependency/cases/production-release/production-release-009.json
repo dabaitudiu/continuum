@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-009",
+  "title": "Ledger API — canary metrics — multiple-dependencies",
+  "domain": "production-release",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including canary metrics and any material change ticket and rollback plan requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-009:primary@v13!benchmark:production-release-009:primary%40revision:91dfb916289af81e7005f6ab98d03ecc9d05313638dbbc860dc7e9175a98cc1d%40representation:sha256:e923309c556b1728e745f5c8686d509639b2594043b4a0eb64779458f90884b9#$.clause",
+      "artifact_id": "benchmark:production-release-009:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-009-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Ledger API, authoritative evidence confirms that canary health metrics meet the release threshold.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-009:support@r7!benchmark:production-release-009:support%40revision:a59c898dce838241fd6852b038e468c89014c3d6d7825c7b920a07908d9ae1dd%40representation:sha256:3e84f1e38948304b134bb98dbd696a285f146ea12a9fa3d03cb1a3905afcf583#$.clause",
+      "artifact_id": "benchmark:production-release-009:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-009-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Ledger API confirms that the change ticket is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-009:third-critical@r9!benchmark:production-release-009:third-critical%40revision:ff9a5f23a57455fa4425fd7a6fdce0a53006ff97785b3a7eefa0bea1e59f856e%40representation:sha256:84e3ee01235cf4ce72d8cd759e301322c68cb37a22c69ea211daa2d53b7b1610#$.clause",
+      "artifact_id": "benchmark:production-release-009:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-009-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that a tested rollback plan is attached for Ledger API.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-009:distractor@v1!benchmark:production-release-009:distractor%40revision:a4a068a7980a2cd48f1f2903b7c9f00c16a013158c4b3d84a1458d64c37f95b9%40representation:sha256:55e3dd49401695477e5abd858839926db2bd29ac0671db44aaf343becd009031#$.clause",
+      "artifact_id": "benchmark:production-release-009:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-009-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions canary metrics, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-009:primary@v13!benchmark:production-release-009:primary%40revision:91dfb916289af81e7005f6ab98d03ecc9d05313638dbbc860dc7e9175a98cc1d%40representation:sha256:e923309c556b1728e745f5c8686d509639b2594043b4a0eb64779458f90884b9#$.clause",
+      "benchmark:production-release-009:support@r7!benchmark:production-release-009:support%40revision:a59c898dce838241fd6852b038e468c89014c3d6d7825c7b920a07908d9ae1dd%40representation:sha256:3e84f1e38948304b134bb98dbd696a285f146ea12a9fa3d03cb1a3905afcf583#$.clause",
+      "benchmark:production-release-009:third-critical@r9!benchmark:production-release-009:third-critical%40revision:ff9a5f23a57455fa4425fd7a6fdce0a53006ff97785b3a7eefa0bea1e59f856e%40representation:sha256:84e3ee01235cf4ce72d8cd759e301322c68cb37a22c69ea211daa2d53b7b1610#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-009:distractor@v1!benchmark:production-release-009:distractor%40revision:a4a068a7980a2cd48f1f2903b7c9f00c16a013158c4b3d84a1458d64c37f95b9%40representation:sha256:55e3dd49401695477e5abd858839926db2bd29ac0671db44aaf343becd009031#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-009:primary@v13!benchmark:production-release-009:primary%40revision:91dfb916289af81e7005f6ab98d03ecc9d05313638dbbc860dc7e9175a98cc1d%40representation:sha256:e923309c556b1728e745f5c8686d509639b2594043b4a0eb64779458f90884b9#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: canary metrics changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-009"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-012",
+  "title": "Nimbus CRM — SOC 2 evidence — clean-negative",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including SOC 2 evidence and any material penetration test requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-012:primary@r13!benchmark:vendor-onboarding-012:primary%40revision:56c55c8c83a863d82ce7aa5b37f943841cf669348188923b62d62234f8c1b585%40representation:sha256:a0a06464b5976932bde7da50c2b21fda10c9c7d79b4025556ed6893ead5ea611#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-012:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-012-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Nimbus CRM, the authoritative record states that a current SOC 2 Type II report is verified is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-012:support@r7!benchmark:vendor-onboarding-012:support%40revision:d154ce83bbbe671911957185757ca1c62c9d1869dc9d82268df3fe4a9fcc17d8%40representation:sha256:d82c67b2d86ed33b528f67489b8ad82385aaf3ed7a12e6d42e9cbccedf8c2f0a#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-012:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-012-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Nimbus CRM confirms that the penetration test is less than twelve months old.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-012:distractor@v1!benchmark:vendor-onboarding-012:distractor%40revision:a1dd5d9fbb6e666c22cd3c4e629582e447567cf76a7f3958c88d80d0ea9aaab6%40representation:sha256:136247bd01e95208c5fe9bc6a59d5e0b7e69c155f149dbe357da303461d4ddb7#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-012:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-012-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions SOC 2 evidence, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-012:primary@r13!benchmark:vendor-onboarding-012:primary%40revision:56c55c8c83a863d82ce7aa5b37f943841cf669348188923b62d62234f8c1b585%40representation:sha256:a0a06464b5976932bde7da50c2b21fda10c9c7d79b4025556ed6893ead5ea611#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-012:support@r7!benchmark:vendor-onboarding-012:support%40revision:d154ce83bbbe671911957185757ca1c62c9d1869dc9d82268df3fe4a9fcc17d8%40representation:sha256:d82c67b2d86ed33b528f67489b8ad82385aaf3ed7a12e6d42e9cbccedf8c2f0a#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-012:distractor@v1!benchmark:vendor-onboarding-012:distractor%40revision:a1dd5d9fbb6e666c22cd3c4e629582e447567cf76a7f3958c88d80d0ea9aaab6%40representation:sha256:136247bd01e95208c5fe9bc6a59d5e0b7e69c155f149dbe357da303461d4ddb7#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-012:primary@r13!benchmark:vendor-onboarding-012:primary%40revision:56c55c8c83a863d82ce7aa5b37f943841cf669348188923b62d62234f8c1b585%40representation:sha256:a0a06464b5976932bde7da50c2b21fda10c9c7d79b4025556ed6893ead5ea611#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: SOC 2 evidence changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-012"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-014",
+  "title": "Nimbus CRM — Singapore residency — irrelevant-distractor",
+  "domain": "vendor-onboarding",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including Singapore residency and any material subprocessor review requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-014:primary@v13!benchmark:vendor-onboarding-014:primary%40revision:3b2566eb514973e0b144801cd8b3d2e7cca3c48827acd299f6dc3a9fa5c96bfa%40representation:sha256:8e104f1d15e68dba01289c4e6ace8c8ca30d504325118a1087341acf0e238552#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-014:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-014-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Nimbus CRM, authoritative evidence confirms that regulated data remains in Singapore.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-014:support@r7!benchmark:vendor-onboarding-014:support%40revision:58bfc1e2a3ae1baf9fa428740a5b91085e128334dada75e94fb227666454a809%40representation:sha256:18d62bf00ad38160f8648bc9ed6d7ff149f2f3fecdb0b1a55f4c2c17f3f63d9b#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-014:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-014-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Nimbus CRM confirms that all subprocessors are approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-014:distractor@v1!benchmark:vendor-onboarding-014:distractor%40revision:a2962e1715b5e8dba50ff4b4e88aba1f152d86ab88d6aa6b00b5f9d3fbf8c694%40representation:sha256:1b53b4ce87aafe075ec288f8d4e0f7cf78318e209313a0d46a6433e4742d6224#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-014:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-014-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions Singapore residency, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-014:distractor-two@v1!benchmark:vendor-onboarding-014:distractor-two%40revision:fa45903f6023b13d33f637c13c5ea96171d9491829888706edca64b9edd59f15%40representation:sha256:64428d03d794c9c6c397a3853280af080941b0d23f02f81811268233417c26b6#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-014:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-014-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses subprocessor review without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-014:primary@v13!benchmark:vendor-onboarding-014:primary%40revision:3b2566eb514973e0b144801cd8b3d2e7cca3c48827acd299f6dc3a9fa5c96bfa%40representation:sha256:8e104f1d15e68dba01289c4e6ace8c8ca30d504325118a1087341acf0e238552#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-014:support@r7!benchmark:vendor-onboarding-014:support%40revision:58bfc1e2a3ae1baf9fa428740a5b91085e128334dada75e94fb227666454a809%40representation:sha256:18d62bf00ad38160f8648bc9ed6d7ff149f2f3fecdb0b1a55f4c2c17f3f63d9b#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-014:distractor@v1!benchmark:vendor-onboarding-014:distractor%40revision:a2962e1715b5e8dba50ff4b4e88aba1f152d86ab88d6aa6b00b5f9d3fbf8c694%40representation:sha256:1b53b4ce87aafe075ec288f8d4e0f7cf78318e209313a0d46a6433e4742d6224#$.clause",
+      "benchmark:vendor-onboarding-014:distractor-two@v1!benchmark:vendor-onboarding-014:distractor-two%40revision:fa45903f6023b13d33f637c13c5ea96171d9491829888706edca64b9edd59f15%40representation:sha256:64428d03d794c9c6c397a3853280af080941b0d23f02f81811268233417c26b6#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-014:distractor@v1!benchmark:vendor-onboarding-014:distractor%40revision:a2962e1715b5e8dba50ff4b4e88aba1f152d86ab88d6aa6b00b5f9d3fbf8c694%40representation:sha256:1b53b4ce87aafe075ec288f8d4e0f7cf78318e209313a0d46a6433e4742d6224#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: Singapore residency changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-014"
+    ]
+  }
+}

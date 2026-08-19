@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-015",
+  "title": "Identity Gateway — release permission — obsolete-revision",
+  "domain": "production-release",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including release permission and any material canary metrics requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-015:versioned-policy@v12!benchmark:production-release-015:versioned-policy%40revision:f3b7b812b97f3e961e9ba4226578bcd2c212ffe5eae4f94495db4fef522b1270%40representation:sha256:8bebb339d92591776417ed680ef5a1dbb4bb03c028223c9ed6e7b42c27e549da#$.clause",
+      "artifact_id": "benchmark:production-release-015:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-015-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: release permission is optional for Identity Gateway.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:production-release-015:versioned-policy@v13!benchmark:production-release-015:versioned-policy%40revision:760f2758bdc34806ab15003dd8763e26a4cd1acb759f2845b0b74572f1b00001%40representation:sha256:9694635ebbf4a438c1a615be7bad6450becdf134d772dde242f51976b92f96ac#$.clause",
+      "artifact_id": "benchmark:production-release-015:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-015-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the release manager authorized production deployment for Identity Gateway.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-015:distractor@v1!benchmark:production-release-015:distractor%40revision:faf5036801de32650169398622d8ecbeaa52d74a24871c5fbe502dee16acaadd%40representation:sha256:06969c2158232a523fe2ddeb26c0021ddd60505c2d0553df90248d59874a697f#$.clause",
+      "artifact_id": "benchmark:production-release-015:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-015-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions release permission, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-015:versioned-policy@v13!benchmark:production-release-015:versioned-policy%40revision:760f2758bdc34806ab15003dd8763e26a4cd1acb759f2845b0b74572f1b00001%40representation:sha256:9694635ebbf4a438c1a615be7bad6450becdf134d772dde242f51976b92f96ac#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-015:versioned-policy@v12!benchmark:production-release-015:versioned-policy%40revision:f3b7b812b97f3e961e9ba4226578bcd2c212ffe5eae4f94495db4fef522b1270%40representation:sha256:8bebb339d92591776417ed680ef5a1dbb4bb03c028223c9ed6e7b42c27e549da#$.clause",
+      "benchmark:production-release-015:distractor@v1!benchmark:production-release-015:distractor%40revision:faf5036801de32650169398622d8ecbeaa52d74a24871c5fbe502dee16acaadd%40representation:sha256:06969c2158232a523fe2ddeb26c0021ddd60505c2d0553df90248d59874a697f#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-015:versioned-policy@v13!benchmark:production-release-015:versioned-policy%40revision:760f2758bdc34806ab15003dd8763e26a4cd1acb759f2845b0b74572f1b00001%40representation:sha256:9694635ebbf4a438c1a615be7bad6450becdf134d772dde242f51976b92f96ac#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: release permission changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-015"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

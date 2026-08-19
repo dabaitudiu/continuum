@@ -1,0 +1,90 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-036",
+  "title": "Jordan Lim — identity verification — conflicting-sources",
+  "domain": "privileged-access",
+  "case_class": "conflicting-sources",
+  "adversarial_tags": [
+    "contradictory-authority"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including identity verification and any material manager approval requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-036:primary@v13!benchmark:privileged-access-036:primary%40revision:166f1de50c7e15d36d8c8ef500596d5795976f59c8963de5b6796455106a8fb3%40representation:sha256:752cfb4b0103d4158acae40259adc5fb238d584106926d86919b8e9e1b21a6d5#$.clause",
+      "artifact_id": "benchmark:privileged-access-036:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-036-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Jordan Lim, authoritative evidence confirms that the requester's identity is verified.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-036:opposing-authority@v13!benchmark:privileged-access-036:opposing-authority%40revision:9f98ae927ddbbd76f7036c99808ba1c176ffa28045568afef940274ba45a8451%40representation:sha256:cd87f4e7ffb7804b568e8eb265dc68981b124ed4eb24bf56751a24e5440b6071#$.clause",
+      "artifact_id": "benchmark:privileged-access-036:opposing-authority",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-036-opposing-authority",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "An equally ranked current authority states that identity verification is waived for Jordan Lim.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-036:distractor@v1!benchmark:privileged-access-036:distractor%40revision:3344b31fb923bd72918a70ec1f40b790896efa8d6cb5f71167f6165a068b5112%40representation:sha256:4eaf6fe1475d85e19fe2c1a66678c49ecf7300727534ec1468ab1f7b5fceac88#$.clause",
+      "artifact_id": "benchmark:privileged-access-036:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-036-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions identity verification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-036:primary@v13!benchmark:privileged-access-036:primary%40revision:166f1de50c7e15d36d8c8ef500596d5795976f59c8963de5b6796455106a8fb3%40representation:sha256:752cfb4b0103d4158acae40259adc5fb238d584106926d86919b8e9e1b21a6d5#$.clause",
+      "benchmark:privileged-access-036:opposing-authority@v13!benchmark:privileged-access-036:opposing-authority%40revision:9f98ae927ddbbd76f7036c99808ba1c176ffa28045568afef940274ba45a8451%40representation:sha256:cd87f4e7ffb7804b568e8eb265dc68981b124ed4eb24bf56751a24e5440b6071#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-036:distractor@v1!benchmark:privileged-access-036:distractor%40revision:3344b31fb923bd72918a70ec1f40b790896efa8d6cb5f71167f6165a068b5112%40representation:sha256:4eaf6fe1475d85e19fe2c1a66678c49ecf7300727534ec1468ab1f7b5fceac88#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "NEEDS_HUMAN_REVIEW"
+      ],
+      "must_block": true
+    },
+    "blocking_contradictions": [
+      {
+        "source_ref_a": "benchmark:privileged-access-036:primary@v13!benchmark:privileged-access-036:primary%40revision:166f1de50c7e15d36d8c8ef500596d5795976f59c8963de5b6796455106a8fb3%40representation:sha256:752cfb4b0103d4158acae40259adc5fb238d584106926d86919b8e9e1b21a6d5#$.clause",
+        "source_ref_b": "benchmark:privileged-access-036:opposing-authority@v13!benchmark:privileged-access-036:opposing-authority%40revision:9f98ae927ddbbd76f7036c99808ba1c176ffa28045568afef940274ba45a8451%40representation:sha256:cd87f4e7ffb7804b568e8eb265dc68981b124ed4eb24bf56751a24e5440b6071#$.clause",
+        "topic": "identity verification"
+      }
+    ]
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-036:primary@v13!benchmark:privileged-access-036:primary%40revision:166f1de50c7e15d36d8c8ef500596d5795976f59c8963de5b6796455106a8fb3%40representation:sha256:752cfb4b0103d4158acae40259adc5fb238d584106926d86919b8e9e1b21a6d5#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: identity verification changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-036"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

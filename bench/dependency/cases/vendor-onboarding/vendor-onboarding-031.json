@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-031",
+  "title": "Beacon AI — security questionnaire — clean-positive",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including security questionnaire and any material encryption control requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-031:primary@v13!benchmark:vendor-onboarding-031:primary%40revision:5cdd00da8ba2b2469151a41cc66de447fe0d65f82fcb3ff4021b511f3ebff040%40representation:sha256:64162af5a4f7e7f9e0a0261658880933bbe912708baca071ca6ac9b70602be75#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-031:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-031-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Beacon AI, authoritative evidence confirms that the current security questionnaire is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-031:support@r7!benchmark:vendor-onboarding-031:support%40revision:0eea65bf613bc8399443e0ea090f139eef91a24ef65bf4a493f7d7efc92cf0ce%40representation:sha256:a8628952311a38eb9ebc0f49894059eb3ded387b98bb803a588e94795c84a39c#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-031:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-031-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Beacon AI confirms that customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-031:distractor@v1!benchmark:vendor-onboarding-031:distractor%40revision:305cd928a7f25b06c63056654a1b2dfab5e00d9699c9d4076f1b339638b5cb64%40representation:sha256:2ca60cf61661062a3fa9caa8aceeab91641469df6b3c29d4fbd050e392b135e3#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-031:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-031-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security questionnaire, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-031:primary@v13!benchmark:vendor-onboarding-031:primary%40revision:5cdd00da8ba2b2469151a41cc66de447fe0d65f82fcb3ff4021b511f3ebff040%40representation:sha256:64162af5a4f7e7f9e0a0261658880933bbe912708baca071ca6ac9b70602be75#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-031:support@r7!benchmark:vendor-onboarding-031:support%40revision:0eea65bf613bc8399443e0ea090f139eef91a24ef65bf4a493f7d7efc92cf0ce%40representation:sha256:a8628952311a38eb9ebc0f49894059eb3ded387b98bb803a588e94795c84a39c#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-031:distractor@v1!benchmark:vendor-onboarding-031:distractor%40revision:305cd928a7f25b06c63056654a1b2dfab5e00d9699c9d4076f1b339638b5cb64%40representation:sha256:2ca60cf61661062a3fa9caa8aceeab91641469df6b3c29d4fbd050e392b135e3#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-031:primary@v13!benchmark:vendor-onboarding-031:primary%40revision:5cdd00da8ba2b2469151a41cc66de447fe0d65f82fcb3ff4021b511f3ebff040%40representation:sha256:64162af5a4f7e7f9e0a0261658880933bbe912708baca071ca6ac9b70602be75#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: security questionnaire changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-031"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

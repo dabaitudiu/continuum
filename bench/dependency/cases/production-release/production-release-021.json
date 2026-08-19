@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-021",
+  "title": "Search Indexer — test report — clean-positive",
+  "domain": "production-release",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Search Indexer for production release. Determine whether the proposed outcome is justified by the current evidence, including test report and any material maintenance window requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-021:primary@v13!benchmark:production-release-021:primary%40revision:d04291d3debac9435c74f9ee722c4ce63e92945670ca9d2b906c3570c409c7e1%40representation:sha256:1e6ff8551b2d6e73aa1d580c53261e00f6a16fa93b88ea2f1760b5554e69989c#$.clause",
+      "artifact_id": "benchmark:production-release-021:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-021-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Search Indexer, authoritative evidence confirms that the current release test suite passed.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-021:support@r7!benchmark:production-release-021:support%40revision:fd3c7ae5594073c13f7f0ea4a5990e06ede6988b191fcff2f7fb71d57daffb32%40representation:sha256:65d1535c583f176aec6b2d196830b259e3efb21df51ad44c5d319bda816877d0#$.clause",
+      "artifact_id": "benchmark:production-release-021:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-021-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Search Indexer confirms that deployment is inside the approved maintenance window.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-021:distractor@v1!benchmark:production-release-021:distractor%40revision:89851372f3b2a14ee5009320f9f1e7d336e14a5cbafc7a850f7b239824236d52%40representation:sha256:0190cf3e6041e72e0365d5468a431ed00d09c5957338ec5ee30ae626a77f2f48#$.clause",
+      "artifact_id": "benchmark:production-release-021:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-021-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions test report, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-021:primary@v13!benchmark:production-release-021:primary%40revision:d04291d3debac9435c74f9ee722c4ce63e92945670ca9d2b906c3570c409c7e1%40representation:sha256:1e6ff8551b2d6e73aa1d580c53261e00f6a16fa93b88ea2f1760b5554e69989c#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-021:support@r7!benchmark:production-release-021:support%40revision:fd3c7ae5594073c13f7f0ea4a5990e06ede6988b191fcff2f7fb71d57daffb32%40representation:sha256:65d1535c583f176aec6b2d196830b259e3efb21df51ad44c5d319bda816877d0#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-021:distractor@v1!benchmark:production-release-021:distractor%40revision:89851372f3b2a14ee5009320f9f1e7d336e14a5cbafc7a850f7b239824236d52%40representation:sha256:0190cf3e6041e72e0365d5468a431ed00d09c5957338ec5ee30ae626a77f2f48#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-021:primary@v13!benchmark:production-release-021:primary%40revision:d04291d3debac9435c74f9ee722c4ce63e92945670ca9d2b906c3570c409c7e1%40representation:sha256:1e6ff8551b2d6e73aa1d580c53261e00f6a16fa93b88ea2f1760b5554e69989c#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Search Indexer: test report changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-021"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

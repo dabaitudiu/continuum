@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-023",
+  "title": "Search Indexer — security scan — critical-omission",
+  "domain": "production-release",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Search Indexer for production release. Determine whether the proposed outcome is justified by the current evidence, including security scan and any material SLO guardrail requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-023:primary@v13!benchmark:production-release-023:primary%40revision:e7f85073d461f4fc4ae0a24876c1c39978d67d22e048c159d84adc775e531222%40representation:sha256:1e66f28c59f3d1f91dcafaa546bba44a828f16e1304a8e1b4f74571468efda21#$.clause",
+      "artifact_id": "benchmark:production-release-023:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-023-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Search Indexer, authoritative evidence confirms that the current security scan has no critical finding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-023:support@r7!benchmark:production-release-023:support%40revision:382e746b2794bdb6d2e9850a8820554144ea90f4cc84639e3b49cca27094bef5%40representation:sha256:e0a962f9dd883a9af9a5b98593c35c559d5b7730d41c800a2c6d4c81c5b6f29c#$.clause",
+      "artifact_id": "benchmark:production-release-023:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-023-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Search Indexer confirms that projected error budget remains within the SLO guardrail.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-023:distractor@v1!benchmark:production-release-023:distractor%40revision:b04ca3fed49e40840b19bee1b53bd00d5a06c5784b9fad8e0c70ba1ce84a7681%40representation:sha256:7734d34ace3dc6a21becc7c8a8ba5b01f6e637f1d1362328ee78612fe2bdb335#$.clause",
+      "artifact_id": "benchmark:production-release-023:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-023-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security scan, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-023:primary@v13!benchmark:production-release-023:primary%40revision:e7f85073d461f4fc4ae0a24876c1c39978d67d22e048c159d84adc775e531222%40representation:sha256:1e66f28c59f3d1f91dcafaa546bba44a828f16e1304a8e1b4f74571468efda21#$.clause",
+      "benchmark:production-release-023:support@r7!benchmark:production-release-023:support%40revision:382e746b2794bdb6d2e9850a8820554144ea90f4cc84639e3b49cca27094bef5%40representation:sha256:e0a962f9dd883a9af9a5b98593c35c559d5b7730d41c800a2c6d4c81c5b6f29c#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-023:distractor@v1!benchmark:production-release-023:distractor%40revision:b04ca3fed49e40840b19bee1b53bd00d5a06c5784b9fad8e0c70ba1ce84a7681%40representation:sha256:7734d34ace3dc6a21becc7c8a8ba5b01f6e637f1d1362328ee78612fe2bdb335#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-023:primary@v13!benchmark:production-release-023:primary%40revision:e7f85073d461f4fc4ae0a24876c1c39978d67d22e048c159d84adc775e531222%40representation:sha256:1e66f28c59f3d1f91dcafaa546bba44a828f16e1304a8e1b4f74571468efda21#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Search Indexer: security scan changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-023"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

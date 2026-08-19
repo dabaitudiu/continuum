@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-014",
+  "title": "Morgan Lee — MFA enrollment — irrelevant-distractor",
+  "domain": "privileged-access",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Morgan Lee for privileged access. Determine whether the proposed outcome is justified by the current evidence, including MFA enrollment and any material access ticket requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-014:primary@v13!benchmark:privileged-access-014:primary%40revision:f72ef9255934287d4bd8183c04ffe02ffcd97938ed06e6e48ed846f493a72a1b%40representation:sha256:d6f4057f0a933a7389b9e8bf54a8013a44839dfac5cf4bd9b4de67d3cd54eac4#$.clause",
+      "artifact_id": "benchmark:privileged-access-014:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-014-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Morgan Lee, authoritative evidence confirms that phishing-resistant MFA is enrolled.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-014:support@r7!benchmark:privileged-access-014:support%40revision:faa7d8140f37da65658d934806aab4deb90dc3e1e0c69156db50be11c29ddce2%40representation:sha256:5a15ecc240b29e7ea42649ceb93ff1b99381e7bd486ec854b39beefa871db5e6#$.clause",
+      "artifact_id": "benchmark:privileged-access-014:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-014-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Morgan Lee confirms that the privileged-access ticket is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-014:distractor@v1!benchmark:privileged-access-014:distractor%40revision:4a5b670c2fed67824f24d36c430910332910bc9861442cc83e8f133a399e5cb4%40representation:sha256:d5f5c8155647601d2955699ba88eb3b84cc55917a76edb2e85e384ebb98cbcb4#$.clause",
+      "artifact_id": "benchmark:privileged-access-014:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-014-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions MFA enrollment, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-014:distractor-two@v1!benchmark:privileged-access-014:distractor-two%40revision:7bf0a56be1c42d4a0702d78d8a130c891bc97d5780cff204336a72769dccd409%40representation:sha256:d831c9efb8173a14601f45c85563db5b2d168312e3e75e15c71b732d03ad8d21#$.clause",
+      "artifact_id": "benchmark:privileged-access-014:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-014-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses access ticket without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-014:primary@v13!benchmark:privileged-access-014:primary%40revision:f72ef9255934287d4bd8183c04ffe02ffcd97938ed06e6e48ed846f493a72a1b%40representation:sha256:d6f4057f0a933a7389b9e8bf54a8013a44839dfac5cf4bd9b4de67d3cd54eac4#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-014:support@r7!benchmark:privileged-access-014:support%40revision:faa7d8140f37da65658d934806aab4deb90dc3e1e0c69156db50be11c29ddce2%40representation:sha256:5a15ecc240b29e7ea42649ceb93ff1b99381e7bd486ec854b39beefa871db5e6#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-014:distractor@v1!benchmark:privileged-access-014:distractor%40revision:4a5b670c2fed67824f24d36c430910332910bc9861442cc83e8f133a399e5cb4%40representation:sha256:d5f5c8155647601d2955699ba88eb3b84cc55917a76edb2e85e384ebb98cbcb4#$.clause",
+      "benchmark:privileged-access-014:distractor-two@v1!benchmark:privileged-access-014:distractor-two%40revision:7bf0a56be1c42d4a0702d78d8a130c891bc97d5780cff204336a72769dccd409%40representation:sha256:d831c9efb8173a14601f45c85563db5b2d168312e3e75e15c71b732d03ad8d21#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-014:distractor@v1!benchmark:privileged-access-014:distractor%40revision:4a5b670c2fed67824f24d36c430910332910bc9861442cc83e8f133a399e5cb4%40representation:sha256:d5f5c8155647601d2955699ba88eb3b84cc55917a76edb2e85e384ebb98cbcb4#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Morgan Lee: MFA enrollment changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-014"
+    ]
+  }
+}

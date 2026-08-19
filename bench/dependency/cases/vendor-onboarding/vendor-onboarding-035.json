@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-035",
+  "title": "Beacon AI — data processing agreement — obsolete-revision",
+  "domain": "vendor-onboarding",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data processing agreement and any material security questionnaire requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-035:versioned-policy@v12!benchmark:vendor-onboarding-035:versioned-policy%40revision:baaac3ea7d9066e7a5c0fc8f3472f4a65d657318a865b10ba2f7f1c03921f609%40representation:sha256:06a845e409d5064204ed70d0c6d676bb08993938349122c7d49fc109c2b5adbf#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-035:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-035-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: data processing agreement is optional for Beacon AI.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-035:versioned-policy@v13!benchmark:vendor-onboarding-035:versioned-policy%40revision:fe3b54d997fb14c24eb4e9053e8efa4b90a0add684ba01325479604fc80a3ea9%40representation:sha256:637d8cfff59429e132ebe9fd8061b6aee9971feb5acfaa2c90c4b329aaa8a31b#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-035:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-035-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the DPA is signed by Legal for Beacon AI.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-035:distractor@v1!benchmark:vendor-onboarding-035:distractor%40revision:8066dcd79bfd9499805cac31fbb12184ac8ca1e6af7da1f811723420d11cac8a%40representation:sha256:47ae3e0fa7dc620c2b50ca6c757d9dceaf9185fd3fc56cb757062938c19610a5#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-035:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-035-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data processing agreement, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-035:versioned-policy@v13!benchmark:vendor-onboarding-035:versioned-policy%40revision:fe3b54d997fb14c24eb4e9053e8efa4b90a0add684ba01325479604fc80a3ea9%40representation:sha256:637d8cfff59429e132ebe9fd8061b6aee9971feb5acfaa2c90c4b329aaa8a31b#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-035:versioned-policy@v12!benchmark:vendor-onboarding-035:versioned-policy%40revision:baaac3ea7d9066e7a5c0fc8f3472f4a65d657318a865b10ba2f7f1c03921f609%40representation:sha256:06a845e409d5064204ed70d0c6d676bb08993938349122c7d49fc109c2b5adbf#$.clause",
+      "benchmark:vendor-onboarding-035:distractor@v1!benchmark:vendor-onboarding-035:distractor%40revision:8066dcd79bfd9499805cac31fbb12184ac8ca1e6af7da1f811723420d11cac8a%40representation:sha256:47ae3e0fa7dc620c2b50ca6c757d9dceaf9185fd3fc56cb757062938c19610a5#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-035:versioned-policy@v13!benchmark:vendor-onboarding-035:versioned-policy%40revision:fe3b54d997fb14c24eb4e9053e8efa4b90a0add684ba01325479604fc80a3ea9%40representation:sha256:637d8cfff59429e132ebe9fd8061b6aee9971feb5acfaa2c90c4b329aaa8a31b#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: data processing agreement changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-035"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

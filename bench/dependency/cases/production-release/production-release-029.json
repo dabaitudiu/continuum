@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-029",
+  "title": "Search Indexer — canary metrics — multiple-dependencies",
+  "domain": "production-release",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Search Indexer for production release. Determine whether the proposed outcome is justified by the current evidence, including canary metrics and any material rollback plan and maintenance window requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-029:primary@v13!benchmark:production-release-029:primary%40revision:deb1c33f297db4cc52805bf4e33cb51af661e770e00ed10aa78262d9471db93e%40representation:sha256:7c609d6f48336c44837ea62b3062163cb76ca258422d822cde2eff9de0f429c7#$.clause",
+      "artifact_id": "benchmark:production-release-029:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-029-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Search Indexer, authoritative evidence confirms that canary health metrics meet the release threshold.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-029:support@r7!benchmark:production-release-029:support%40revision:4807f4dde781af710b011080def5ac78a1e1318adb47bedf9ff0063a3c741de2%40representation:sha256:f02d299726acfe3a1fdb9e933c119b82cbd93dca2fd8f7c4b83e1c5a99c144fa#$.clause",
+      "artifact_id": "benchmark:production-release-029:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-029-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Search Indexer confirms that a tested rollback plan is attached.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-029:third-critical@r9!benchmark:production-release-029:third-critical%40revision:4b53e974420f30da1117377174b75fd80cecd8172cffce4082562ac7a8563a3f%40representation:sha256:52983409057e8c33f294026df41c9470f8c85b5fcddf7433479b5184ebb43c0d#$.clause",
+      "artifact_id": "benchmark:production-release-029:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-029-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that deployment is inside the approved maintenance window for Search Indexer.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-029:distractor@v1!benchmark:production-release-029:distractor%40revision:d753dd2183b10f88cdc6e76255bb0c52d83ebe478427120d45ab8408ead36817%40representation:sha256:60f88251df5d81b261ecbb9365220253f9280b530ffef0661130283540f92ffa#$.clause",
+      "artifact_id": "benchmark:production-release-029:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-029-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions canary metrics, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-029:primary@v13!benchmark:production-release-029:primary%40revision:deb1c33f297db4cc52805bf4e33cb51af661e770e00ed10aa78262d9471db93e%40representation:sha256:7c609d6f48336c44837ea62b3062163cb76ca258422d822cde2eff9de0f429c7#$.clause",
+      "benchmark:production-release-029:support@r7!benchmark:production-release-029:support%40revision:4807f4dde781af710b011080def5ac78a1e1318adb47bedf9ff0063a3c741de2%40representation:sha256:f02d299726acfe3a1fdb9e933c119b82cbd93dca2fd8f7c4b83e1c5a99c144fa#$.clause",
+      "benchmark:production-release-029:third-critical@r9!benchmark:production-release-029:third-critical%40revision:4b53e974420f30da1117377174b75fd80cecd8172cffce4082562ac7a8563a3f%40representation:sha256:52983409057e8c33f294026df41c9470f8c85b5fcddf7433479b5184ebb43c0d#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-029:distractor@v1!benchmark:production-release-029:distractor%40revision:d753dd2183b10f88cdc6e76255bb0c52d83ebe478427120d45ab8408ead36817%40representation:sha256:60f88251df5d81b261ecbb9365220253f9280b530ffef0661130283540f92ffa#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-029:primary@v13!benchmark:production-release-029:primary%40revision:deb1c33f297db4cc52805bf4e33cb51af661e770e00ed10aa78262d9471db93e%40representation:sha256:7c609d6f48336c44837ea62b3062163cb76ca258422d822cde2eff9de0f429c7#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Search Indexer: canary metrics changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-029"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

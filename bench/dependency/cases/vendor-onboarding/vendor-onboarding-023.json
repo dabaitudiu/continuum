@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-023",
+  "title": "Orchid Payments — data classification — critical-omission",
+  "domain": "vendor-onboarding",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data classification and any material subprocessor review requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-023:primary@v13!benchmark:vendor-onboarding-023:primary%40revision:7b2a0aea224426aaad354625fb70077958c71f840c716c50f064e5b3aa2f77fe%40representation:sha256:9a38ba014e0ec5a0affce9625c89619203bb401359198364fdffcf1f1de109ac#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-023:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-023-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Orchid Payments, authoritative evidence confirms that handled data is classified before onboarding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-023:support@r7!benchmark:vendor-onboarding-023:support%40revision:5c0c1c4ac59d4a436446f391094801b82535ceffe5697b41e85333244c53be7c%40representation:sha256:f03bf4dd92b9d00aeca470575f944c2095f3bda01eb82cc2db41f7f11bc80af5#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-023:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-023-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Orchid Payments confirms that all subprocessors are approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-023:distractor@v1!benchmark:vendor-onboarding-023:distractor%40revision:b6a14648173ed455899e49aa4420e01f9f3d3b099f5139dc36f13499b3e3d52f%40representation:sha256:d3042b578e1ad72c1224296f1f2454630e96bdd8c8cba0da1794e060821ab124#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-023:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-023-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data classification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-023:primary@v13!benchmark:vendor-onboarding-023:primary%40revision:7b2a0aea224426aaad354625fb70077958c71f840c716c50f064e5b3aa2f77fe%40representation:sha256:9a38ba014e0ec5a0affce9625c89619203bb401359198364fdffcf1f1de109ac#$.clause",
+      "benchmark:vendor-onboarding-023:support@r7!benchmark:vendor-onboarding-023:support%40revision:5c0c1c4ac59d4a436446f391094801b82535ceffe5697b41e85333244c53be7c%40representation:sha256:f03bf4dd92b9d00aeca470575f944c2095f3bda01eb82cc2db41f7f11bc80af5#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-023:distractor@v1!benchmark:vendor-onboarding-023:distractor%40revision:b6a14648173ed455899e49aa4420e01f9f3d3b099f5139dc36f13499b3e3d52f%40representation:sha256:d3042b578e1ad72c1224296f1f2454630e96bdd8c8cba0da1794e060821ab124#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-023:primary@v13!benchmark:vendor-onboarding-023:primary%40revision:7b2a0aea224426aaad354625fb70077958c71f840c716c50f064e5b3aa2f77fe%40representation:sha256:9a38ba014e0ec5a0affce9625c89619203bb401359198364fdffcf1f1de109ac#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: data classification changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-023"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

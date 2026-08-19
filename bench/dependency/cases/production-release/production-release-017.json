@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-017",
+  "title": "Identity Gateway — migration backup — near-duplicate",
+  "domain": "production-release",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including migration backup and any material test report requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-017:near-policy@v13!benchmark:production-release-017:near-policy%40revision:c6d155399862d99d6e746938f070b3a3e7e12c579d0164cae21a1aad6c223387%40representation:sha256:db30fc991c19ea48d1999417f68f300f6b9a9f14c9b7a2e91b7fb0cf909099bd#$.binding_clause",
+      "artifact_id": "benchmark:production-release-017:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-017-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Identity Gateway: a verified pre-migration backup exists.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-017:near-policy@v13!benchmark:production-release-017:near-policy%40revision:c6d155399862d99d6e746938f070b3a3e7e12c579d0164cae21a1aad6c223387%40representation:sha256:db30fc991c19ea48d1999417f68f300f6b9a9f14c9b7a2e91b7fb0cf909099bd#$.near_match",
+      "artifact_id": "benchmark:production-release-017:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-017-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: migration backup may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-017:support@r7!benchmark:production-release-017:support%40revision:b2660f5752fde3636c3e85fa31dc8fec73aa5ed1b55a670e84b4338ee86c4506%40representation:sha256:c2987cebde569ecbf558b3abc83546c0bc77da3cc80ede852cde7841a0f8cbe7#$.clause",
+      "artifact_id": "benchmark:production-release-017:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-017-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Identity Gateway confirms that the current release test suite passed.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-017:near-policy@v13!benchmark:production-release-017:near-policy%40revision:c6d155399862d99d6e746938f070b3a3e7e12c579d0164cae21a1aad6c223387%40representation:sha256:db30fc991c19ea48d1999417f68f300f6b9a9f14c9b7a2e91b7fb0cf909099bd#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-017:support@r7!benchmark:production-release-017:support%40revision:b2660f5752fde3636c3e85fa31dc8fec73aa5ed1b55a670e84b4338ee86c4506%40representation:sha256:c2987cebde569ecbf558b3abc83546c0bc77da3cc80ede852cde7841a0f8cbe7#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-017:near-policy@v13!benchmark:production-release-017:near-policy%40revision:c6d155399862d99d6e746938f070b3a3e7e12c579d0164cae21a1aad6c223387%40representation:sha256:db30fc991c19ea48d1999417f68f300f6b9a9f14c9b7a2e91b7fb0cf909099bd#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-017:near-policy@v13!benchmark:production-release-017:near-policy%40revision:c6d155399862d99d6e746938f070b3a3e7e12c579d0164cae21a1aad6c223387%40representation:sha256:db30fc991c19ea48d1999417f68f300f6b9a9f14c9b7a2e91b7fb0cf909099bd#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: migration backup changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:production-release-017"
+    ]
+  }
+}

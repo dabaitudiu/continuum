@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-025",
+  "title": "Orchid Payments — data processing agreement — obsolete-revision",
+  "domain": "vendor-onboarding",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data processing agreement and any material retention clause requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-025:versioned-policy@v12!benchmark:vendor-onboarding-025:versioned-policy%40revision:940dfcbdfadf47896dfe821933a2dd6ab0b9c967db165a83a5fb1f2c24748d22%40representation:sha256:3766fde0f42e4acb9c2e905b5135baebb98e738eb24a8d290c14da84b8e2f92c#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-025:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-025-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: data processing agreement is optional for Orchid Payments.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-025:versioned-policy@v13!benchmark:vendor-onboarding-025:versioned-policy%40revision:9c260f89c35b1462906415bf74f6179b4a6d7bc73e74c820384f4f316e4646df%40representation:sha256:c7ea5b877831e86e09740927ecb3e0fe9b8a52c68abee3dfeed30c52804c9b4f#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-025:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-025-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the DPA is signed by Legal for Orchid Payments.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-025:distractor@v1!benchmark:vendor-onboarding-025:distractor%40revision:0118758e51811fb04d278a1367099bae9aa6965a55446fb262d870c37f7a7d0d%40representation:sha256:ca2dbfe1536272ee9b004820b53fa2072df7ef5aa78617c0beed31b9ac8e8523#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-025:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-025-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data processing agreement, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-025:versioned-policy@v13!benchmark:vendor-onboarding-025:versioned-policy%40revision:9c260f89c35b1462906415bf74f6179b4a6d7bc73e74c820384f4f316e4646df%40representation:sha256:c7ea5b877831e86e09740927ecb3e0fe9b8a52c68abee3dfeed30c52804c9b4f#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-025:versioned-policy@v12!benchmark:vendor-onboarding-025:versioned-policy%40revision:940dfcbdfadf47896dfe821933a2dd6ab0b9c967db165a83a5fb1f2c24748d22%40representation:sha256:3766fde0f42e4acb9c2e905b5135baebb98e738eb24a8d290c14da84b8e2f92c#$.clause",
+      "benchmark:vendor-onboarding-025:distractor@v1!benchmark:vendor-onboarding-025:distractor%40revision:0118758e51811fb04d278a1367099bae9aa6965a55446fb262d870c37f7a7d0d%40representation:sha256:ca2dbfe1536272ee9b004820b53fa2072df7ef5aa78617c0beed31b9ac8e8523#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-025:versioned-policy@v13!benchmark:vendor-onboarding-025:versioned-policy%40revision:9c260f89c35b1462906415bf74f6179b4a6d7bc73e74c820384f4f316e4646df%40representation:sha256:c7ea5b877831e86e09740927ecb3e0fe9b8a52c68abee3dfeed30c52804c9b4f#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: data processing agreement changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-025"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

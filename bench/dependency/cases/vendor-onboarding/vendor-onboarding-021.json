@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-021",
+  "title": "Orchid Payments — security questionnaire — clean-positive",
+  "domain": "vendor-onboarding",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including security questionnaire and any material penetration test requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-021:primary@v13!benchmark:vendor-onboarding-021:primary%40revision:60386ab73dc558d26dd9c3cdc08a379eabbcd0dd7be3935301f8306e8b7238be%40representation:sha256:04f4e2567318cce3ccda029e959a60128ccb8b3c7276b587b2193891e02eaae0#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-021:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-021-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Orchid Payments, authoritative evidence confirms that the current security questionnaire is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-021:support@r7!benchmark:vendor-onboarding-021:support%40revision:8f1f578619db535efbfdff34e3bc93e5d2fd79b0e043c8e4464a383e81d126f1%40representation:sha256:2500f3e538e28ee6034bc4453037772e4bddd14768f15fe8f91aefef0697a955#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-021:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-021-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Orchid Payments confirms that the penetration test is less than twelve months old.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-021:distractor@v1!benchmark:vendor-onboarding-021:distractor%40revision:14e3091f7b2faabe286b26936100031119f5e77997f057ec7bf46c2d0c8aa912%40representation:sha256:db1270a19a8e787a0368ba64729634ccd66c23855316af2d2e4679620a41107e#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-021:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-021-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions security questionnaire, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-021:primary@v13!benchmark:vendor-onboarding-021:primary%40revision:60386ab73dc558d26dd9c3cdc08a379eabbcd0dd7be3935301f8306e8b7238be%40representation:sha256:04f4e2567318cce3ccda029e959a60128ccb8b3c7276b587b2193891e02eaae0#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-021:support@r7!benchmark:vendor-onboarding-021:support%40revision:8f1f578619db535efbfdff34e3bc93e5d2fd79b0e043c8e4464a383e81d126f1%40representation:sha256:2500f3e538e28ee6034bc4453037772e4bddd14768f15fe8f91aefef0697a955#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-021:distractor@v1!benchmark:vendor-onboarding-021:distractor%40revision:14e3091f7b2faabe286b26936100031119f5e77997f057ec7bf46c2d0c8aa912%40representation:sha256:db1270a19a8e787a0368ba64729634ccd66c23855316af2d2e4679620a41107e#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-021:primary@v13!benchmark:vendor-onboarding-021:primary%40revision:60386ab73dc558d26dd9c3cdc08a379eabbcd0dd7be3935301f8306e8b7238be%40representation:sha256:04f4e2567318cce3ccda029e959a60128ccb8b3c7276b587b2193891e02eaae0#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: security questionnaire changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-021"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-034",
+  "title": "Billing Worker — rollback plan — irrelevant-distractor",
+  "domain": "production-release",
+  "case_class": "irrelevant-distractor",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including rollback plan and any material incident freeze requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-034:primary@v13!benchmark:production-release-034:primary%40revision:b1d4f6e4edd564e8b259630311de2022ee8bfa82eafaf543d6cad4c796d4b723%40representation:sha256:1bd19990e1a3332e25f644475692a68686b69582ae50cac740f0b1b1ea9d665b#$.clause",
+      "artifact_id": "benchmark:production-release-034:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-034-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Billing Worker, authoritative evidence confirms that a tested rollback plan is attached.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-034:support@r7!benchmark:production-release-034:support%40revision:260ea6d7638185ef36e8279225b3b17bdcf4e73fb436c9673908a9e33fc70f8e%40representation:sha256:4c87a38146f8dc3b039baf363243ce3c5672ed7fbcc6774923a1e25878a1c8e1#$.clause",
+      "artifact_id": "benchmark:production-release-034:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-034-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Billing Worker confirms that no active severity-one incident freeze applies.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-034:distractor@v1!benchmark:production-release-034:distractor%40revision:770e20eacab341100210316b2fa2e61a2c9772746248ae0983913a78ff2f9958%40representation:sha256:8af93d7c64d592ac1d9c38966ad65012187de8d7a87bfa58f1875021505e0b2d#$.clause",
+      "artifact_id": "benchmark:production-release-034:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-034-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions rollback plan, but is not approval evidence.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-034:distractor-two@v1!benchmark:production-release-034:distractor-two%40revision:c90454f145ccbbd53a76275a603725c49d44df045371acf5b226647eb643a55b%40representation:sha256:1486b490e9ee2b5941c83cbd875d032ba231f38a43c7b4f906a5e9f2764afad7#$.clause",
+      "artifact_id": "benchmark:production-release-034:distractor-two",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-034-distractor-two",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 1,
+      "content": "An expired sales deck discusses incident freeze without evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-034:primary@v13!benchmark:production-release-034:primary%40revision:b1d4f6e4edd564e8b259630311de2022ee8bfa82eafaf543d6cad4c796d4b723%40representation:sha256:1bd19990e1a3332e25f644475692a68686b69582ae50cac740f0b1b1ea9d665b#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-034:support@r7!benchmark:production-release-034:support%40revision:260ea6d7638185ef36e8279225b3b17bdcf4e73fb436c9673908a9e33fc70f8e%40representation:sha256:4c87a38146f8dc3b039baf363243ce3c5672ed7fbcc6774923a1e25878a1c8e1#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-034:distractor@v1!benchmark:production-release-034:distractor%40revision:770e20eacab341100210316b2fa2e61a2c9772746248ae0983913a78ff2f9958%40representation:sha256:8af93d7c64d592ac1d9c38966ad65012187de8d7a87bfa58f1875021505e0b2d#$.clause",
+      "benchmark:production-release-034:distractor-two@v1!benchmark:production-release-034:distractor-two%40revision:c90454f145ccbbd53a76275a603725c49d44df045371acf5b226647eb643a55b%40representation:sha256:1486b490e9ee2b5941c83cbd875d032ba231f38a43c7b4f906a5e9f2764afad7#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-034:distractor@v1!benchmark:production-release-034:distractor%40revision:770e20eacab341100210316b2fa2e61a2c9772746248ae0983913a78ff2f9958%40representation:sha256:8af93d7c64d592ac1d9c38966ad65012187de8d7a87bfa58f1875021505e0b2d#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: rollback plan changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:production-release-034"
+    ]
+  }
+}

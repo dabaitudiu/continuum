@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-029",
+  "title": "Orchid Payments — financial approval — multiple-dependencies",
+  "domain": "vendor-onboarding",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Orchid Payments for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including financial approval and any material Singapore residency and penetration test requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-029:primary@v13!benchmark:vendor-onboarding-029:primary%40revision:b9149a0053cea7bf86060e143307adeb5d6b3d8df9bfe9e17499f2f59ce53af2%40representation:sha256:3cfa818481f761808618fb6fa0ef56a7be46d4451ede8890c406c439c90265a4#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-029:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-029-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Orchid Payments, authoritative evidence confirms that annual spend has Finance approval.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-029:support@r7!benchmark:vendor-onboarding-029:support%40revision:acd4503ef939fe60f979a07eaf09b2b2a3cc06b07892f20ae8bfe1017c70a146%40representation:sha256:56e8607896b49b70c06e54a21ec75b5d401f7ab457a762439712c69a8c547b4c#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-029:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-029-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Orchid Payments confirms that regulated data remains in Singapore.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-029:third-critical@r9!benchmark:vendor-onboarding-029:third-critical%40revision:6bd392c657819de3874a549f86199652d6d8c5bfd678822e90cecc6f2b97dd71%40representation:sha256:3af513a9eb727b2276bfb4cc0ba216729e717c5b40f4298f24c60995cf05bfdf#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-029:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-029-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that the penetration test is less than twelve months old for Orchid Payments.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-029:distractor@v1!benchmark:vendor-onboarding-029:distractor%40revision:702b8c49f3d3a9625c80df650cd45d1563675988db0115f6ebbf8252c4661549%40representation:sha256:e67c0e73e6692a9b6fe8e09624356972c768eae285499cd7017877fa4532e5fd#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-029:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-029-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions financial approval, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-029:primary@v13!benchmark:vendor-onboarding-029:primary%40revision:b9149a0053cea7bf86060e143307adeb5d6b3d8df9bfe9e17499f2f59ce53af2%40representation:sha256:3cfa818481f761808618fb6fa0ef56a7be46d4451ede8890c406c439c90265a4#$.clause",
+      "benchmark:vendor-onboarding-029:support@r7!benchmark:vendor-onboarding-029:support%40revision:acd4503ef939fe60f979a07eaf09b2b2a3cc06b07892f20ae8bfe1017c70a146%40representation:sha256:56e8607896b49b70c06e54a21ec75b5d401f7ab457a762439712c69a8c547b4c#$.clause",
+      "benchmark:vendor-onboarding-029:third-critical@r9!benchmark:vendor-onboarding-029:third-critical%40revision:6bd392c657819de3874a549f86199652d6d8c5bfd678822e90cecc6f2b97dd71%40representation:sha256:3af513a9eb727b2276bfb4cc0ba216729e717c5b40f4298f24c60995cf05bfdf#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-029:distractor@v1!benchmark:vendor-onboarding-029:distractor%40revision:702b8c49f3d3a9625c80df650cd45d1563675988db0115f6ebbf8252c4661549%40representation:sha256:e67c0e73e6692a9b6fe8e09624356972c768eae285499cd7017877fa4532e5fd#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-029:primary@v13!benchmark:vendor-onboarding-029:primary%40revision:b9149a0053cea7bf86060e143307adeb5d6b3d8df9bfe9e17499f2f59ce53af2%40representation:sha256:3cfa818481f761808618fb6fa0ef56a7be46d4451ede8890c406c439c90265a4#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Orchid Payments: financial approval changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-029"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

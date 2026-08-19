@@ -1,0 +1,90 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-006",
+  "title": "Acme Analytics — penetration test — conflicting-sources",
+  "domain": "vendor-onboarding",
+  "case_class": "conflicting-sources",
+  "adversarial_tags": [
+    "contradictory-authority"
+  ],
+  "variance_subset": true,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Acme Analytics for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including penetration test and any material financial approval requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-006:primary@v13!benchmark:vendor-onboarding-006:primary%40revision:0990dfb621e4d7f0c4f8e524bfd79b615bf97da5f68148321c4928420ec3605a%40representation:sha256:c1ac53d9581b3fb8a78a01129e629d8e9ed27cd8a0eb66e37f818b32bcdad59e#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-006:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-006-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Acme Analytics, authoritative evidence confirms that the penetration test is less than twelve months old.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-006:opposing-authority@v13!benchmark:vendor-onboarding-006:opposing-authority%40revision:216a939d9089b663f7ec56aab2e3a3db08bc7d7377f8dba881117197bbdae631%40representation:sha256:5d8a89a2fcfe4f85a19da1dc3accb2a20c6c1e91a5a69c645701f9bed2eeacdb#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-006:opposing-authority",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-006-opposing-authority",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "An equally ranked current authority states that penetration test is waived for Acme Analytics.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-006:distractor@v1!benchmark:vendor-onboarding-006:distractor%40revision:2632b7b0cf04fa27ecc4ac854282793a9dcc67a48e62ce98935b0e646e794572%40representation:sha256:4f7fef363100df2da30e8cf3d6290baad8ff87f56c9db5a5cc601aa73a0f068d#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-006:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-006-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions penetration test, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-006:primary@v13!benchmark:vendor-onboarding-006:primary%40revision:0990dfb621e4d7f0c4f8e524bfd79b615bf97da5f68148321c4928420ec3605a%40representation:sha256:c1ac53d9581b3fb8a78a01129e629d8e9ed27cd8a0eb66e37f818b32bcdad59e#$.clause",
+      "benchmark:vendor-onboarding-006:opposing-authority@v13!benchmark:vendor-onboarding-006:opposing-authority%40revision:216a939d9089b663f7ec56aab2e3a3db08bc7d7377f8dba881117197bbdae631%40representation:sha256:5d8a89a2fcfe4f85a19da1dc3accb2a20c6c1e91a5a69c645701f9bed2eeacdb#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-006:distractor@v1!benchmark:vendor-onboarding-006:distractor%40revision:2632b7b0cf04fa27ecc4ac854282793a9dcc67a48e62ce98935b0e646e794572%40representation:sha256:4f7fef363100df2da30e8cf3d6290baad8ff87f56c9db5a5cc601aa73a0f068d#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "NEEDS_HUMAN_REVIEW"
+      ],
+      "must_block": true
+    },
+    "blocking_contradictions": [
+      {
+        "source_ref_a": "benchmark:vendor-onboarding-006:primary@v13!benchmark:vendor-onboarding-006:primary%40revision:0990dfb621e4d7f0c4f8e524bfd79b615bf97da5f68148321c4928420ec3605a%40representation:sha256:c1ac53d9581b3fb8a78a01129e629d8e9ed27cd8a0eb66e37f818b32bcdad59e#$.clause",
+        "source_ref_b": "benchmark:vendor-onboarding-006:opposing-authority@v13!benchmark:vendor-onboarding-006:opposing-authority%40revision:216a939d9089b663f7ec56aab2e3a3db08bc7d7377f8dba881117197bbdae631%40representation:sha256:5d8a89a2fcfe4f85a19da1dc3accb2a20c6c1e91a5a69c645701f9bed2eeacdb#$.clause",
+        "topic": "penetration test"
+      }
+    ]
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-006:primary@v13!benchmark:vendor-onboarding-006:primary%40revision:0990dfb621e4d7f0c4f8e524bfd79b615bf97da5f68148321c4928420ec3605a%40representation:sha256:c1ac53d9581b3fb8a78a01129e629d8e9ed27cd8a0eb66e37f818b32bcdad59e#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Acme Analytics: penetration test changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-006"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

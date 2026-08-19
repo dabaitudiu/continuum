@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-035",
+  "title": "Billing Worker — release permission — obsolete-revision",
+  "domain": "production-release",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including release permission and any material test report requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-035:versioned-policy@v12!benchmark:production-release-035:versioned-policy%40revision:668af346dc413de355649f42508eb0ba5dc61d25f54a46e1b2e5b76eb432b487%40representation:sha256:6a247e2aff0498c82d20dd7826a77fc9bde136e1637d2819a42fa29e8c364d0b#$.clause",
+      "artifact_id": "benchmark:production-release-035:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-035-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: release permission is optional for Billing Worker.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:production-release-035:versioned-policy@v13!benchmark:production-release-035:versioned-policy%40revision:ac2be68fbe301de67fcc1587bec9b8664e66df7f27d075d6db30d6ee393e3496%40representation:sha256:f0476cc148aea4f50bcf6a258830f0fd9946628e5ebb79d63135d702ba9f7c68#$.clause",
+      "artifact_id": "benchmark:production-release-035:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-035-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: the release manager authorized production deployment for Billing Worker.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-035:distractor@v1!benchmark:production-release-035:distractor%40revision:46d553f8977ee984edb08e98beea43846eb8a0ce1b8cb2a20a5da1843de6afbc%40representation:sha256:8832020335ca3bdd3460157019042108369c232505e685fb5f8c27f7bb7a5341#$.clause",
+      "artifact_id": "benchmark:production-release-035:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-035-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions release permission, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-035:versioned-policy@v13!benchmark:production-release-035:versioned-policy%40revision:ac2be68fbe301de67fcc1587bec9b8664e66df7f27d075d6db30d6ee393e3496%40representation:sha256:f0476cc148aea4f50bcf6a258830f0fd9946628e5ebb79d63135d702ba9f7c68#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-035:versioned-policy@v12!benchmark:production-release-035:versioned-policy%40revision:668af346dc413de355649f42508eb0ba5dc61d25f54a46e1b2e5b76eb432b487%40representation:sha256:6a247e2aff0498c82d20dd7826a77fc9bde136e1637d2819a42fa29e8c364d0b#$.clause",
+      "benchmark:production-release-035:distractor@v1!benchmark:production-release-035:distractor%40revision:46d553f8977ee984edb08e98beea43846eb8a0ce1b8cb2a20a5da1843de6afbc%40representation:sha256:8832020335ca3bdd3460157019042108369c232505e685fb5f8c27f7bb7a5341#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-035:versioned-policy@v13!benchmark:production-release-035:versioned-policy%40revision:ac2be68fbe301de67fcc1587bec9b8664e66df7f27d075d6db30d6ee393e3496%40representation:sha256:f0476cc148aea4f50bcf6a258830f0fd9946628e5ebb79d63135d702ba9f7c68#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: release permission changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-035"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-019",
+  "title": "Nimbus CRM — financial approval — multiple-dependencies",
+  "domain": "vendor-onboarding",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including financial approval and any material data classification and data processing agreement requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-019:primary@v13!benchmark:vendor-onboarding-019:primary%40revision:feebebd3e10eefce651aac30aba5db237772197fdd9cd6d2c145b126482781d7%40representation:sha256:41f81e6d45c4b28458f584da1623912729d535a9de9f04e6e58dd53708645ba6#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-019:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-019-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Nimbus CRM, authoritative evidence confirms that annual spend has Finance approval.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-019:support@r7!benchmark:vendor-onboarding-019:support%40revision:bd2500fb4ab9af0847fe699ba0fda7f08bc6c8f25ba95b06dff35a6216f90770%40representation:sha256:37b7ac23f9dcfafc69259305ca23b8dc1324fa353d37db0a60728e62615e5689#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-019:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-019-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Nimbus CRM confirms that handled data is classified before onboarding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-019:third-critical@r9!benchmark:vendor-onboarding-019:third-critical%40revision:1c9050fbe042e279f5a97bb0dcadf0ad8f3c17c31ee2452a1c99324dc7bdfae5%40representation:sha256:466547787a099cd7f52e069b6d41449457ae1bdd5dea718b6e2f279dc6aae407#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-019:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-019-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that the DPA is signed by Legal for Nimbus CRM.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-019:distractor@v1!benchmark:vendor-onboarding-019:distractor%40revision:14efc776cdeac996e167be1a0062f6190412227198b61673e3a701d4bd163507%40representation:sha256:291019d1f317764a4412f32200c4033cc20daea41b6e92a84c95d68a4942873e#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-019:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-019-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions financial approval, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-019:primary@v13!benchmark:vendor-onboarding-019:primary%40revision:feebebd3e10eefce651aac30aba5db237772197fdd9cd6d2c145b126482781d7%40representation:sha256:41f81e6d45c4b28458f584da1623912729d535a9de9f04e6e58dd53708645ba6#$.clause",
+      "benchmark:vendor-onboarding-019:support@r7!benchmark:vendor-onboarding-019:support%40revision:bd2500fb4ab9af0847fe699ba0fda7f08bc6c8f25ba95b06dff35a6216f90770%40representation:sha256:37b7ac23f9dcfafc69259305ca23b8dc1324fa353d37db0a60728e62615e5689#$.clause",
+      "benchmark:vendor-onboarding-019:third-critical@r9!benchmark:vendor-onboarding-019:third-critical%40revision:1c9050fbe042e279f5a97bb0dcadf0ad8f3c17c31ee2452a1c99324dc7bdfae5%40representation:sha256:466547787a099cd7f52e069b6d41449457ae1bdd5dea718b6e2f279dc6aae407#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-019:distractor@v1!benchmark:vendor-onboarding-019:distractor%40revision:14efc776cdeac996e167be1a0062f6190412227198b61673e3a701d4bd163507%40representation:sha256:291019d1f317764a4412f32200c4033cc20daea41b6e92a84c95d68a4942873e#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-019:primary@v13!benchmark:vendor-onboarding-019:primary%40revision:feebebd3e10eefce651aac30aba5db237772197fdd9cd6d2c145b126482781d7%40representation:sha256:41f81e6d45c4b28458f584da1623912729d535a9de9f04e6e58dd53708645ba6#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: financial approval changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-019"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

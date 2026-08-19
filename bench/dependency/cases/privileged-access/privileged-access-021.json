@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-021",
+  "title": "Riley Tan — role eligibility — clean-positive",
+  "domain": "privileged-access",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Riley Tan for privileged access. Determine whether the proposed outcome is justified by the current evidence, including role eligibility and any material identity verification requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-021:primary@v13!benchmark:privileged-access-021:primary%40revision:a12f2d6c18d32747f7d5c44dfb943a2dc7990d7cfd92debadafc0007b717e64e%40representation:sha256:c9609cef14a53039150fc2a66a4ec00c4d30675ad6ca51ffd419857c1f0f6dd1#$.clause",
+      "artifact_id": "benchmark:privileged-access-021:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-021-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Riley Tan, authoritative evidence confirms that the requested role is eligible for privileged access.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-021:support@r7!benchmark:privileged-access-021:support%40revision:4ea3b95bee149809d1e178f2143440874c92ecbddd859145d076294e7987e31f%40representation:sha256:5aeeb3f80faf317d1455673061180f93074daf391fb2c573e35d612bf6f98e93#$.clause",
+      "artifact_id": "benchmark:privileged-access-021:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-021-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Riley Tan confirms that the requester's identity is verified.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-021:distractor@v1!benchmark:privileged-access-021:distractor%40revision:2fa3afe8cd29c03295559b21e9bca2f436c813e2811b8fa414fe184e7c075c5b%40representation:sha256:e978e89b99b273196066bf69f551b48d7de6ce5aacb5218e3ed2ea99b6e740dc#$.clause",
+      "artifact_id": "benchmark:privileged-access-021:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-021-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions role eligibility, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-021:primary@v13!benchmark:privileged-access-021:primary%40revision:a12f2d6c18d32747f7d5c44dfb943a2dc7990d7cfd92debadafc0007b717e64e%40representation:sha256:c9609cef14a53039150fc2a66a4ec00c4d30675ad6ca51ffd419857c1f0f6dd1#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-021:support@r7!benchmark:privileged-access-021:support%40revision:4ea3b95bee149809d1e178f2143440874c92ecbddd859145d076294e7987e31f%40representation:sha256:5aeeb3f80faf317d1455673061180f93074daf391fb2c573e35d612bf6f98e93#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-021:distractor@v1!benchmark:privileged-access-021:distractor%40revision:2fa3afe8cd29c03295559b21e9bca2f436c813e2811b8fa414fe184e7c075c5b%40representation:sha256:e978e89b99b273196066bf69f551b48d7de6ce5aacb5218e3ed2ea99b6e740dc#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-021:primary@v13!benchmark:privileged-access-021:primary%40revision:a12f2d6c18d32747f7d5c44dfb943a2dc7990d7cfd92debadafc0007b717e64e%40representation:sha256:c9609cef14a53039150fc2a66a4ec00c4d30675ad6ca51ffd419857c1f0f6dd1#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Riley Tan: role eligibility changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-021"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

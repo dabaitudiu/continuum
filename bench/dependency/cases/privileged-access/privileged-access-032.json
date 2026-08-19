@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-032",
+  "title": "Jordan Lim — manager approval — clean-negative",
+  "domain": "privileged-access",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Jordan Lim for privileged access. Determine whether the proposed outcome is justified by the current evidence, including manager approval and any material access ticket requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-032:primary@r13!benchmark:privileged-access-032:primary%40revision:9131f5218a24b2c6b8e7aa185fefdff58c3d0ce3118ff4d04ef3ad04b14e1fdc%40representation:sha256:793463c52f475fd6206537e1880f4819be353917678d35ed6c3996f6e0620d81#$.clause",
+      "artifact_id": "benchmark:privileged-access-032:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-032-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Jordan Lim, the authoritative record states that the current manager approved the request is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-032:support@r7!benchmark:privileged-access-032:support%40revision:313e0588e26eee0b0e24274dcaded3645bcf7f5350de10a8c0532c664f238210%40representation:sha256:1ea55629f2c93ea5beac9f673e90170c3a4bb330ed761764308f83ccf1bfaaec#$.clause",
+      "artifact_id": "benchmark:privileged-access-032:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-032-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Jordan Lim confirms that the privileged-access ticket is approved.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-032:distractor@v1!benchmark:privileged-access-032:distractor%40revision:dbfc1843e7e58439a65002a1a500301ac91d4f70fd9a77161c403a8b0da41315%40representation:sha256:413caad1053ced2e43887dd2ecaa5d76b758e84f2ba4738d6ab5b36738a459fd#$.clause",
+      "artifact_id": "benchmark:privileged-access-032:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-032-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions manager approval, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-032:primary@r13!benchmark:privileged-access-032:primary%40revision:9131f5218a24b2c6b8e7aa185fefdff58c3d0ce3118ff4d04ef3ad04b14e1fdc%40representation:sha256:793463c52f475fd6206537e1880f4819be353917678d35ed6c3996f6e0620d81#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-032:support@r7!benchmark:privileged-access-032:support%40revision:313e0588e26eee0b0e24274dcaded3645bcf7f5350de10a8c0532c664f238210%40representation:sha256:1ea55629f2c93ea5beac9f673e90170c3a4bb330ed761764308f83ccf1bfaaec#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-032:distractor@v1!benchmark:privileged-access-032:distractor%40revision:dbfc1843e7e58439a65002a1a500301ac91d4f70fd9a77161c403a8b0da41315%40representation:sha256:413caad1053ced2e43887dd2ecaa5d76b758e84f2ba4738d6ab5b36738a459fd#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-032:primary@r13!benchmark:privileged-access-032:primary%40revision:9131f5218a24b2c6b8e7aa185fefdff58c3d0ce3118ff4d04ef3ad04b14e1fdc%40representation:sha256:793463c52f475fd6206537e1880f4819be353917678d35ed6c3996f6e0620d81#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Jordan Lim: manager approval changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-032"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

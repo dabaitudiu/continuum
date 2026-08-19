@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-017",
+  "title": "Nimbus CRM — encryption control — near-duplicate",
+  "domain": "vendor-onboarding",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including encryption control and any material security questionnaire requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-017:near-policy@v13!benchmark:vendor-onboarding-017:near-policy%40revision:225defe0ba898144c1bbe03a99a51b15403c351ceb3f77f5c21af1293e8c3a82%40representation:sha256:3d596db302b38d38686b28ef0da2e775ae4f38059e5b6f04da7539081b086ad5#$.binding_clause",
+      "artifact_id": "benchmark:vendor-onboarding-017:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-017-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Nimbus CRM: customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-017:near-policy@v13!benchmark:vendor-onboarding-017:near-policy%40revision:225defe0ba898144c1bbe03a99a51b15403c351ceb3f77f5c21af1293e8c3a82%40representation:sha256:3d596db302b38d38686b28ef0da2e775ae4f38059e5b6f04da7539081b086ad5#$.near_match",
+      "artifact_id": "benchmark:vendor-onboarding-017:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-017-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: encryption control may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-017:support@r7!benchmark:vendor-onboarding-017:support%40revision:4b89a20450901adfe39822674c3bab4379f13225b7852ebfc994675ae87557ab%40representation:sha256:934e4018398c57cb7655b082ec2c8a45988fcbde3d2e90bd00f60fdc95ac1ef4#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-017:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-017-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Nimbus CRM confirms that the current security questionnaire is approved.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-017:near-policy@v13!benchmark:vendor-onboarding-017:near-policy%40revision:225defe0ba898144c1bbe03a99a51b15403c351ceb3f77f5c21af1293e8c3a82%40representation:sha256:3d596db302b38d38686b28ef0da2e775ae4f38059e5b6f04da7539081b086ad5#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-017:support@r7!benchmark:vendor-onboarding-017:support%40revision:4b89a20450901adfe39822674c3bab4379f13225b7852ebfc994675ae87557ab%40representation:sha256:934e4018398c57cb7655b082ec2c8a45988fcbde3d2e90bd00f60fdc95ac1ef4#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-017:near-policy@v13!benchmark:vendor-onboarding-017:near-policy%40revision:225defe0ba898144c1bbe03a99a51b15403c351ceb3f77f5c21af1293e8c3a82%40representation:sha256:3d596db302b38d38686b28ef0da2e775ae4f38059e5b6f04da7539081b086ad5#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-017:near-policy@v13!benchmark:vendor-onboarding-017:near-policy%40revision:225defe0ba898144c1bbe03a99a51b15403c351ceb3f77f5c21af1293e8c3a82%40representation:sha256:3d596db302b38d38686b28ef0da2e775ae4f38059e5b6f04da7539081b086ad5#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: encryption control changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-017"
+    ]
+  }
+}

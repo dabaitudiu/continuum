@@ -1,0 +1,90 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-006",
+  "title": "Ledger API — maintenance window — conflicting-sources",
+  "domain": "production-release",
+  "case_class": "conflicting-sources",
+  "adversarial_tags": [
+    "contradictory-authority"
+  ],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including maintenance window and any material canary metrics requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-006:primary@v13!benchmark:production-release-006:primary%40revision:fbf9ba4c69ac08076a9d5882b134c68f3288c1daef99487242a78cd4b59169c7%40representation:sha256:48a21c0ca0e64bdec36eeb7372e6acca910913be1228e5c025feec4f47183542#$.clause",
+      "artifact_id": "benchmark:production-release-006:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-006-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Ledger API, authoritative evidence confirms that deployment is inside the approved maintenance window.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-006:opposing-authority@v13!benchmark:production-release-006:opposing-authority%40revision:a6b444a346ceed305b25100fbc2a4a7243cd483e046e3d8fac980595e675b556%40representation:sha256:d4df801b6b6398e6dfc705ab3446dbcd2f90dbf03207c50efc53ceca3b08ef12#$.clause",
+      "artifact_id": "benchmark:production-release-006:opposing-authority",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-006-opposing-authority",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "An equally ranked current authority states that maintenance window is waived for Ledger API.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-006:distractor@v1!benchmark:production-release-006:distractor%40revision:5456ab29583a0b4bb1bee9706fc38c551c79c5301c5c7a48f60a065d8d72a5c7%40representation:sha256:dbdbe6f296ec9885bc342abc777f7301b92ca8b42fad83568e9c3e27d0dd8a6a#$.clause",
+      "artifact_id": "benchmark:production-release-006:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-006-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions maintenance window, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-006:primary@v13!benchmark:production-release-006:primary%40revision:fbf9ba4c69ac08076a9d5882b134c68f3288c1daef99487242a78cd4b59169c7%40representation:sha256:48a21c0ca0e64bdec36eeb7372e6acca910913be1228e5c025feec4f47183542#$.clause",
+      "benchmark:production-release-006:opposing-authority@v13!benchmark:production-release-006:opposing-authority%40revision:a6b444a346ceed305b25100fbc2a4a7243cd483e046e3d8fac980595e675b556%40representation:sha256:d4df801b6b6398e6dfc705ab3446dbcd2f90dbf03207c50efc53ceca3b08ef12#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-006:distractor@v1!benchmark:production-release-006:distractor%40revision:5456ab29583a0b4bb1bee9706fc38c551c79c5301c5c7a48f60a065d8d72a5c7%40representation:sha256:dbdbe6f296ec9885bc342abc777f7301b92ca8b42fad83568e9c3e27d0dd8a6a#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "NEEDS_HUMAN_REVIEW"
+      ],
+      "must_block": true
+    },
+    "blocking_contradictions": [
+      {
+        "source_ref_a": "benchmark:production-release-006:primary@v13!benchmark:production-release-006:primary%40revision:fbf9ba4c69ac08076a9d5882b134c68f3288c1daef99487242a78cd4b59169c7%40representation:sha256:48a21c0ca0e64bdec36eeb7372e6acca910913be1228e5c025feec4f47183542#$.clause",
+        "source_ref_b": "benchmark:production-release-006:opposing-authority@v13!benchmark:production-release-006:opposing-authority%40revision:a6b444a346ceed305b25100fbc2a4a7243cd483e046e3d8fac980595e675b556%40representation:sha256:d4df801b6b6398e6dfc705ab3446dbcd2f90dbf03207c50efc53ceca3b08ef12#$.clause",
+        "topic": "maintenance window"
+      }
+    ]
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-006:primary@v13!benchmark:production-release-006:primary%40revision:fbf9ba4c69ac08076a9d5882b134c68f3288c1daef99487242a78cd4b59169c7%40representation:sha256:48a21c0ca0e64bdec36eeb7372e6acca910913be1228e5c025feec4f47183542#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: maintenance window changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-006"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-015",
+  "title": "Morgan Lee — access expiry — obsolete-revision",
+  "domain": "privileged-access",
+  "case_class": "obsolete-revision",
+  "adversarial_tags": [
+    "obsolete-revision"
+  ],
+  "variance_subset": false,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Morgan Lee for privileged access. Determine whether the proposed outcome is justified by the current evidence, including access expiry and any material break-glass justification requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-015:versioned-policy@v12!benchmark:privileged-access-015:versioned-policy%40revision:5cc3693689c8d348cdecd48c85d42535b0778678c21ebf174132d924edfd8dc6%40representation:sha256:99ebc9b76613407081e4f60b7910b796cdc970fe8ab4a552afedb4357a6c28e9#$.clause",
+      "artifact_id": "benchmark:privileged-access-015:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-015-versioned-policy",
+      "revision_label": "v12",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Obsolete policy: access expiry is optional for Morgan Lee.",
+      "current": false
+    },
+    {
+      "source_ref": "benchmark:privileged-access-015:versioned-policy@v13!benchmark:privileged-access-015:versioned-policy%40revision:79b88e0d82531e28d050bc889a629a900955cb47a769bbfeee2ca574b4cde4ff%40representation:sha256:6516c7a15cd6faf2db5d100dc8722e5df82af327cdcf7f1217f8a8b28d746248#$.clause",
+      "artifact_id": "benchmark:privileged-access-015:versioned-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-015-versioned-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Current policy: requested access expires within eight hours for Morgan Lee.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-015:distractor@v1!benchmark:privileged-access-015:distractor%40revision:8cdd2a6beef7e2e5d70fb451442b151c212f91fe8f2f8aa4c2f0b5d37363a1c3%40representation:sha256:7c79f9c56413a1e3a315455459b21d1eec41a02341b525a480cf1b5dcc6043ce#$.clause",
+      "artifact_id": "benchmark:privileged-access-015:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "privileged-access-015-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions access expiry, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-015:versioned-policy@v13!benchmark:privileged-access-015:versioned-policy%40revision:79b88e0d82531e28d050bc889a629a900955cb47a769bbfeee2ca574b4cde4ff%40representation:sha256:6516c7a15cd6faf2db5d100dc8722e5df82af327cdcf7f1217f8a8b28d746248#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-015:versioned-policy@v12!benchmark:privileged-access-015:versioned-policy%40revision:5cc3693689c8d348cdecd48c85d42535b0778678c21ebf174132d924edfd8dc6%40representation:sha256:99ebc9b76613407081e4f60b7910b796cdc970fe8ab4a552afedb4357a6c28e9#$.clause",
+      "benchmark:privileged-access-015:distractor@v1!benchmark:privileged-access-015:distractor%40revision:8cdd2a6beef7e2e5d70fb451442b151c212f91fe8f2f8aa4c2f0b5d37363a1c3%40representation:sha256:7c79f9c56413a1e3a315455459b21d1eec41a02341b525a480cf1b5dcc6043ce#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-015:versioned-policy@v13!benchmark:privileged-access-015:versioned-policy%40revision:79b88e0d82531e28d050bc889a629a900955cb47a769bbfeee2ca574b4cde4ff%40representation:sha256:6516c7a15cd6faf2db5d100dc8722e5df82af327cdcf7f1217f8a8b28d746248#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Morgan Lee: access expiry changed.",
+    "expected_stale_decision_ids": [
+      "decision:privileged-access-015"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

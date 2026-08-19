@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-037",
+  "title": "Beacon AI — encryption control — near-duplicate",
+  "domain": "vendor-onboarding",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including encryption control and any material data classification requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-037:near-policy@v13!benchmark:vendor-onboarding-037:near-policy%40revision:d969d45a3ec8229778b41b6d5ee1ace2e4a67845b3a59c5fd032bf4fb02cfa5f%40representation:sha256:843d3c501446daea8b9b46f3dae91b0a6429c6b7484d18bd2abf537f60f063fe#$.binding_clause",
+      "artifact_id": "benchmark:vendor-onboarding-037:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-037-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Beacon AI: customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-037:near-policy@v13!benchmark:vendor-onboarding-037:near-policy%40revision:d969d45a3ec8229778b41b6d5ee1ace2e4a67845b3a59c5fd032bf4fb02cfa5f%40representation:sha256:843d3c501446daea8b9b46f3dae91b0a6429c6b7484d18bd2abf537f60f063fe#$.near_match",
+      "artifact_id": "benchmark:vendor-onboarding-037:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-037-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: encryption control may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-037:support@r7!benchmark:vendor-onboarding-037:support%40revision:e1054894fb5654c964829f99f1a523874558315a0941e9564da181e42e323f5e%40representation:sha256:1d4edc5168f0b2b7d61192a80baab2f07761319bd90b4e95f9b6583b6ec92883#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-037:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-037-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Beacon AI confirms that handled data is classified before onboarding.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-037:near-policy@v13!benchmark:vendor-onboarding-037:near-policy%40revision:d969d45a3ec8229778b41b6d5ee1ace2e4a67845b3a59c5fd032bf4fb02cfa5f%40representation:sha256:843d3c501446daea8b9b46f3dae91b0a6429c6b7484d18bd2abf537f60f063fe#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:vendor-onboarding-037:support@r7!benchmark:vendor-onboarding-037:support%40revision:e1054894fb5654c964829f99f1a523874558315a0941e9564da181e42e323f5e%40representation:sha256:1d4edc5168f0b2b7d61192a80baab2f07761319bd90b4e95f9b6583b6ec92883#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-037:near-policy@v13!benchmark:vendor-onboarding-037:near-policy%40revision:d969d45a3ec8229778b41b6d5ee1ace2e4a67845b3a59c5fd032bf4fb02cfa5f%40representation:sha256:843d3c501446daea8b9b46f3dae91b0a6429c6b7484d18bd2abf537f60f063fe#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-037:near-policy@v13!benchmark:vendor-onboarding-037:near-policy%40revision:d969d45a3ec8229778b41b6d5ee1ace2e4a67845b3a59c5fd032bf4fb02cfa5f%40representation:sha256:843d3c501446daea8b9b46f3dae91b0a6429c6b7484d18bd2abf537f60f063fe#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: encryption control changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:vendor-onboarding-037"
+    ]
+  }
+}

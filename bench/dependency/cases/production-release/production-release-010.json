@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-010",
+  "title": "Ledger API — incident freeze — narrow-clause",
+  "domain": "production-release",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": true,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Ledger API for production release. Determine whether the proposed outcome is justified by the current evidence, including incident freeze and any material security scan requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.scope",
+      "artifact_id": "benchmark:production-release-010:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-010-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Ledger API.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.binding_clause",
+      "artifact_id": "benchmark:production-release-010:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-010-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that no active severity-one incident freeze applies.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.appendix",
+      "artifact_id": "benchmark:production-release-010:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-010-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses security scan for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.scope",
+      "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-010:wide-policy@v13!benchmark:production-release-010:wide-policy%40revision:a20fa7b55fca218a2d48e328e8cc8bc987cc04f776aed315a86fe54b4f34f2cf%40representation:sha256:d919c41b2a4f349aac8707a99a8058f25a34f8ae707bea0594ec32fcf78634ce#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Ledger API: incident freeze changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-010"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

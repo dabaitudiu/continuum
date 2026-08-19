@@ -1,0 +1,97 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-039",
+  "title": "Beacon AI — financial approval — multiple-dependencies",
+  "domain": "vendor-onboarding",
+  "case_class": "multiple-dependencies",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Beacon AI for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including financial approval and any material data processing agreement and encryption control requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-039:primary@v13!benchmark:vendor-onboarding-039:primary%40revision:350c77009c6298199f793b4bc7446f208409af08d97f57af1ff8dd5e1e88c4dc%40representation:sha256:2aac5a2d2bbb01a3663c8786684f3160f058201154027153fce60e87916dccfd#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-039:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-039-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Beacon AI, authoritative evidence confirms that annual spend has Finance approval.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-039:support@r7!benchmark:vendor-onboarding-039:support%40revision:d6ec0ad5680ba956de218f330e5fed9cbaa8c75095845c8021768b8e7dc95d6b%40representation:sha256:6f60b1e3aa03f0e52ecf6e5982931efc3f9566ec01eb2b738d4225c639cb4621#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-039:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-039-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Beacon AI confirms that the DPA is signed by Legal.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-039:third-critical@r9!benchmark:vendor-onboarding-039:third-critical%40revision:78fc92ffdbf57056f8753b4205bee5696994db4f41be409b1241b4ad42ff64fb%40representation:sha256:4a5e4faa63179f7b71808f917fc3582022129a50ffec245230e72bdad665fa15#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-039:third-critical",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-039-third-critical",
+      "revision_label": "r9",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 90,
+      "content": "The authoritative control record confirms that customer data is encrypted at rest and in transit for Beacon AI.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-039:distractor@v1!benchmark:vendor-onboarding-039:distractor%40revision:d3efae620e0d4265216f8f765e26e46209d8863c0c063f18f8e2aee541ad6f0f%40representation:sha256:4d8fd0ff1f50bdcecfe132e8dac98035e6f2c792cdd8ec88c07c41cd46902d3c#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-039:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-039-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions financial approval, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-039:primary@v13!benchmark:vendor-onboarding-039:primary%40revision:350c77009c6298199f793b4bc7446f208409af08d97f57af1ff8dd5e1e88c4dc%40representation:sha256:2aac5a2d2bbb01a3663c8786684f3160f058201154027153fce60e87916dccfd#$.clause",
+      "benchmark:vendor-onboarding-039:support@r7!benchmark:vendor-onboarding-039:support%40revision:d6ec0ad5680ba956de218f330e5fed9cbaa8c75095845c8021768b8e7dc95d6b%40representation:sha256:6f60b1e3aa03f0e52ecf6e5982931efc3f9566ec01eb2b738d4225c639cb4621#$.clause",
+      "benchmark:vendor-onboarding-039:third-critical@r9!benchmark:vendor-onboarding-039:third-critical%40revision:78fc92ffdbf57056f8753b4205bee5696994db4f41be409b1241b4ad42ff64fb%40representation:sha256:4a5e4faa63179f7b71808f917fc3582022129a50ffec245230e72bdad665fa15#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-039:distractor@v1!benchmark:vendor-onboarding-039:distractor%40revision:d3efae620e0d4265216f8f765e26e46209d8863c0c063f18f8e2aee541ad6f0f%40representation:sha256:4d8fd0ff1f50bdcecfe132e8dac98035e6f2c792cdd8ec88c07c41cd46902d3c#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-039:primary@v13!benchmark:vendor-onboarding-039:primary%40revision:350c77009c6298199f793b4bc7446f208409af08d97f57af1ff8dd5e1e88c4dc%40representation:sha256:2aac5a2d2bbb01a3663c8786684f3160f058201154027153fce60e87916dccfd#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Beacon AI: financial approval changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-039"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

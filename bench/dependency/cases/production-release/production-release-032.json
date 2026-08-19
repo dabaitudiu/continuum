@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-032",
+  "title": "Billing Worker — change ticket — clean-negative",
+  "domain": "production-release",
+  "case_class": "clean-negative",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including change ticket and any material SLO guardrail requirement.",
+  "proposed_outcome": "DENIED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-032:primary@r13!benchmark:production-release-032:primary%40revision:9bb9ad39201f395f385f69886df69677202f2eda1358b3ae50df1a84388821f0%40representation:sha256:31059ffdd218883ca538a59af68dee50ae2a247375518edecf7c23824445fce1#$.clause",
+      "artifact_id": "benchmark:production-release-032:primary",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-032-primary",
+      "revision_label": "r13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Billing Worker, the authoritative record states that the change ticket is approved is false.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-032:support@r7!benchmark:production-release-032:support%40revision:6e28a04b45a659287486b43673a6c8f050f9dacf354f58c2d78177b00ad9b30d%40representation:sha256:0efbe962b644d03fee8e0cb19ccd2e8f5e26c91fe5708ee3367bb13aa4bcda56#$.clause",
+      "artifact_id": "benchmark:production-release-032:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-032-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Billing Worker confirms that projected error budget remains within the SLO guardrail.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-032:distractor@v1!benchmark:production-release-032:distractor%40revision:aad5c21d9c0b8d6be567425fab9a854eae6b92bb9a10b23cccee60163106f976%40representation:sha256:7cdd02cc8b8e7b83402d4580bd66d7aeb7967cd7aff0b1160780804bf0feda10#$.clause",
+      "artifact_id": "benchmark:production-release-032:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-032-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions change ticket, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-032:primary@r13!benchmark:production-release-032:primary%40revision:9bb9ad39201f395f385f69886df69677202f2eda1358b3ae50df1a84388821f0%40representation:sha256:31059ffdd218883ca538a59af68dee50ae2a247375518edecf7c23824445fce1#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-032:support@r7!benchmark:production-release-032:support%40revision:6e28a04b45a659287486b43673a6c8f050f9dacf354f58c2d78177b00ad9b30d%40representation:sha256:0efbe962b644d03fee8e0cb19ccd2e8f5e26c91fe5708ee3367bb13aa4bcda56#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-032:distractor@v1!benchmark:production-release-032:distractor%40revision:aad5c21d9c0b8d6be567425fab9a854eae6b92bb9a10b23cccee60163106f976%40representation:sha256:7cdd02cc8b8e7b83402d4580bd66d7aeb7967cd7aff0b1160780804bf0feda10#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "DENIED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-032:primary@r13!benchmark:production-release-032:primary%40revision:9bb9ad39201f395f385f69886df69677202f2eda1358b3ae50df1a84388821f0%40representation:sha256:31059ffdd218883ca538a59af68dee50ae2a247375518edecf7c23824445fce1#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: change ticket changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-032"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

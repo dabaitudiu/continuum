@@ -1,0 +1,84 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-013",
+  "title": "Nimbus CRM — data classification — critical-omission",
+  "domain": "vendor-onboarding",
+  "case_class": "critical-omission",
+  "adversarial_tags": [
+    "critical-omission"
+  ],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including data classification and any material encryption control requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-013:primary@v13!benchmark:vendor-onboarding-013:primary%40revision:83ab0a623fdfcc62dedc42fad2be80cea52e5426f0829157f6f4796f078ea4e4%40representation:sha256:ec21a64487bf6c57b8797d50fdfc26c5e53830478526cf94bd4ebe0d39649c06#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-013:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-013-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Nimbus CRM, authoritative evidence confirms that handled data is classified before onboarding.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-013:support@r7!benchmark:vendor-onboarding-013:support%40revision:a91763a989adf2dae18ff7ae019df99fdc441603e45b2875127e87dcacc7828f%40representation:sha256:2c45013c788b63c1745f30141c1386a83d1f64e3c4a29029f16cd7bc33741d25#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-013:support",
+      "artifact_type": "RECORD",
+      "logical_key": "vendor-onboarding-013-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Nimbus CRM confirms that customer data is encrypted at rest and in transit.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-013:distractor@v1!benchmark:vendor-onboarding-013:distractor%40revision:acc0d1c8e92b566a749d6a42add764b8fa4838cdea2d1434af3df03ed8de230f%40representation:sha256:b61d785c3bfa1575d3ee7559950b46f37ec3aca68071c182de3324caf8e69124#$.clause",
+      "artifact_id": "benchmark:vendor-onboarding-013:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "vendor-onboarding-013-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions data classification, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-013:primary@v13!benchmark:vendor-onboarding-013:primary%40revision:83ab0a623fdfcc62dedc42fad2be80cea52e5426f0829157f6f4796f078ea4e4%40representation:sha256:ec21a64487bf6c57b8797d50fdfc26c5e53830478526cf94bd4ebe0d39649c06#$.clause",
+      "benchmark:vendor-onboarding-013:support@r7!benchmark:vendor-onboarding-013:support%40revision:a91763a989adf2dae18ff7ae019df99fdc441603e45b2875127e87dcacc7828f%40representation:sha256:2c45013c788b63c1745f30141c1386a83d1f64e3c4a29029f16cd7bc33741d25#$.clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-013:distractor@v1!benchmark:vendor-onboarding-013:distractor%40revision:acc0d1c8e92b566a749d6a42add764b8fa4838cdea2d1434af3df03ed8de230f%40representation:sha256:b61d785c3bfa1575d3ee7559950b46f37ec3aca68071c182de3324caf8e69124#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-013:primary@v13!benchmark:vendor-onboarding-013:primary%40revision:83ab0a623fdfcc62dedc42fad2be80cea52e5426f0829157f6f4796f078ea4e4%40representation:sha256:ec21a64487bf6c57b8797d50fdfc26c5e53830478526cf94bd4ebe0d39649c06#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: data classification changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-013"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

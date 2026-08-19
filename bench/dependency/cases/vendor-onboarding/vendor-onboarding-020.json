@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "vendor-onboarding-020",
+  "title": "Nimbus CRM — retention clause — narrow-clause",
+  "domain": "vendor-onboarding",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "VENDOR_ONBOARDING_REVIEW",
+  "task": "Evaluate Nimbus CRM for vendor onboarding. Determine whether the proposed outcome is justified by the current evidence, including retention clause and any material Singapore residency requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.scope",
+      "artifact_id": "benchmark:vendor-onboarding-020:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-020-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Nimbus CRM.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.binding_clause",
+      "artifact_id": "benchmark:vendor-onboarding-020:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-020-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that the contract contains the approved retention clause.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.appendix",
+      "artifact_id": "benchmark:vendor-onboarding-020:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "vendor-onboarding-020-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses Singapore residency for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.scope",
+      "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:vendor-onboarding-020:wide-policy@v13!benchmark:vendor-onboarding-020:wide-policy%40revision:040d4312b12c6a2ec949c1d33a40b7a31a1fb87728909447c288994fa95f6ef2%40representation:sha256:c61898642751d99ca01df4d222bc923f400c0bc899f33ded975277968f4bea60#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Nimbus CRM: retention clause changed.",
+    "expected_stale_decision_ids": [
+      "decision:vendor-onboarding-020"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

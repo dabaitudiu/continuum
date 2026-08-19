@@ -1,0 +1,85 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "privileged-access-007",
+  "title": "Avery Chen — separation of duties — near-duplicate",
+  "domain": "privileged-access",
+  "case_class": "near-duplicate",
+  "adversarial_tags": [
+    "near-match"
+  ],
+  "variance_subset": true,
+  "decision_type": "PRIVILEGED_ACCESS_REVIEW",
+  "task": "Evaluate Avery Chen for privileged access. Determine whether the proposed outcome is justified by the current evidence, including separation of duties and any material device compliance requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:privileged-access-007:near-policy@v13!benchmark:privileged-access-007:near-policy%40revision:34e6bbd11241970da0b65b49608c5fa92d8f3a002ceed2406cc9e18b9bc89bd2%40representation:sha256:43fb2472e75881f0b2b65e9fb3a4cc24e85af0151a5125157d423a044d83afee#$.binding_clause",
+      "artifact_id": "benchmark:privileged-access-007:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-007-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Binding clause for Avery Chen: the role creates no separation-of-duties conflict.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-007:near-policy@v13!benchmark:privileged-access-007:near-policy%40revision:34e6bbd11241970da0b65b49608c5fa92d8f3a002ceed2406cc9e18b9bc89bd2%40representation:sha256:43fb2472e75881f0b2b65e9fb3a4cc24e85af0151a5125157d423a044d83afee#$.near_match",
+      "artifact_id": "benchmark:privileged-access-007:near-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "privileged-access-007-near-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.near_match",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "Similar non-binding example: separation of duties may be considered.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:privileged-access-007:support@r7!benchmark:privileged-access-007:support%40revision:576b41414c3f8a346744b20f13255bb0885877dc018bc39796bff2d3335b989e%40representation:sha256:75cb941b77e78ead14e22816b5de274d9da5b249ddbb6305b9e9a71f31261a9f#$.clause",
+      "artifact_id": "benchmark:privileged-access-007:support",
+      "artifact_type": "RECORD",
+      "logical_key": "privileged-access-007-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Avery Chen confirms that the requesting device is compliant.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:privileged-access-007:near-policy@v13!benchmark:privileged-access-007:near-policy%40revision:34e6bbd11241970da0b65b49608c5fa92d8f3a002ceed2406cc9e18b9bc89bd2%40representation:sha256:43fb2472e75881f0b2b65e9fb3a4cc24e85af0151a5125157d423a044d83afee#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:privileged-access-007:support@r7!benchmark:privileged-access-007:support%40revision:576b41414c3f8a346744b20f13255bb0885877dc018bc39796bff2d3335b989e%40representation:sha256:75cb941b77e78ead14e22816b5de274d9da5b249ddbb6305b9e9a71f31261a9f#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:privileged-access-007:near-policy@v13!benchmark:privileged-access-007:near-policy%40revision:34e6bbd11241970da0b65b49608c5fa92d8f3a002ceed2406cc9e18b9bc89bd2%40representation:sha256:43fb2472e75881f0b2b65e9fb3a4cc24e85af0151a5125157d423a044d83afee#$.near_match"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:privileged-access-007:near-policy@v13!benchmark:privileged-access-007:near-policy%40revision:34e6bbd11241970da0b65b49608c5fa92d8f3a002ceed2406cc9e18b9bc89bd2%40representation:sha256:43fb2472e75881f0b2b65e9fb3a4cc24e85af0151a5125157d423a044d83afee#$.near_match",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Avery Chen: separation of duties changed.",
+    "expected_stale_decision_ids": [],
+    "expected_unchanged_decision_ids": [
+      "decision:privileged-access-007"
+    ]
+  }
+}

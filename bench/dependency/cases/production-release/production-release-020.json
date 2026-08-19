@@ -1,0 +1,82 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-020",
+  "title": "Identity Gateway — incident freeze — narrow-clause",
+  "domain": "production-release",
+  "case_class": "narrow-clause",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Identity Gateway for production release. Determine whether the proposed outcome is justified by the current evidence, including incident freeze and any material rollback plan requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.scope",
+      "artifact_id": "benchmark:production-release-020:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-020-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.scope",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "This policy applies to Identity Gateway.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.binding_clause",
+      "artifact_id": "benchmark:production-release-020:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-020-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.binding_clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The narrow binding rule is that no active severity-one incident freeze applies.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.appendix",
+      "artifact_id": "benchmark:production-release-020:wide-policy",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-020-wide-policy",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.appendix",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "The appendix discusses rollback plan for a different mission.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.binding_clause"
+    ],
+    "acceptable_supporting_refs": [],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.scope",
+      "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.appendix"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-020:wide-policy@v13!benchmark:production-release-020:wide-policy%40revision:7285771585f7dacb61b771eda9a5f82d239cae7d8c69f9d99b3088af4204ed64%40representation:sha256:4bb2308e866a10281866b0d37f26d7ca753035d7e1064ce373bb0a57b16c09e2#$.binding_clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Identity Gateway: incident freeze changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-020"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}

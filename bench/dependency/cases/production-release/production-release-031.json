@@ -1,0 +1,83 @@
+{
+  "schema_version": "continuum-dependency-bench-v1",
+  "case_id": "production-release-031",
+  "title": "Billing Worker — test report — clean-positive",
+  "domain": "production-release",
+  "case_class": "clean-positive",
+  "adversarial_tags": [],
+  "variance_subset": false,
+  "decision_type": "PRODUCTION_RELEASE_REVIEW",
+  "task": "Evaluate Billing Worker for production release. Determine whether the proposed outcome is justified by the current evidence, including test report and any material migration backup requirement.",
+  "proposed_outcome": "APPROVED",
+  "sources": [
+    {
+      "source_ref": "benchmark:production-release-031:primary@v13!benchmark:production-release-031:primary%40revision:055cbb0ab5244c305bfa97f61dc22abfc340e94efaa76fb499fddcb290f05595%40representation:sha256:231bb351d02d0344ed6ff64b34a9c2e95eebee223f086aaa4b0507e50b8898c2#$.clause",
+      "artifact_id": "benchmark:production-release-031:primary",
+      "artifact_type": "POLICY",
+      "logical_key": "production-release-031-primary",
+      "revision_label": "v13",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "POLICY",
+      "trust_class": "AUTHORITATIVE",
+      "authority_rank": 100,
+      "content": "For Billing Worker, authoritative evidence confirms that the current release test suite passed.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-031:support@r7!benchmark:production-release-031:support%40revision:d9821eae90ce513bef4d519f277744d3489556a5d28c48f40a2ef880417634de%40representation:sha256:d58a7c6cc5226f88644c4b0dc9dbea53318a939ed19e63392fe8ece3338761a0#$.clause",
+      "artifact_id": "benchmark:production-release-031:support",
+      "artifact_type": "RECORD",
+      "logical_key": "production-release-031-support",
+      "revision_label": "r7",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "STRUCTURED_RECORD",
+      "trust_class": "VERIFIED",
+      "authority_rank": 80,
+      "content": "The case record for Billing Worker confirms that a verified pre-migration backup exists.",
+      "current": true
+    },
+    {
+      "source_ref": "benchmark:production-release-031:distractor@v1!benchmark:production-release-031:distractor%40revision:d23141ad859e0116d8363f30dc3215382fdfd879cb1f1310a0b0134af63bf960%40representation:sha256:c478514a0f80d867d8a8389067cd43026f19ba5c988340fda9e40b873f00908e#$.clause",
+      "artifact_id": "benchmark:production-release-031:distractor",
+      "artifact_type": "DOCUMENT",
+      "logical_key": "production-release-031-distractor",
+      "revision_label": "v1",
+      "parser_version": "benchmark-json-v1",
+      "logical_path": "$.clause",
+      "source_type": "DOCUMENT",
+      "trust_class": "UNTRUSTED",
+      "authority_rank": 5,
+      "content": "A marketing note mentions test report, but is not approval evidence.",
+      "current": true
+    }
+  ],
+  "ground_truth": {
+    "required_critical_refs": [
+      "benchmark:production-release-031:primary@v13!benchmark:production-release-031:primary%40revision:055cbb0ab5244c305bfa97f61dc22abfc340e94efaa76fb499fddcb290f05595%40representation:sha256:231bb351d02d0344ed6ff64b34a9c2e95eebee223f086aaa4b0507e50b8898c2#$.clause"
+    ],
+    "acceptable_supporting_refs": [
+      "benchmark:production-release-031:support@r7!benchmark:production-release-031:support%40revision:d9821eae90ce513bef4d519f277744d3489556a5d28c48f40a2ef880417634de%40representation:sha256:d58a7c6cc5226f88644c4b0dc9dbea53318a939ed19e63392fe8ece3338761a0#$.clause"
+    ],
+    "forbidden_or_irrelevant_refs": [
+      "benchmark:production-release-031:distractor@v1!benchmark:production-release-031:distractor%40revision:d23141ad859e0116d8363f30dc3215382fdfd879cb1f1310a0b0134af63bf960%40representation:sha256:c478514a0f80d867d8a8389067cd43026f19ba5c988340fda9e40b873f00908e#$.clause"
+    ],
+    "expected_outcome_constraints": {
+      "allowed_outcomes": [
+        "APPROVED"
+      ],
+      "must_block": false
+    },
+    "blocking_contradictions": []
+  },
+  "mutation": {
+    "source_ref": "benchmark:production-release-031:primary@v13!benchmark:production-release-031:primary%40revision:055cbb0ab5244c305bfa97f61dc22abfc340e94efaa76fb499fddcb290f05595%40representation:sha256:231bb351d02d0344ed6ff64b34a9c2e95eebee223f086aaa4b0507e50b8898c2#$.clause",
+    "mutation_kind": "replace-fragment-content",
+    "replacement_content": "Mutated benchmark evidence for Billing Worker: test report changed.",
+    "expected_stale_decision_ids": [
+      "decision:production-release-031"
+    ],
+    "expected_unchanged_decision_ids": []
+  }
+}
