@@ -313,8 +313,35 @@ def _critic_ablation_markdown(report: CriticAblationReport) -> str:
         f"- Temperature: `{run.configuration.temperature}`",
         f"- Reasoning/service tier: `{run.configuration.reasoning_effort}` / `{run.configuration.service_tier}`",
         f"- Metric version: `{run.configuration.metric_version}`",
+        *(
+            [f"- Recomputed from run: `{run.configuration.recomputed_from_run_id}`"]
+            if run.configuration.recomputed_from_run_id
+            else []
+        ),
+        *(
+            [
+                (
+                    "- Immutable evidence SHA-256: "
+                    f"`{run.configuration.evidence_source_sha256}`"
+                )
+            ]
+            if run.configuration.evidence_source_sha256
+            else []
+        ),
         "",
         "Both arms consume the same persisted reasoner draft per case. The only arm difference is critic off/on.",
+        *(
+            [
+                "",
+                (
+                    "**Evaluator correction:** derived critic-added refs and metrics "
+                    "were recomputed from the immutable raw draft/review evidence; "
+                    "the model responses and usage were not changed."
+                ),
+            ]
+            if run.configuration.recomputed_from_run_id
+            else []
+        ),
         "",
         "## Metrics",
         "",
@@ -334,6 +361,32 @@ def _critic_ablation_markdown(report: CriticAblationReport) -> str:
                 f"| Accepted cases | {reasoner.counts.accepted_cases} | "
                 f"{critic.counts.accepted_cases} | "
                 f"{run.critic_effect.accepted_case_delta:+d} |"
+            ),
+            "",
+            "## Mutation denominator disclosure",
+            "",
+            "| Coverage count | Reasoner-only | Current critic |",
+            "|---|---:|---:|",
+            (
+                "| Accepted material mutations tested | "
+                f"{reasoner.counts.accepted_expected_stale} | "
+                f"{critic.counts.accepted_expected_stale} |"
+            ),
+            (
+                "| Accepted unrelated mutations tested | "
+                f"{reasoner.counts.accepted_expected_unchanged} | "
+                f"{critic.counts.accepted_expected_unchanged} |"
+            ),
+            (
+                "| Material mutations excluded because compilation was not accepted | "
+                f"{reasoner.counts.not_accepted_expected_stale} | "
+                f"{critic.counts.not_accepted_expected_stale} |"
+            ),
+            "",
+            (
+                "A 0% accepted-only stale escape rate is safety evidence only for "
+                "the accepted material-mutation denominator above; it does not "
+                "convert NOT_ACCEPTED cases into Runtime successes."
             ),
             "",
             "## Required K3 questions",

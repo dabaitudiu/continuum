@@ -183,7 +183,12 @@ def test_paired_ablation_shares_one_reasoner_draft_and_traces_critic_effect() ->
                         candidate_ref=missing_ref,
                         severity=Materiality.CRITICAL,
                         why="The second material requirement was omitted.",
-                    )
+                    ),
+                    MissingDependencyProposal(
+                        candidate_ref="UNKNOWN_SOURCE_REQUIRED",
+                        severity=Materiality.CRITICAL,
+                        why="A nonexistent requirement was invented.",
+                    ),
                 ]
             ),
         ]
@@ -209,7 +214,10 @@ def test_paired_ablation_shares_one_reasoner_draft_and_traces_critic_effect() ->
         CriticProposal,
     ]
     assert evidence.reasoner_critical_refs == (primary_ref,)
-    assert evidence.critic_added_critical_refs == (missing_ref,)
+    assert set(evidence.critic_added_critical_refs) == {
+        missing_ref,
+        "UNKNOWN_SOURCE_REQUIRED",
+    }
     assert evidence.reasoner_only.disposition is CompilationDisposition.ACCEPTED
     assert evidence.reasoner_only.accepted_canonical_refs == (primary_ref,)
     assert evidence.reasoner_only.mutation.terminal == "STALE"
@@ -219,8 +227,32 @@ def test_paired_ablation_shares_one_reasoner_draft_and_traces_critic_effect() ->
     assert evidence.critic_on.accepted_canonical_refs == ()
     assert evidence.critic_on.mutation.terminal == "NOT_ACCEPTED"
     assert evidence.validation.findings == []
-    assert len(evidence.critic_review.findings) == 1
+    assert len(evidence.critic_review.findings) == 2
     assert evidence.reasoner_only.accepted_dependency_edges
+    corrupted = evidence.model_copy(
+        update={
+            "critic_added_critical_refs": (),
+            "critic_on": evidence.critic_on.model_copy(
+                update={"predicted_critical_refs": (primary_ref,)}
+            ),
+        }
+    )
+    recompute = getattr(
+        model_subject_module,
+        "recompute_paired_case_derived_evidence",
+        None,
+    )
+    assert recompute is not None
+    recomputed = recompute(corrupted)
+    assert set(recomputed.critic_added_critical_refs) == {
+        missing_ref,
+        "UNKNOWN_SOURCE_REQUIRED",
+    }
+    assert set(recomputed.critic_on.predicted_critical_refs) == {
+        primary_ref,
+        missing_ref,
+        "UNKNOWN_SOURCE_REQUIRED",
+    }
 
 
 def test_paired_ablation_run_measures_both_arms_and_exact_critic_delta() -> None:
@@ -298,13 +330,20 @@ def test_paired_ablation_run_measures_both_arms_and_exact_critic_delta() -> None
     )
 
     observed_records = []
-    run = runner_type([case]).run(
+    runner = runner_type([case])
+    run = runner.run(
         subject,
         configuration,
         record_observer=observed_records.append,
     )
+    replayed = runner.summarize(
+        run.records,
+        configuration,
+        usage=run.usage,
+    )
 
     assert len(run.records) == 1
+    assert replayed == run
     assert observed_records == list(run.records)
     assert run.records[0].reasoner_duration_ms >= 0
     assert run.records[0].critic_duration_ms >= 0
@@ -387,6 +426,8 @@ def test_ablation_report_persists_both_arms_and_k3_decision(tmp_path) -> None:  
         reasoning_effort="low",
         service_tier="default",
         case_set="unit-one-case",
+        evidence_source_sha256="a" * 64,
+        recomputed_from_run_id="critic-ablation:source",
         max_incremental_cost_usd="0.25",
     )
     run = model_subject_module.PairedAblationRunner([case]).run(
@@ -416,6 +457,10 @@ def test_ablation_report_persists_both_arms_and_k3_decision(tmp_path) -> None:  
     assert "required omissions recovered" in markdown
     assert "RETAIN_SIGNAL" in markdown
     assert "Latency ms" in markdown
+    assert "critic-ablation:source" in markdown
+    assert "aaaaaaaaaaaaaaaa" in markdown
+    assert "Evaluator correction" in markdown
+    assert "Accepted material mutations tested" in markdown
     evidence_lines = evidence_path.read_text(encoding="utf-8").splitlines()
     assert len(evidence_lines) == 1
     assert json.loads(evidence_lines[0])["case_id"] == case.case_id
@@ -495,6 +540,7 @@ def test_critic_ablation_entrypoint_runs_paired_cases_with_injected_transport(
     assert len(run.records) == 1
     assert observed_records == list(run.records)
     assert run.configuration.case_set == "injected-1-case"
+    assert run.configuration.metric_version == "ablation-metrics-v3"
     assert run.critic_effect.required_omissions_recovered == 1
     assert len(transport.invocations) == 2
     serialized_prompts = "\n".join(

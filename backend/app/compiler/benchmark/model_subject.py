@@ -122,8 +122,14 @@ class AblationRunConfiguration(FrozenEvidenceModel):
     case_set: str
     compiler_version: str = "sdc-1"
     validation_policy_version: str = "validation-v1"
-    metric_version: str = "ablation-metrics-v2"
+    metric_version: str = "ablation-metrics-v3"
     pricing_version: str | None = None
+    evidence_source_sha256: str | None = Field(
+        default=None,
+        min_length=64,
+        max_length=64,
+    )
+    recomputed_from_run_id: str | None = None
     cumulative_budget_usd: str = "10"
     max_incremental_cost_usd: str
     max_model_posts: int = 120
@@ -534,18 +540,9 @@ class PairedAblationSubject:
             critic_duration_ms = (perf_counter_ns() - critic_started) / 1_000_000
 
         reasoner_refs = _draft_critical_refs(draft)
-        known_refs = {source.source_ref for source in case.sources}
-        critic_added = tuple(
-            sorted(
-                {
-                    finding.candidate_ref
-                    for finding in critic_review.findings
-                    if finding.finding_type is CriticFindingType.MISSING_DEPENDENCY
-                    and finding.severity is Materiality.CRITICAL
-                    and finding.candidate_ref in known_refs
-                    and finding.candidate_ref not in reasoner_refs
-                }
-            )
+        critic_added = _critic_added_critical_refs(
+            critic_review,
+            reasoner_refs,
         )
         reasoner_only = self._evaluate_arm(
             case,
@@ -727,6 +724,20 @@ class PairedAblationRunner:
             if record_observer is not None:
                 record_observer(record)
         records = tuple(collected_records)
+        return self.summarize(records, configuration, usage=usage)
+
+    def summarize(
+        self,
+        records: tuple[PairedCaseEvidence, ...],
+        configuration: AblationRunConfiguration,
+        *,
+        usage: AblationUsage | None = None,
+    ) -> PairedAblationRun:
+        expected_case_ids = tuple(case.case_id for case in self._cases)
+        if tuple(record.case_id for record in records) != expected_case_ids:
+            raise ValueError(
+                "paired evidence must exactly match the runner's frozen case order"
+            )
         reasoner_records = [
             _evaluation_record(record, record.reasoner_only) for record in records
         ]
@@ -762,6 +773,35 @@ class PairedAblationRunner:
             critic_effect=effect,
             usage=observed_usage,
         )
+
+
+def recompute_paired_case_derived_evidence(
+    record: PairedCaseEvidence,
+) -> PairedCaseEvidence:
+    """Rebuild evaluator-derived proposal refs from immutable model evidence."""
+    if record.draft_digest != _digest(record.draft.model_dump(mode="json")):
+        raise ValueError("paired evidence draft digest does not match its raw draft")
+    reasoner_refs = _draft_critical_refs(record.draft)
+    critic_added = _critic_added_critical_refs(
+        record.critic_review,
+        reasoner_refs,
+    )
+    return record.model_copy(
+        update={
+            "reasoner_critical_refs": reasoner_refs,
+            "critic_added_critical_refs": critic_added,
+            "reasoner_only": record.reasoner_only.model_copy(
+                update={"predicted_critical_refs": reasoner_refs}
+            ),
+            "critic_on": record.critic_on.model_copy(
+                update={
+                    "predicted_critical_refs": tuple(
+                        sorted(set(reasoner_refs) | set(critic_added))
+                    )
+                }
+            ),
+        }
+    )
 
 
 def _evaluation_record(
@@ -894,6 +934,23 @@ def _draft_critical_refs(draft: DecisionDraft) -> tuple[str, ...]:
     )
 
 
+def _critic_added_critical_refs(
+    review: CriticReview,
+    reasoner_refs: tuple[str, ...],
+) -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            {
+                finding.candidate_ref
+                for finding in review.findings
+                if finding.finding_type is CriticFindingType.MISSING_DEPENDENCY
+                and finding.severity is Materiality.CRITICAL
+                and finding.candidate_ref not in reasoner_refs
+            }
+        )
+    )
+
+
 def _repeat_compilation_hashes(
     draft: DecisionDraft,
     runtime: BenchmarkCaseRuntime,
@@ -975,4 +1032,5 @@ __all__ = [
     "PairedAblationSubject",
     "PairedCaseEvidence",
     "build_case_runtime",
+    "recompute_paired_case_derived_evidence",
 ]
