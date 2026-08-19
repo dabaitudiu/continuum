@@ -130,9 +130,10 @@ def test_authorized_reference_scenario_compiles_and_exposes_honest_evidence(
     assert len(payload["sources"]) == 3
     assert all(source["source_ref"] for source in payload["sources"])
     assert payload["evidence"]["deterministic_reference"]["status"] == "PASS"
-    assert payload["evidence"]["openai"]["status"] == "BLOCKED"
+    assert payload["evidence"]["openai"]["status"] == "FAIL"
+    assert payload["evidence"]["openai"]["credentials_configured"] is False
     assert payload["evidence"]["openai"]["reason"] == (
-        "OPENAI_API_KEY is not configured"
+        "The recorded live evidence run failed its model or metric gate"
     )
     assert payload["evidence"]["openai"]["budget"] == {
         "limit_usd": "10.000000000",
@@ -141,7 +142,7 @@ def test_authorized_reference_scenario_compiles_and_exposes_honest_evidence(
         "remaining_usd": "10.000000000",
         "settled_calls": 0,
         "reserved_calls": 0,
-        "pricing_version": "openai-2026-08-19",
+        "pricing_version": "openai-2026-08-19-v2",
     }
     assert payload["evidence"]["gemini"]["status"] == "BLOCKED"
     assert {item["stage"]: item["state"] for item in payload["stage_trace"]} == {
@@ -187,6 +188,42 @@ def test_evidence_service_preserves_recorded_live_failure(
 
     assert evidence.openai.status == "FAIL"
     assert evidence.openai.reason == "MODEL_SCHEMA_INVALID: invalid output"
+
+
+def test_evidence_service_preserves_recorded_failure_without_current_key(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    report_path = tmp_path / "report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "runs": [
+                    {
+                        "run_id": "benchmark:metric-failure",
+                        "status": "FAIL",
+                        "configuration": {
+                            "evidence_lane": "live_openai",
+                            "reasoner_model": "gpt-5.6-luna",
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = CompilerEvidenceService(
+        report_path=report_path,
+        budget_path=tmp_path / "budget.db",
+    ).status()
+
+    assert evidence.openai.status == "FAIL"
+    assert evidence.openai.credentials_configured is False
+    assert evidence.openai.reason == (
+        "The recorded live evidence run failed its model or metric gate"
+    )
 
 
 def test_reference_run_limiter_bounds_public_compilation_creation() -> None:

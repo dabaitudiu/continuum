@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -13,7 +14,7 @@ from app.compiler.benchmark.runner import (
     UsageSummary,
     evaluate_runtime_mutation,
 )
-from app.compiler.budget import ModelPricing, ModelUsage
+from app.compiler.budget import ModelPricing, ModelUsage, SettledUsageSummary
 from app.compiler.canonicalization import DeterministicCanonicalizer
 from app.compiler.context import CompilationContext, RiskClass
 from app.compiler.models import (
@@ -151,6 +152,7 @@ def build_case_runtime(
             decision_type=case.decision_type,
             task=case.task,
             risk_class=RiskClass.HIGH,
+            outcome_options=("APPROVED", "DENIED", "NEEDS_HUMAN_REVIEW"),
         ),
     )
 
@@ -168,6 +170,7 @@ class ModelCompilerSubject:
         compiler_version: str = "sdc-1",
         validation_policy_version: str = "validation-v1",
         execution_namespace: str = "benchmark",
+        settled_usage_supplier: Callable[[], SettledUsageSummary] | None = None,
     ) -> None:
         self._reasoner = reasoner
         self._review_gate = DeterministicReviewGate(
@@ -181,6 +184,7 @@ class ModelCompilerSubject:
         self._reasoner_pricing = reasoner_pricing
         self._critic_pricing = critic_pricing
         self._execution_namespace = execution_namespace
+        self._settled_usage_supplier = settled_usage_supplier
         self._input_tokens = 0
         self._cached_input_tokens = 0
         self._output_tokens = 0
@@ -331,9 +335,19 @@ class ModelCompilerSubject:
         )
 
     def usage_summary(self) -> UsageSummary:
+        if self._settled_usage_supplier is not None:
+            settled = self._settled_usage_supplier()
+            return UsageSummary(
+                input_tokens=settled.usage.input_tokens,
+                cached_input_tokens=settled.usage.cached_input_tokens,
+                cache_write_tokens=settled.usage.cache_write_tokens,
+                output_tokens=settled.usage.output_tokens,
+                actual_cost_usd=str(settled.actual_cost_usd),
+            )
         return UsageSummary(
             input_tokens=self._input_tokens,
             cached_input_tokens=self._cached_input_tokens,
+            cache_write_tokens=0,
             output_tokens=self._output_tokens,
             actual_cost_usd=str(self._cost_usd),
         )

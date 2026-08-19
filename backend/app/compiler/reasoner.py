@@ -258,6 +258,14 @@ class DependencyReasoner:
                     "MODEL_DECISION_TYPE_MISMATCH",
                     "model changed the request decision type",
                 )
+            if proposal.proposed_outcome not in request.outcome_options:
+                schema_feedback = (
+                    f"proposed_outcome {proposal.proposed_outcome!r} is not one of "
+                    f"{list(request.outcome_options)!r}"
+                )
+                if attempt == 2:
+                    raise ReasonerError("MODEL_OUTCOME_INVALID", schema_feedback)
+                continue
             return proposal.to_draft(
                 request_id=request.request_id,
                 model_metadata=ModelMetadata(
@@ -305,12 +313,16 @@ class OpenAIResponsesTransport:
                 "MODEL_INPUT_LIMIT_EXCEEDED",
                 "bounded prompt exceeds configured conservative input limit",
             )
+        from openai.lib._parsing._responses import type_to_text_format_param
+
+        text_format = type_to_text_format_param(invocation.output_schema)
         try:
             self._budget.reserve(
                 invocation.call_id,
                 pricing=self._pricing,
                 maximum_usage=ModelUsage(
                     input_tokens=self._max_input_tokens,
+                    cache_write_tokens=self._max_input_tokens,
                     output_tokens=self._max_output_tokens,
                 ),
             )
@@ -318,15 +330,16 @@ class OpenAIResponsesTransport:
             raise ReasonerError(error.code, error.message) from error
 
         try:
-            response = self._client.responses.parse(
+            response = self._client.responses.create(
                 model=invocation.model_name,
                 input=[
                     {"role": "system", "content": invocation.system_instruction},
                     {"role": "user", "content": invocation.user_prompt},
                 ],
-                text_format=invocation.output_schema,
+                text={"format": text_format},
                 max_output_tokens=self._max_output_tokens,
                 reasoning={"effort": "low"},
+                service_tier="default",
             )
         except Exception as error:
             self._budget.mark_unknown(invocation.call_id)
@@ -348,14 +361,19 @@ class OpenAIResponsesTransport:
             self._budget.mark_unknown(invocation.call_id)
             raise
 
-        parsed = getattr(response, "output_parsed", None)
-        if parsed is None:
-            raise StructuredOutputError("OpenAI response contained no parsed output")
-        if not isinstance(parsed, invocation.output_schema):
-            try:
-                parsed = invocation.output_schema.model_validate(parsed)
-            except Exception as error:
-                raise StructuredOutputError(str(error)) from error
+        if getattr(response, "service_tier", None) != "default":
+            raise ReasonerError(
+                "MODEL_SERVICE_TIER_MISMATCH",
+                "OpenAI response did not confirm the requested default service tier",
+            )
+
+        output_text = getattr(response, "output_text", "")
+        if not output_text:
+            raise StructuredOutputError("OpenAI response contained no output text")
+        try:
+            parsed = invocation.output_schema.model_validate_json(output_text)
+        except Exception as error:
+            raise StructuredOutputError(str(error)) from error
         actual_model = getattr(response, "model", invocation.model_name)
         return StructuredModelResponse(
             parsed=parsed,
@@ -378,8 +396,9 @@ def openai_luna_pricing() -> ModelPricing:
         model_name="gpt-5.6-luna",
         input_usd_per_million="0.20",
         cached_input_usd_per_million="0.02",
+        cache_write_usd_per_million="0.25",
         output_usd_per_million="1.20",
-        pricing_version="openai-2026-08-19",
+        pricing_version="openai-2026-08-19-v2",
     )
 
 
@@ -394,6 +413,7 @@ def _openai_usage(response: Any) -> ModelUsage:
     return ModelUsage(
         input_tokens=int(getattr(usage, "input_tokens", 0)),
         cached_input_tokens=int(getattr(details, "cached_tokens", 0) or 0),
+        cache_write_tokens=int(getattr(details, "cache_write_tokens", 0) or 0),
         output_tokens=int(getattr(usage, "output_tokens", 0)),
     )
 

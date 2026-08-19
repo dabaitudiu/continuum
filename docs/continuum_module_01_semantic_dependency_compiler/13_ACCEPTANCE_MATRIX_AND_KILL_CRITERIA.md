@@ -6,7 +6,7 @@
 
 ## P0 acceptance matrix
 
-Status vocabulary: `PASS` means the specified evidence exists; `PARTIAL` means implementation/reference evidence exists but the required live-model evidence does not; `BLOCKED` means the required authenticated lane could not run. A deterministic reference result is never promoted to live-model evidence.
+Status vocabulary: `PASS` means the specified evidence exists and meets its target; `FAIL` means an authenticated lane ran and missed the target; `PARTIAL` means evidence is mixed or incomplete; `BLOCKED` means the required authenticated lane could not run. A deterministic reference result is never promoted to live-model evidence.
 
 | Capability | Acceptance evidence | Current status |
 |---|---|---|
@@ -18,27 +18,27 @@ Status vocabulary: `PASS` means the specified evidence exists; `PARTIAL` means i
 | Relation/authority restrictions | policy-source tests | PASS |
 | Deterministic canonicalization | repeated compile hash test | PASS |
 | Live Gemini reasoner | authenticated integration evidence | **BLOCKED — no Gemini/Vertex credentials** |
-| Critical omission critic | omission benchmark | PARTIAL — reference cases pass; live lane blocked |
-| Material contradiction handling | contradiction benchmark | PARTIAL — reference cases pass; live lane blocked |
+| Critical omission critic | omission benchmark | PARTIAL — OpenAI recovers 24/24 required omission refs, but only 4/12 omission cases compile as accepted and critic contribution is not isolated |
+| Material contradiction handling | contradiction benchmark | **FAIL — OpenAI detects 0/12 blocking contradictions** |
 | 3-domain benchmark >=120 cases | committed benchmark corpus | PASS — 40 cases/domain |
-| Critical dependency recall >=0.92 | benchmark report | PARTIAL — reference 1.00; no live score |
-| Critical dependency precision >=0.82 | benchmark report | PARTIAL — reference 1.00; no live score |
-| Unsupported canonical refs = 0% | benchmark + deterministic validator | PASS |
-| Contradiction recall >=0.90 | benchmark report | PARTIAL — reference 1.00; no live score |
-| Critical contradiction severity recall >=0.90 | benchmark report | PARTIAL — reference 1.00; no live score |
-| Outcome constraints = 100% | benchmark report | PARTIAL — reference 1.00; no live score |
-| Must-block disposition compliance = 100% | benchmark report | PARTIAL — reference 1.00; no live score |
-| Unnecessary invalidation <8% in mutation eval | compiler→drift integration eval | PARTIAL — reference 0%; no live score |
-| Stale escape <2% in mutation eval | compiler→drift integration eval | PARTIAL — reference 0%; no live score |
+| Critical dependency recall >=0.92 | benchmark report | PASS — OpenAI 0.9821; every domain >=0.9643 |
+| Critical dependency precision >=0.82 | benchmark report | **FAIL — OpenAI 0.6548** |
+| Unsupported canonical refs = 0% | benchmark + deterministic validator | PASS — OpenAI 0% |
+| Contradiction recall >=0.90 | benchmark report | **FAIL — OpenAI 0%** |
+| Critical contradiction severity recall >=0.90 | benchmark report | **FAIL — OpenAI 0%** |
+| Outcome constraints = 100% | benchmark report | **FAIL — OpenAI 42.50%** |
+| Must-block disposition compliance = 100% | benchmark report | **FAIL — OpenAI 26.67%** |
+| Unnecessary invalidation <8% in mutation eval | compiler→drift integration eval | PASS — OpenAI 0% |
+| Stale escape <2% in mutation eval | compiler→drift integration eval | **FAIL — OpenAI 80.56%** |
 | Runtime acceptance bound to mission/world revision | concurrency integration test | PASS |
 | Audit links compilation→Decision | runtime integration test/UI read model | PASS |
-| Prompt-injection adversarial set | >=10 live-model cases + findings | PARTIAL — corpus threshold passes; live findings blocked |
+| Prompt-injection adversarial set | >=10 live-model cases + findings | PASS — 12 OpenAI cases; no injected ref became critical or canonical |
 
 ## Current decision
 
-Phases B–G are implemented and locally productized, but **Module 01 is not P0-complete**. The stop condition remains active: do not begin a full Drift Engine implementation until authenticated live-model evidence resolves the `BLOCKED`/`PARTIAL` rows.
+Phases B–G are implemented and locally productized, but **Module 01 is not P0-complete**. The authenticated OpenAI run is a quality-gate `FAIL`, not a credential gap. The stop condition remains active: do not begin a full Drift Engine implementation while any P0 row is `FAIL` or `BLOCKED`.
 
-The current report is `docs/reports/module-01-dependency-compiler.md`. OpenAI is available as an additional provider-neutral evidence lane with a persisted cumulative hard cap of $10, but it does not replace the explicit live-Gemini P0 row.
+The current report is `docs/reports/module-01-dependency-compiler.md`. OpenAI remains an additional provider-neutral falsification lane with a persisted cumulative hard cap of $10; its failure does not replace or waive the explicit live-Gemini P0 row.
 
 ## P1
 
@@ -91,8 +91,11 @@ No autonomous agent may approve its own scope reduction.
 
 ## Kill-criteria assessment as of 2026-08-19
 
-- K1, K3, K4, and K5 cannot be adjudicated from deterministic fixtures; they require authenticated model runs.
-- K2 is not observed in the reference lane: canonical dependencies remain fragment-level and reference mutation metrics pass, but this is not yet live evidence.
-- Reference mutation metrics now accept the predicted graph into the real Runtime, apply the corpus replacement mutation, and read the resulting `DecisionStatus`; they no longer infer staleness from ref membership.
-- K6 is **not cleared**: the four product reference cases are deliberately server-authored. The generic reasoner/compiler path exists, but without a passing live-model benchmark we cannot claim the central dependency graph is no longer effectively authored by developers.
-- Therefore no kill decision is justified yet, and no continuation to the full Drift Engine is justified either. The next evidence action is a budget-gated OpenAI run if a key becomes available, followed by the required Gemini run when Google credentials exist.
+- **K1 is not triggered:** OpenAI critical recall is 0.9821 overall, every domain is at least 0.9643, and all three variance runs score 1.00.
+- **K2 is not triggered:** live proposals use exact fragment refs rather than whole-document refs. The 0.6548 precision failure is over-selection of known fragments, which is a redesign target but not evidence that broad refs are required.
+- **K3 is unresolved and now the primary ablation:** the full pipeline detects 0/12 material contradictions. The report does not yet contain a live reasoner-only comparison, so it cannot show whether the critic adds value. If a bounded live ablation shows no material recall or contradiction gain, remove or redesign the critic as K3 requires.
+- **K4 is not triggered:** dependency recall is not confined to vendor onboarding; access scores 1.00, release scores 0.9821, and vendor onboarding scores 0.9643.
+- **K5 is not triggered in this run:** across 12 prompt-injection cases, no injected ref became a predicted critical ref or an accepted canonical ref.
+- Reference mutation metrics accept predicted graphs into the real Runtime, apply the corpus replacement mutation, and read the resulting `DecisionStatus`; they do not infer staleness from ref membership. The 0.8056 stale-escape result therefore blocks progression.
+- **K6 is not cleared:** the live benchmark proves the model—not a developer-authored exact graph—selects dependencies, but only 20/120 primary compilations are accepted and the four product reference cases remain server-authored. The central dependency compiler is not yet useful enough to replace authored demo graphs.
+- **Whole-project kill is not yet justified by the named K1–K6 conditions, but the current compiler configuration is killed for progression.** Do not start Module 02. The next bounded evidence step is one critic/reasoner redesign plus a live single-pass ablation; if K3 then triggers or the failed P0 rows remain materially unchanged after that bounded iteration, remove the critic or narrow/redesign the module before spending on Gemini acceptance.

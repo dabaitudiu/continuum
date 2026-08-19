@@ -17,6 +17,7 @@ LUNA_PRICING = ModelPricing(
     model_name="gpt-5.6-luna",
     input_usd_per_million=Decimal("0.20"),
     cached_input_usd_per_million=Decimal("0.02"),
+    cache_write_usd_per_million=Decimal("0.25"),
     output_usd_per_million=Decimal("1.20"),
     pricing_version="openai-2026-08-19",
 )
@@ -34,6 +35,29 @@ def test_pricing_charges_cached_input_at_its_distinct_rate() -> None:
     assert cost == Decimal("1.328000000")
 
 
+def test_pricing_charges_cache_writes_at_the_explicit_premium() -> None:
+    cost = LUNA_PRICING.cost(
+        ModelUsage(
+            input_tokens=1_000_000,
+            cached_input_tokens=200_000,
+            cache_write_tokens=300_000,
+            output_tokens=1_000_000,
+        )
+    )
+
+    assert cost == Decimal("1.379000000")
+
+
+def test_cached_reads_and_writes_must_fit_inside_total_input() -> None:
+    with pytest.raises(ValueError):
+        ModelUsage(
+            input_tokens=100,
+            cached_input_tokens=60,
+            cache_write_tokens=50,
+            output_tokens=0,
+        )
+
+
 def test_reservation_rejects_before_spend_can_exceed_ten_dollar_cap(
     tmp_path: Path,
 ) -> None:
@@ -43,6 +67,7 @@ def test_reservation_rejects_before_spend_can_exceed_ten_dollar_cap(
         model_name="test-model",
         input_usd_per_million=Decimal(6),
         cached_input_usd_per_million=Decimal(6),
+        cache_write_usd_per_million=Decimal(6),
         output_usd_per_million=Decimal(6),
         pricing_version="test-v1",
     )
@@ -165,6 +190,7 @@ def test_concurrent_reservations_cannot_race_past_limit(tmp_path: Path) -> None:
         model_name="test-model",
         input_usd_per_million=Decimal(6),
         cached_input_usd_per_million=Decimal(6),
+        cache_write_usd_per_million=Decimal(6),
         output_usd_per_million=Decimal(6),
         pricing_version="test-v1",
     )
@@ -187,3 +213,44 @@ def test_concurrent_reservations_cannot_race_past_limit(tmp_path: Path) -> None:
         outcomes = sorted(pool.map(reserve, ["call-a", "call-b"]))
 
     assert outcomes == ["MODEL_BUDGET_EXHAUSTED", "RESERVED"]
+
+
+def test_usage_summary_includes_every_settled_attempt_for_a_namespace(
+    tmp_path: Path,
+) -> None:
+    with SQLiteBudgetLedger(
+        tmp_path / "budget.db",
+        limit_usd=Decimal(10),
+    ) as ledger:
+        first = ModelUsage(
+            input_tokens=1_000,
+            cached_input_tokens=100,
+            cache_write_tokens=200,
+            output_tokens=50,
+        )
+        second = ModelUsage(
+            input_tokens=2_000,
+            cached_input_tokens=300,
+            cache_write_tokens=400,
+            output_tokens=75,
+        )
+        for call_id, usage in (
+            ("run-a:reasoner:1", first),
+            ("run-a:reasoner:2", second),
+            ("run-b:reasoner:1", first),
+        ):
+            ledger.reserve(call_id, pricing=LUNA_PRICING, maximum_usage=usage)
+            ledger.settle(call_id, actual_usage=usage)
+
+        summary = ledger.settled_usage("run-a:")
+
+    assert summary.usage == ModelUsage(
+        input_tokens=3_000,
+        cached_input_tokens=400,
+        cache_write_tokens=600,
+        output_tokens=125,
+    )
+    assert summary.settled_calls == 2
+    assert summary.actual_cost_usd == LUNA_PRICING.cost(first) + LUNA_PRICING.cost(
+        second
+    )

@@ -103,9 +103,9 @@ def _markdown(report: BenchmarkReport) -> str:
             "## Acceptance interpretation",
             "",
             (
-                "Metric PASS in a deterministic reference lane does not turn the Live OpenAI "
-                "or Live Gemini rows green. Missing credentials remain BLOCKED, not "
-                "SKIPPED-as-PASS."
+                "Metric PASS in a deterministic reference lane does not turn a live lane "
+                "green. Authenticated gate failures remain FAIL; missing credentials remain "
+                "BLOCKED, not SKIPPED-as-PASS."
             ),
             "",
             (

@@ -110,5 +110,6 @@ def build_live_access_case() -> tuple[
                 "fragments as CRITICAL dependencies."
             ),
             risk_class=RiskClass.HIGH,
+            outcome_options=("APPROVED", "DENIED", "NEEDS_HUMAN_REVIEW"),
         ),
     )

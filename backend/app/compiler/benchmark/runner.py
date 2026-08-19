@@ -73,7 +73,7 @@ class RunConfiguration(FrozenModel):
     critic_model: str | None = None
     reasoner_prompt_version: str = Field(min_length=1)
     critic_prompt_version: str | None = None
-    temperature: float = Field(ge=0.0, le=2.0)
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     pricing_version: str | None = None
     cumulative_budget_usd: str | None = None
 
@@ -106,6 +106,7 @@ class VarianceSummary(FrozenModel):
 class UsageSummary(FrozenModel):
     input_tokens: int = Field(default=0, ge=0)
     cached_input_tokens: int = Field(default=0, ge=0)
+    cache_write_tokens: int = Field(default=0, ge=0)
     output_tokens: int = Field(default=0, ge=0)
     actual_cost_usd: str = "0"
 
@@ -277,6 +278,7 @@ def blocked_evidence_run(
     configuration: RunConfiguration,
     *,
     reason: str,
+    usage: UsageSummary | None = None,
 ) -> BenchmarkRun:
     if not reason.strip():
         raise ValueError("blocked evidence requires a reason")
@@ -284,6 +286,7 @@ def blocked_evidence_run(
         {
             "configuration": configuration.model_dump(mode="json"),
             "blocked_reason": reason,
+            "usage": None if usage is None else usage.model_dump(mode="json"),
         }
     )[:16]
     return BenchmarkRun(
@@ -291,6 +294,7 @@ def blocked_evidence_run(
         configuration=configuration,
         status=EvidenceStatus.BLOCKED,
         blocked_reason=reason,
+        usage=usage or UsageSummary(),
     )
 
 
@@ -298,6 +302,7 @@ def failed_evidence_run(
     configuration: RunConfiguration,
     *,
     reason: str,
+    usage: UsageSummary | None = None,
 ) -> BenchmarkRun:
     if not reason.strip():
         raise ValueError("failed evidence requires a reason")
@@ -305,6 +310,7 @@ def failed_evidence_run(
         {
             "configuration": configuration.model_dump(mode="json"),
             "failure_reason": reason,
+            "usage": None if usage is None else usage.model_dump(mode="json"),
         }
     )[:16]
     return BenchmarkRun(
@@ -312,6 +318,7 @@ def failed_evidence_run(
         configuration=configuration,
         status=EvidenceStatus.FAIL,
         failure_reason=reason,
+        usage=usage or UsageSummary(),
     )
 
 

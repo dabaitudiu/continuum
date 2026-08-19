@@ -3,7 +3,7 @@
 **Date:** 2026-08-19
 **Scope:** Semantic Dependency Compiler Phases B–G
 **Product result:** PASS — browser-operated deterministic reference product
-**Module 01 P0 result:** BLOCKED — authenticated live-model evidence is absent
+**Module 01 P0 result:** NOT READY — authenticated OpenAI evidence fails the gate; Gemini remains blocked
 
 ## Delivered product flow
 
@@ -33,10 +33,10 @@ The screen exposes `Execution mode: DETERMINISTIC_REFERENCE`, the backend-author
 Compiler Lab permanently separates three evidence lanes:
 
 - `DETERMINISTIC REFERENCE`: `PASS`; proves fixture, compiler, repository, API, and UI wiring only.
-- `OPENAI EVIDENCE`: `BLOCKED`; `OPENAI_API_KEY` was not present. The transport and persisted reserve/settle ledger exist, with an immutable cumulative hard cap of $10. Call IDs grant execution ownership once; ambiguous post-send failures retain the worst-case reservation and cannot be replayed through the ledger.
+- `OPENAI EVIDENCE`: `FAIL`; an authenticated `gpt-5.6-luna` run completed 120 primary cases plus 90 variance observations. Critical recall is 98.21%, but precision is 65.48%, contradiction recall is 0%, outcome compliance is 42.50%, must-block compliance is 26.67%, and stale escape is 80.56%. The report-recorded run cost is $0.419523600 for 272 settled attempts, including 309,424 cache-write tokens. The persisted reserve/settle ledger retains an immutable cumulative hard cap of $10: SDK retries are disabled, service tier is fixed to `default`, cache writes are charged at 1.25× uncached input, call IDs grant execution ownership once, and ambiguous or legacy exposure retains a conservative worst-case UNKNOWN hold.
 - `GEMINI EVIDENCE`: `BLOCKED`; neither Gemini key nor configured Vertex credentials were present.
 
-No deterministic score is reported as live-model performance. OpenAI can provide an additional falsification lane but does not replace the module's explicit live-Gemini P0 requirement.
+No deterministic score is reported as live-model performance. Recorded evidence status and current credential availability are disclosed independently: the historical OpenAI `FAIL` remains visible when no key is loaded, while the UI also says that the current key is unavailable. OpenAI can provide an additional falsification lane but does not replace the module's explicit live-Gemini P0 requirement.
 
 ## Visual verification
 
@@ -48,13 +48,13 @@ Desktop measurement produced the intended `264px / 856px / 320px` source, proven
 
 ## Automated evidence
 
-- The full backend suite reports **450 passed, 2 live credential tests skipped**, with **89% branch-aware coverage**.
-- The frontend suite reports **19/19 passed**, followed by a successful TypeScript/Vite production build.
+- The full backend suite passes: 458 tests passed, 2 authenticated live tests skipped without injected credentials, and branch-aware coverage is 89%.
+- The frontend suite passes 20/20 tests and the production TypeScript/Vite build succeeds.
 - Compiler demo/API tests cover failure-closed default behavior, generic API isolation, honest PASS/FAIL/BLOCKED evidence status, all four dispositions, exactly-once acceptance, prefix-forgery refusal, and reference replay.
 - Frontend behavior tests cover accepted compilation through Runtime receipt and rejected compilation without a mutation action.
 - Four Playwright Chromium end-to-end tests cover the canonical Semantic Resume story, keyboard/mobile Mission Control, accepted and blocked Compiler Lab paths, and compiled-state 320px overflow checks.
-- This report does not promote the two skipped live tests to passes; their lanes remain `BLOCKED` in the generated benchmark report.
+- The generated benchmark report preserves the authenticated OpenAI metric failure and the credential-blocked Gemini lane independently; neither is promoted by deterministic fixtures.
 
 ## Stop condition
 
-The Compiler Lab product and Phases B–G implementation are delivered. Do not proceed to a full Drift Engine build until the `BLOCKED`/`PARTIAL` rows in the Module 01 P0 matrix are resolved, especially live Gemini, live dependency quality metrics, live prompt-injection findings, and K6.
+The Compiler Lab product and Phases B–G implementation are delivered. Do not proceed to a full Drift Engine build while the OpenAI quality rows are `FAIL` or the required Gemini row is `BLOCKED`. The next bounded work is compiler-method redesign/ablation against the failed precision, contradiction, outcome, must-block, and stale-escape rows—not expansion into Module 02.

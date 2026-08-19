@@ -27,12 +27,15 @@ class _Value(BaseModel):
 class ModelUsage(_Value):
     input_tokens: int = Field(ge=0)
     cached_input_tokens: int = Field(default=0, ge=0)
+    cache_write_tokens: int = Field(default=0, ge=0)
     output_tokens: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")
-    def _cached_tokens_are_part_of_input(self) -> ModelUsage:
-        if self.cached_input_tokens > self.input_tokens:
-            raise ValueError("cached input tokens cannot exceed input tokens")
+    def _cache_tokens_are_part_of_input(self) -> ModelUsage:
+        if self.cached_input_tokens + self.cache_write_tokens > self.input_tokens:
+            raise ValueError(
+                "cached input and cache write tokens cannot exceed input tokens"
+            )
         return self
 
 
@@ -41,14 +44,21 @@ class ModelPricing(_Value):
     model_name: str = Field(min_length=1, max_length=128)
     input_usd_per_million: Decimal = Field(ge=0)
     cached_input_usd_per_million: Decimal = Field(ge=0)
+    cache_write_usd_per_million: Decimal = Field(ge=0)
     output_usd_per_million: Decimal = Field(ge=0)
     pricing_version: str = Field(min_length=1, max_length=128)
 
     def cost(self, usage: ModelUsage) -> Decimal:
-        uncached_input = usage.input_tokens - usage.cached_input_tokens
+        ordinary_input = (
+            usage.input_tokens
+            - usage.cached_input_tokens
+            - usage.cache_write_tokens
+        )
         cost = (
-            Decimal(uncached_input) * self.input_usd_per_million
+            Decimal(ordinary_input) * self.input_usd_per_million
             + Decimal(usage.cached_input_tokens) * self.cached_input_usd_per_million
+            + Decimal(usage.cache_write_tokens)
+            * self.cache_write_usd_per_million
             + Decimal(usage.output_tokens) * self.output_usd_per_million
         ) / _MILLION
         return cost.quantize(_NINE_PLACES, rounding=ROUND_CEILING)
@@ -79,6 +89,12 @@ class BudgetSnapshot(_Value):
     remaining_usd: Decimal
     settled_calls: int
     reserved_calls: int
+
+
+class SettledUsageSummary(_Value):
+    usage: ModelUsage
+    actual_cost_usd: Decimal
+    settled_calls: int
 
 
 class SQLiteBudgetLedger:
@@ -157,9 +173,9 @@ class SQLiteBudgetLedger:
                 """
                 INSERT INTO model_budget_calls (
                     call_id, provider, model_name, pricing_version,
-                    input_rate, cached_input_rate, output_rate,
+                    input_rate, cached_input_rate, cache_write_rate, output_rate,
                     maximum_usage_json, reserved_nano, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'RESERVED')
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'RESERVED')
                 """,
                 (
                     call_id,
@@ -168,6 +184,7 @@ class SQLiteBudgetLedger:
                     pricing.pricing_version,
                     str(pricing.input_usd_per_million),
                     str(pricing.cached_input_usd_per_million),
+                    str(pricing.cache_write_usd_per_million),
                     str(pricing.output_usd_per_million),
                     maximum_usage.model_dump_json(),
                     reserved_nano,
@@ -288,6 +305,41 @@ class SQLiteBudgetLedger:
                 reserved_calls=totals["reserved_calls"],
             )
 
+    def settled_usage(self, call_id_prefix: str) -> SettledUsageSummary:
+        if not call_id_prefix:
+            raise ValueError("call id prefix must be non-empty")
+        escaped_prefix = (
+            call_id_prefix.replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT actual_usage_json, actual_nano
+                FROM model_budget_calls
+                WHERE status = 'SETTLED' AND call_id LIKE ? ESCAPE '\\'
+                """,
+                (escaped_prefix + "%",),
+            ).fetchall()
+        usages = [
+            ModelUsage.model_validate_json(row["actual_usage_json"]) for row in rows
+        ]
+        return SettledUsageSummary(
+            usage=ModelUsage(
+                input_tokens=sum(usage.input_tokens for usage in usages),
+                cached_input_tokens=sum(
+                    usage.cached_input_tokens for usage in usages
+                ),
+                cache_write_tokens=sum(usage.cache_write_tokens for usage in usages),
+                output_tokens=sum(usage.output_tokens for usage in usages),
+            ),
+            actual_cost_usd=_from_nano(
+                sum(int(row["actual_nano"] or 0) for row in rows)
+            ),
+            settled_calls=len(rows),
+        )
+
     def _initialize(self) -> None:
         with self._lock:
             self._connection.executescript(
@@ -304,6 +356,7 @@ class SQLiteBudgetLedger:
                     pricing_version TEXT NOT NULL,
                     input_rate TEXT NOT NULL,
                     cached_input_rate TEXT NOT NULL,
+                    cache_write_rate TEXT NOT NULL,
                     output_rate TEXT NOT NULL,
                     maximum_usage_json TEXT NOT NULL,
                     reserved_nano INTEGER NOT NULL,
@@ -314,6 +367,7 @@ class SQLiteBudgetLedger:
                 """
             )
             self._migrate_unknown_status_support()
+            self._migrate_cache_write_rate_support()
             row = self._connection.execute(
                 "SELECT limit_nano FROM model_budget_meta WHERE singleton = 1"
             ).fetchone()
@@ -353,6 +407,22 @@ class SQLiteBudgetLedger:
             );
             INSERT INTO model_budget_calls SELECT * FROM model_budget_calls_legacy;
             DROP TABLE model_budget_calls_legacy;
+            """
+        )
+
+    def _migrate_cache_write_rate_support(self) -> None:
+        columns = {
+            row["name"]
+            for row in self._connection.execute(
+                "PRAGMA table_info(model_budget_calls)"
+            ).fetchall()
+        }
+        if "cache_write_rate" in columns:
+            return
+        self._connection.execute(
+            """
+            ALTER TABLE model_budget_calls
+            ADD COLUMN cache_write_rate TEXT NOT NULL DEFAULT '0'
             """
         )
 
@@ -402,6 +472,7 @@ def _pricing_from_row(row: sqlite3.Row) -> ModelPricing:
         pricing_version=row["pricing_version"],
         input_usd_per_million=Decimal(row["input_rate"]),
         cached_input_usd_per_million=Decimal(row["cached_input_rate"]),
+        cache_write_usd_per_million=Decimal(row["cache_write_rate"]),
         output_usd_per_million=Decimal(row["output_rate"]),
     )
 

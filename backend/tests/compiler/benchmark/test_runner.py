@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.compiler.benchmark.cli import _reasoner_error_evidence, main
+import httpx
+import pytest
+from openai import InternalServerError
+from app.compiler.benchmark.cli import _openai_client, _reasoner_error_evidence, main
 from app.compiler.benchmark.corpus import load_corpus
 from app.compiler.benchmark.report import write_report_bundle
 from app.compiler.benchmark.runner import (
@@ -15,6 +18,7 @@ from app.compiler.benchmark.runner import (
     FullPipelineReferenceSubject,
     RunConfiguration,
     SinglePassReferenceSubject,
+    UsageSummary,
     blocked_evidence_run,
     evaluate_runtime_mutation,
 )
@@ -158,17 +162,25 @@ def test_missing_live_credentials_are_blocked_evidence_not_a_pass() -> None:
 
 
 def test_executed_model_schema_failure_is_fail_not_blocked() -> None:
+    usage = UsageSummary(
+        input_tokens=100,
+        cache_write_tokens=20,
+        output_tokens=10,
+        actual_cost_usd="0.000037000",
+    )
     run = _reasoner_error_evidence(
         _configuration(
             BaselineKind.FULL_PIPELINE,
             lane=EvidenceLane.LIVE_OPENAI,
         ),
         ReasonerError("MODEL_SCHEMA_INVALID", "typed output was invalid"),
+        usage=usage,
     )
 
     assert run.status is EvidenceStatus.FAIL
     assert run.blocked_reason is None
     assert "MODEL_SCHEMA_INVALID" in (run.failure_reason or "")
+    assert run.usage == usage
 
 
 def test_report_bundle_separates_evidence_lanes_and_records_configuration(
@@ -228,4 +240,28 @@ def test_live_openai_cli_without_key_writes_blocked_not_pass_evidence(
     assert run["status"] == "BLOCKED"
     assert run["configuration"]["evidence_lane"] == "live_openai"
     assert run["configuration"]["cumulative_budget_usd"] == "10"
+    assert run["configuration"]["reasoner_prompt_version"] == "reasoner-v2"
     assert "OPENAI_API_KEY" in run["blocked_reason"]
+
+
+def test_openai_client_disables_sdk_level_retries(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key-for-local-http-mock")
+    requests = 0
+
+    def fail_once(request: httpx.Request) -> httpx.Response:
+        nonlocal requests
+        requests += 1
+        return httpx.Response(
+            500,
+            request=request,
+            json={"error": {"message": "synthetic failure", "type": "server_error"}},
+        )
+
+    http_client = httpx.Client(transport=httpx.MockTransport(fail_once))
+    client = _openai_client(http_client=http_client)
+
+    with pytest.raises(InternalServerError):
+        client.responses.create(model="gpt-5.6-luna", input="test")
+
+    assert client.max_retries == 0
+    assert requests == 1

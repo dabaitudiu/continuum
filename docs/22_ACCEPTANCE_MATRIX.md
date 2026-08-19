@@ -23,7 +23,7 @@
 | Runtime compiler acceptance boundary | PASS | revision/world/CAS/idempotency/capability tests | accepted fixture commits once and returns an audit-linked receipt |
 | 120-case, three-domain dependency corpus | PASS | corpus/schema/distribution tests | benchmark report is committed |
 | Deterministic full-pipeline reference metrics | PASS | reproducible benchmark runner | report shows 100% reference recall/precision/contradiction/determinism |
-| Live OpenAI compiler evidence | BLOCKED | transport/budget contracts pass; no authenticated run | UI says key not configured; cumulative hard cap is $10 |
+| Live OpenAI compiler evidence | FAIL | authenticated 120-case + 90-observation run; recall passes but precision/contradiction/outcome/block/stale gates fail | UI preserves the recorded FAIL even without a current key; cumulative hard cap is $10 |
 | Live Gemini compiler evidence | BLOCKED | ADK transport contracts pass; no authenticated run | UI says credentials not configured |
 | Gemini used materially | DEFERRED | agent contract fixture only | requires authenticated live run |
 | ADK used | DEFERRED | adapter inspection only | requires authenticated live run |

@@ -8,6 +8,7 @@ import pytest
 from app.compiler.budget import SQLiteBudgetLedger
 from app.compiler.canonicalization import DeterministicCanonicalizer
 from app.compiler.models import CriticReview
+from app.compiler.prompts import REASONER_PROMPT_VERSION
 from app.compiler.reasoner import (
     DependencyReasoner,
     OpenAIResponsesTransport,
@@ -31,7 +32,7 @@ def test_live_openai_compiles_a_multi_source_decision_within_budget(tmp_path) ->
         limit_usd=Decimal("10"),
     )
     transport = OpenAIResponsesTransport(
-        client=OpenAI(),
+        client=OpenAI(max_retries=0),
         budget=ledger,
         pricing=openai_luna_pricing(),
         max_input_tokens=250_000,
@@ -40,7 +41,7 @@ def test_live_openai_compiles_a_multi_source_decision_within_budget(tmp_path) ->
     draft = DependencyReasoner(
         transport,
         model_name="gpt-5.6-luna",
-        prompt_version="reasoner-v1",
+        prompt_version=REASONER_PROMPT_VERSION,
     ).propose(request, tools)
 
     proposed_refs = {

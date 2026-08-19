@@ -8,7 +8,7 @@ This is a planning range, not a timer-based definition of done. If the work fini
 
 ## Implementation status — 2026-08-19
 
-Phases A–G are implemented. Phase D's OpenAI and Gemini transports are locally contract-tested, but their authenticated evidence lanes are `BLOCKED` because this environment supplied neither key. Phase F's deterministic reference lane passes; it does not satisfy live-model acceptance. Consequently the stop condition at the end of this document remains in force.
+Phases A–G are implemented. Phase D's OpenAI and Gemini transports are locally contract-tested. The authenticated OpenAI lane has now completed but fails the Phase F quality gate; the Gemini lane remains `BLOCKED` because this environment supplied no Gemini/Vertex credentials. The deterministic reference lane still passes, but it does not override the live failure. Consequently the stop condition at the end of this document remains in force.
 
 ## Phase A — Source identity kernel (5–6h)
 

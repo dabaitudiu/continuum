@@ -64,6 +64,8 @@ expected_staleness_after_mutation
 
 Ground truth is manually authored and version-controlled.
 
+The model request receives the complete decision-type outcome vocabulary (`APPROVED`, `DENIED`, `NEEDS_HUMAN_REVIEW`) so the categorical field is well-defined. It never receives the case's ground-truth `allowed_outcomes`; exposing that singleton would leak the answer and invalidate outcome compliance.
+
 ## Metrics
 
 ### Dependency Critical Recall

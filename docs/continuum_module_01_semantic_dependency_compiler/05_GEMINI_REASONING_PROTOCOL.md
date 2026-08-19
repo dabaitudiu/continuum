@@ -22,6 +22,7 @@ The system instruction must state:
 
 - source refs are opaque canonical identifiers;
 - never fabricate refs;
+- `proposed_outcome` must equal one of the request's explicit outcome options;
 - every critical claim must cite at least one source or derived claim;
 - policy/rule claims should cite exact policy fragments when available;
 - distinguish facts from assessments;
@@ -84,6 +85,8 @@ The architecture must not depend on a specific model tier.
 ### Invalid JSON/schema
 
 Retry once with schema error feedback. Then reject.
+
+An outcome outside the request's explicit option set follows the same bounded correction path. The request supplies the complete option vocabulary, never the benchmark's expected answer.
 
 ### Unknown references
 

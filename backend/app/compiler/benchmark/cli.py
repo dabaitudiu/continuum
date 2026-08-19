@@ -5,6 +5,7 @@ import os
 import uuid
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 from app.compiler.benchmark.corpus import load_corpus
 from app.compiler.benchmark.model_subject import ModelCompilerSubject
@@ -18,10 +19,12 @@ from app.compiler.benchmark.runner import (
     FullPipelineReferenceSubject,
     RunConfiguration,
     SinglePassReferenceSubject,
+    UsageSummary,
     blocked_evidence_run,
     failed_evidence_run,
 )
 from app.compiler.budget import SQLiteBudgetLedger
+from app.compiler.prompts import CRITIC_PROMPT_VERSION, REASONER_PROMPT_VERSION
 from app.compiler.reasoner import (
     AdkGeminiTransport,
     DependencyReasoner,
@@ -108,8 +111,8 @@ def _configuration(baseline: BaselineKind) -> RunConfiguration:
         provider="REFERENCE",
         reasoner_model="deterministic-reference-v1",
         critic_model="deterministic-reference-critic-v1" if is_full else None,
-        reasoner_prompt_version="reasoner-v1",
-        critic_prompt_version="critic-v1" if is_full else None,
+        reasoner_prompt_version=REASONER_PROMPT_VERSION,
+        critic_prompt_version=CRITIC_PROMPT_VERSION if is_full else None,
         temperature=0.0,
     )
 
@@ -126,9 +129,9 @@ def _run_live_openai(
         provider="OPENAI",
         reasoner_model=model_name,
         critic_model=model_name,
-        reasoner_prompt_version="reasoner-v1",
-        critic_prompt_version="critic-v1",
-        temperature=0.0,
+        reasoner_prompt_version=REASONER_PROMPT_VERSION,
+        critic_prompt_version=CRITIC_PROMPT_VERSION,
+        temperature=None,
         pricing_version=pricing.pricing_version,
         cumulative_budget_usd="10",
     )
@@ -146,12 +149,11 @@ def _run_live_openai(
             ),
         )
 
-    from openai import OpenAI
-
     ledger = SQLiteBudgetLedger(budget_path, limit_usd=Decimal(10))
     try:
+        execution_namespace = f"benchmark-openai-{uuid.uuid4().hex}"
         transport = OpenAIResponsesTransport(
-            client=OpenAI(),
+            client=_openai_client(),
             budget=ledger,
             pricing=pricing,
             max_input_tokens=250_000,
@@ -161,23 +163,39 @@ def _run_live_openai(
             reasoner=DependencyReasoner(
                 transport,
                 model_name=model_name,
-                prompt_version="reasoner-v1",
+                prompt_version=REASONER_PROMPT_VERSION,
             ),
             critic=ModelDependencyCritic(
                 transport,
                 model_name=model_name,
-                prompt_version="critic-v1",
+                prompt_version=CRITIC_PROMPT_VERSION,
             ),
             reasoner_pricing=pricing,
             critic_pricing=pricing,
-            execution_namespace=f"benchmark-openai-{uuid.uuid4().hex}",
+            execution_namespace=execution_namespace,
+            settled_usage_supplier=lambda: ledger.settled_usage(
+                execution_namespace + ":"
+            ),
         )
         try:
             return runner.run(subject, configuration)
         except ReasonerError as error:
-            return _reasoner_error_evidence(configuration, error)
+            return _reasoner_error_evidence(
+                configuration,
+                error,
+                usage=subject.usage_summary(),
+            )
     finally:
         ledger.close()
+
+
+def _openai_client(*, http_client: Any | None = None):  # type: ignore[no-untyped-def]
+    from openai import OpenAI
+
+    kwargs: dict[str, Any] = {"max_retries": 0}
+    if http_client is not None:
+        kwargs["http_client"] = http_client
+    return OpenAI(**kwargs)
 
 
 def _run_live_gemini(runner: BenchmarkRunner):  # type: ignore[no-untyped-def]
@@ -188,8 +206,8 @@ def _run_live_gemini(runner: BenchmarkRunner):  # type: ignore[no-untyped-def]
         provider="GOOGLE",
         reasoner_model=model_name,
         critic_model=model_name,
-        reasoner_prompt_version="reasoner-v1",
-        critic_prompt_version="critic-v1",
+        reasoner_prompt_version=REASONER_PROMPT_VERSION,
+        critic_prompt_version=CRITIC_PROMPT_VERSION,
         temperature=0.0,
     )
     using_api_key = bool(
@@ -210,12 +228,12 @@ def _run_live_gemini(runner: BenchmarkRunner):  # type: ignore[no-untyped-def]
         reasoner=DependencyReasoner(
             transport,
             model_name=model_name,
-            prompt_version="reasoner-v1",
+            prompt_version=REASONER_PROMPT_VERSION,
         ),
         critic=ModelDependencyCritic(
             transport,
             model_name=model_name,
-            prompt_version="critic-v1",
+            prompt_version=CRITIC_PROMPT_VERSION,
         ),
         execution_namespace=f"benchmark-gemini-{uuid.uuid4().hex}",
     )
@@ -238,11 +256,13 @@ _BLOCKED_REASONER_CODES = frozenset(
 def _reasoner_error_evidence(
     configuration: RunConfiguration,
     error: ReasonerError,
+    *,
+    usage: UsageSummary | None = None,
 ):  # type: ignore[no-untyped-def]
     reason = f"{error.code}: {error.message}"
     if error.code in _BLOCKED_REASONER_CODES:
-        return blocked_evidence_run(configuration, reason=reason)
-    return failed_evidence_run(configuration, reason=reason)
+        return blocked_evidence_run(configuration, reason=reason, usage=usage)
+    return failed_evidence_run(configuration, reason=reason, usage=usage)
 
 
 if __name__ == "__main__":

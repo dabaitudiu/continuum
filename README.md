@@ -17,7 +17,7 @@ Four current-scope product milestones are implemented:
 3. **Local Mission Control product:** a browser-operated Acme Analytics scenario with three semantic agent lanes, policy-drift impact, preserved work, durable missing-evidence wait, immutable D57/D58 supersession, and exactly-once vendor activation.
 4. **Semantic Dependency Compiler Phases B–G:** typed Decision/Claim/Dependency IR, deterministic validation and canonicalization, provider-neutral reasoner/critic adapters, completeness and contradiction gates, a 120-case three-domain benchmark, durable compiler repositories, runtime acceptance, and the browser-operated Compiler Lab.
 
-Module 01 is not declared fully accepted: its deterministic reference lane passes, but authenticated OpenAI and Gemini evidence are currently `BLOCKED` because no credentials were available to this process. The module definition of done still requires live Gemini evidence. See [the compiler benchmark report](docs/reports/module-01-dependency-compiler.md) and [the current P0 matrix](docs/continuum_module_01_semantic_dependency_compiler/13_ACCEPTANCE_MATRIX_AND_KILL_CRITERIA.md).
+Module 01 is not declared fully accepted: its deterministic reference lane passes, but the authenticated OpenAI lane completed and **failed** the model-quality gate (98.21% critical recall, 65.48% precision, 0% contradiction recall, 42.50% outcome compliance, and 80.56% stale escape). Live Gemini remains `BLOCKED` because no Gemini/Vertex credentials were available, and the module definition of done still explicitly requires live Gemini evidence. See [the compiler benchmark report](docs/reports/module-01-dependency-compiler.md) and [the current P0 matrix](docs/continuum_module_01_semantic_dependency_compiler/13_ACCEPTANCE_MATRIX_AND_KILL_CRITERIA.md).
 
 An optional Google integration foundation also exists: bounded Google ADK/Gemini agents, a transactional Firestore repository, durable Pub/Sub outbox relay, Cloud Trace instrumentation, and a Cloud Run deployment path. These adapters are locally contract-tested but have no live-cloud evidence, and they are not counted as a completed product milestone. The UI and `/api/health` always disclose the active execution, persistence, event, and telemetry modes.
 
@@ -57,7 +57,7 @@ The Mission history view lists recent durable namespaces from the runtime store 
 
 Open **Compiler Lab** in the top navigation to execute four bounded reference cases: accepted dependencies, a missing governing clause, conflicting equal-rank authorities, and a stale Policy v12 reference. The reference adapter is intentionally labeled deterministic and does not count as model evidence. Only an accepted immutable compilation exposes the demo Runtime commit action; rejected or review-required results cannot mutate Runtime.
 
-If an OpenAI key is supplied, the evidence benchmark can be run through the real Responses API. The SQLite ledger reserves estimated cost before every request and enforces a cumulative hard cap of **$10** across runs:
+If an OpenAI key is supplied, the evidence benchmark can be run through the real Responses API. The SQLite ledger reserves worst-case cost before every request and enforces a cumulative hard cap of **$10** across runs. The audited OpenAI client disables SDK retries, pins the default service tier, prices cache writes separately at the documented premium, and retains conservative UNKNOWN holds for ambiguous or pre-v2 exposure:
 
 ```bash
 cd backend
@@ -67,7 +67,7 @@ OPENAI_API_KEY='...' uv run python -m app.compiler.benchmark.cli run \
   --output-dir ../docs/reports
 ```
 
-With no Gemini credentials, this command intentionally exits non-zero after writing the report because the Gemini lane remains `BLOCKED`; inspect the individual lane statuses rather than treating the process exit as an OpenAI failure. An unaudited `CONTINUUM_OPENAI_MODEL` override is rejected instead of weakening the budget guard.
+The command exits non-zero after writing the report whenever any selected lane is `FAIL` or `BLOCKED`. The committed result contains an OpenAI metric-gate `FAIL` and a credential-blocked Gemini lane, so inspect the individual statuses rather than inferring one cause from the process exit code. An unaudited `CONTINUUM_OPENAI_MODEL` override is rejected instead of weakening the budget guard.
 
 The production image serves the built React application and FastAPI API from one Cloud Run container:
 

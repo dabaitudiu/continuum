@@ -106,8 +106,12 @@ test('Compiler Lab proves accepted and blocked paths before runtime mutation', a
   await expect(evidence.getByText('DETERMINISTIC REFERENCE')).toBeVisible()
   await expect(evidence.getByText('OPENAI EVIDENCE')).toBeVisible()
   await expect(evidence.getByText('GEMINI EVIDENCE')).toBeVisible()
+  await expect(evidence.getByText('FAIL')).toHaveCount(2)
+  await expect(evidence.getByText('KEY NOT CONFIGURED')).toBeVisible()
   await expect(evidence.getByText('BLOCKED')).toHaveCount(2)
-  await expect(evidence.getByText('$0.00 / $10.00 CUMULATIVE CAP')).toBeVisible()
+  await expect(
+    evidence.getByText(/^\$\d+\.\d{2} \/ \$10\.00 CUMULATIVE CAP$/),
+  ).toBeVisible()
 
   await page.getByRole('button', { name: 'Authorized access' }).click()
   await page.getByRole('button', { name: 'Run reference compilation' }).click()

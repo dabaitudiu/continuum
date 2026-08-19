@@ -20,6 +20,7 @@ from app.compiler.models import (
     MissingDependencyProposal,
     ModelMetadata,
 )
+from app.compiler.prompts import REASONER_PROMPT_VERSION
 from app.domain.models import GraphSnapshot
 from app.repository.runtime_protocol import RuntimeRepository
 from app.runtime.entities import (
@@ -118,7 +119,7 @@ class CompilerReferenceCatalog:
             model_metadata=ModelMetadata(
                 provider="REFERENCE",
                 model_name="deterministic-reference-v1",
-                prompt_version="reasoner-v1",
+                prompt_version=REASONER_PROMPT_VERSION,
                 temperature=0.0,
                 execution_id=f"{request_id}:reasoner:1",
             ),

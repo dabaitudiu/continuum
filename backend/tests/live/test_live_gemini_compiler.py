@@ -6,6 +6,7 @@ import pytest
 
 from app.compiler.canonicalization import DeterministicCanonicalizer
 from app.compiler.models import CriticReview
+from app.compiler.prompts import REASONER_PROMPT_VERSION
 from app.compiler.reasoner import AdkGeminiTransport, DependencyReasoner
 from app.compiler.validation import DeterministicDraftValidator
 from tests.live.compiler_live_fixture import build_live_access_case
@@ -31,7 +32,7 @@ def test_live_gemini_compiles_a_multi_source_decision() -> None:
     draft = DependencyReasoner(
         AdkGeminiTransport(),
         model_name=model_name,
-        prompt_version="reasoner-v1",
+        prompt_version=REASONER_PROMPT_VERSION,
     ).propose(request, tools)
 
     proposed_refs = {

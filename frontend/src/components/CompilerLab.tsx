@@ -34,10 +34,15 @@ function money(value: string | undefined): string {
 
 function statusLabel(evidence: ProviderEvidenceDto): string {
   if (evidence.status === 'PASS') return 'PASSING EVIDENCE'
-  if (!evidence.credentials_configured) {
-    return evidence.provider === 'OPENAI' ? 'KEY NOT CONFIGURED' : 'CREDENTIALS NOT CONFIGURED'
-  }
+  if (evidence.status === 'FAIL') return 'FAIL'
   return evidence.status
+}
+
+function credentialLabel(evidence: ProviderEvidenceDto): string {
+  if (evidence.credentials_configured) return 'CURRENT CREDENTIALS AVAILABLE'
+  return evidence.provider === 'OPENAI'
+    ? 'KEY NOT CONFIGURED'
+    : 'CREDENTIALS NOT CONFIGURED'
 }
 
 export function CompilerLab({ api }: { api: ContinuumApi }) {
@@ -211,6 +216,7 @@ function EvidenceCell({ label, evidence }: { label: string; evidence: ProviderEv
       <span>{label}</span>
       <strong>{evidence.status}</strong>
       <small><b>{statusLabel(evidence)}</b> · {evidence.model}</small>
+      {evidence.provider !== 'REFERENCE' && <small>{credentialLabel(evidence)}</small>}
     </div>
   )
 }

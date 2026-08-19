@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -84,7 +84,7 @@ function compilerStatusFixture() {
       deterministic_reference: { status: 'PASS', provider: 'REFERENCE', model: 'deterministic-reference-v1', reason: 'Repeatable product fixture; not live model evidence.', credentials_configured: true },
       openai: {
         status: 'BLOCKED', provider: 'OPENAI', model: 'gpt-5.6-luna', reason: 'OPENAI_API_KEY is not configured', credentials_configured: false,
-        budget: { limit_usd: '10.000000000', spent_usd: '0E-9', reserved_usd: '0E-9', remaining_usd: '10.000000000', settled_calls: 0, reserved_calls: 0, pricing_version: 'openai-2026-08-19' },
+        budget: { limit_usd: '10.000000000', spent_usd: '0E-9', reserved_usd: '0E-9', remaining_usd: '10.000000000', settled_calls: 0, reserved_calls: 0, pricing_version: 'openai-2026-08-19-v2' },
       },
       gemini: { status: 'BLOCKED', provider: 'GOOGLE', model: 'gemini-3.5-flash', reason: 'Gemini credentials are not configured', credentials_configured: false },
     },
@@ -569,6 +569,38 @@ describe('App', () => {
     expect(await screen.findByText('RUNTIME ACCEPTED')).toBeVisible()
     expect(screen.getAllByText('decision:123')[0]).toBeVisible()
     expect(screen.getByText('audit:compiler-accept:123')).toBeVisible()
+  })
+
+  it('shows recorded OpenAI failure even when the current key is unavailable', async () => {
+    const status = compilerStatusFixture()
+    status.evidence.openai = {
+      ...status.evidence.openai,
+      status: 'FAIL',
+      reason: 'The recorded live evidence run failed its model or metric gate',
+      credentials_configured: false,
+    }
+    const api = {
+      listMissions: noMissions,
+      createDemo: vi.fn().mockResolvedValue({ mission_id: 'demo-001' }),
+      start: vi.fn(),
+      getControl: vi.fn().mockResolvedValue(control('CREATED')),
+      upgradePolicy: vi.fn(),
+      revalidate: vi.fn(),
+      uploadPenTest: vi.fn(),
+      getCompilerLabStatus: vi.fn().mockResolvedValue(status),
+    } as unknown as ContinuumApi
+
+    render(<App api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Compiler Lab' }))
+
+    const openaiEvidence = (await screen.findByText('OPENAI EVIDENCE')).closest(
+      '.evidence-cell',
+    )
+    expect(openaiEvidence).not.toBeNull()
+    expect(within(openaiEvidence as HTMLElement).getAllByText('FAIL')).toHaveLength(2)
+    expect(
+      within(openaiEvidence as HTMLElement).getByText('KEY NOT CONFIGURED'),
+    ).toBeVisible()
   })
 
   it('shows compiler rejection evidence and never offers a runtime mutation', async () => {

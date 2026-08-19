@@ -535,10 +535,7 @@ def _provider_evidence(
 ) -> ProviderEvidence:
     configuration = {} if run is None else run.get("configuration", {})
     report_status = None if run is None else run.get("status")
-    if not credentials_configured:
-        status = "BLOCKED"
-        reason = missing_reason
-    elif report_status == "PASS":
+    if report_status == "PASS":
         status = "PASS"
         reason = None
     elif report_status == "FAIL":
@@ -546,11 +543,17 @@ def _provider_evidence(
         reason = (
             None if run is None else run.get("failure_reason")
         ) or "The recorded live evidence run failed its model or metric gate"
-    else:
+    elif report_status == "BLOCKED":
         status = "BLOCKED"
         reason = (
             None if run is None else run.get("blocked_reason")
-        ) or "No executable live evidence run is recorded for the current configuration"
+        ) or "The recorded live evidence run is blocked"
+    elif not credentials_configured:
+        status = "BLOCKED"
+        reason = missing_reason
+    else:
+        status = "BLOCKED"
+        reason = "No executable live evidence run is recorded for the current configuration"
     return ProviderEvidence(
         status=status,
         provider=provider,
