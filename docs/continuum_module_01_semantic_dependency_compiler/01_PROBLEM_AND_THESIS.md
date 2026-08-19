@@ -103,8 +103,8 @@ Does the compiler work across multiple mission domains rather than only vendor o
 
 We prefer a **hybrid compiler** with explicit semantic stages:
 
-- Model: Requirement Decomposition, Evidence Binding, dedicated contradiction proposals, and completeness assessment over explicit requirements.
-- Deterministic code: identity, access scope, schema, temporal validity, reference integrity, graph compilation, invariant enforcement.
+- Model: Requirement Decomposition, Evidence Binding, and dedicated contradiction proposals.
+- Deterministic code: identity, access scope, schema, temporal validity, reference integrity, DIRECT/DERIVED_ALL completeness, outcome/justification selection, graph compilation, and invariant enforcement.
 - Deterministic acceptance: precedence, outcome/blocking policy, disposition, canonicalization, and Runtime boundary.
 
 The former open-ended second-pass critic is rejected by the product owner after K3 evidence. See `15_REPLACEMENT_ARCHITECTURE.md`; reasoner-only and old-critic pipelines remain ablation baselines, not production candidates.

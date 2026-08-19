@@ -20,6 +20,7 @@ Compiler v2 adds immutable records:
 - `EvidenceBindingSetRecord`
 - `ContradictionSetRecord`
 - `RequirementAssessmentSetRecord`
+- `DecisionJustificationRecord` for accepted APPROVE/DENY only;
 - `CompilerFindingRecord`
 - `CompilationResultRecord`
 - per-stage `ModelInvocationRecord` / ledger settlement linkage.
@@ -42,6 +43,7 @@ requirements[]
 evidence_bindings[]
 contradictions[]
 requirement_assessments[]
+decision_justification? only when ACCEPTED
 findings[]
 canonical graph fields only when ACCEPTED
 compilation_hash only when ACCEPTED
@@ -54,7 +56,7 @@ CONTEXT_ASSEMBLED
 REQUIREMENTS_VALIDATED
 BINDINGS_VALIDATED
 CONTRADICTIONS_VALIDATED
-COMPLETENESS_VALIDATED
+COMPLETENESS_COMPUTED
 GATE_EVALUATED
 CANONICALIZED
 ```
@@ -87,20 +89,19 @@ The current draft/compile routes may remain as versioned v1 readers during migra
 
 ```text
 ContextAssembler.assemble(request)
-RequirementDecomposer.decompose(context)
+RequirementDecomposer.decompose(context) -> DecisionAnalysisProposal
 RequirementStructureValidator.validate(requirements, request)
 EvidenceBinder.bind(requirements, context)
 EvidenceBindingValidator.validate(bindings, requirements, context)
 ContradictionDetector.detect(requirements, bindings, context)
 ContradictionValidator.resolve(contradictions, requirements, bindings, context)
-RequirementCompletenessAssessor.assess(requirements, bindings, contradictions)
-RequirementAssessmentValidator.validate_and_trace(...)
-DeterministicAcceptanceGate.evaluate(...)
+DeterministicRequirementCompleteness.compute(requirements, bindings, contradictions)
+DeterministicAcceptanceGate.evaluate(...) -> disposition + DecisionJustification?
 Canonicalizer.compile(...)
 RuntimeAcceptanceService.accept(...)
 ```
 
-Each model interface returns a typed proposal. Each validator returns immutable validated objects/findings. Only the gate returns a semantic disposition; only the canonicalizer returns canonical graph objects; only Runtime acceptance mutates canonical Runtime state.
+RequirementDecomposer, EvidenceBinder, and ContradictionDetector are the only model interfaces and return typed proposals. Validators return immutable validated objects/findings; deterministic completeness computes RequirementAssessments. Only the gate returns a semantic disposition; only the canonicalizer returns canonical graph objects; only Runtime acceptance mutates canonical Runtime state.
 
 ## Transaction boundary
 

@@ -10,12 +10,14 @@ Focus on deterministic code:
 - fragment resolution;
 - temporal validity;
 - scope checks;
-- Requirement schema, outcome vocabulary, and DAG integrity;
+- Requirement schema, expected truth, DIRECT/DERIVED_ALL rules, and conjunction-DAG integrity;
 - EvidenceBinding cross-links and CRITICAL/validity-impact consistency;
 - Contradiction pair validation and deterministic precedence;
-- RequirementAssessment cross-links and one-assessment-per-requirement;
+- deterministic RequirementAssessment truth table, support paths, blocking IDs, and one-assessment-per-requirement;
+- deterministic same-truth proof-binding selection and opposite-truth conflict preservation;
 - transitive Source → Claim → Claim → Decision reachability;
 - deterministic `APPROVE | DENY | REVIEW` acceptance rules;
+- deterministic minimal DecisionJustification selection independent of case/domain/local-ID order;
 - canonical edge normalization;
 - duplicate edge handling;
 - materiality rules;
@@ -41,9 +43,10 @@ Cases:
 - unknown ref rejected;
 - stale revision rejected;
 - cross-scope ref rejected;
-- critical requirement without support reaches contradiction and completeness before gate rejection;
+- a Requirement without CRITICAL evidence reaches contradiction and completeness before gate rejection;
 - equal-authority contradiction reaches a dedicated typed pass and forces review;
 - a transitive Claim support path is accepted without redundant direct source edges;
+- only requirement-DAG roots connect to Decision; intermediate Claim → Decision edges are not duplicated;
 - reasoner-only and old-critic baselines cannot call Runtime acceptance;
 - no v2 failure falls back to old critic;
 - runtime revision changes after compile → accept fails.
@@ -85,10 +88,13 @@ Include:
 New Option B regression fixtures must be method-level and must not branch on benchmark case IDs or known source refs. Required cases:
 
 - supporting evidence is not promoted to CRITICAL;
-- a critical omission becomes `INSUFFICIENT_EVIDENCE` and blocks at the gate;
+- a v1 material omission becomes an explicit Requirement/Binding, enters the accepted canonical graph, and affects Runtime invalidation;
+- genuinely absent evidence becomes `INSUFFICIENT_EVIDENCE` and blocks at the gate;
 - contradiction missed by v1 is found and typed;
 - equal-authority conflict cannot silently accept;
 - a critical fragment mutation makes an accepted Decision stale;
+- a counterevidence fragment mutation makes an accepted DENY Decision stale;
+- an unselected failed/satisfied sibling fragment mutation leaves that DENY Decision valid;
 - supporting/irrelevant fragment mutation leaves it valid;
 - stale historical evidence cannot authorize acceptance;
 - prompt injection cannot create an authority edge;

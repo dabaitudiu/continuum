@@ -29,7 +29,7 @@ Experiment 1 已足以触发 K3：
 3. model 只能生成 immutable proposal；任何 model output 都不能直接写 canonical graph、Mission、Decision status、world snapshot 或 side effect state。
 4. `CRITICAL` 表示反事实 materiality：该 source 的相关内容改变时，可能改变 requirement 或 decision validity。
 5. 阅读过、相关或有解释价值，不足以成为 `CRITICAL`。
-6. completeness 只评估 Stage 1 已显式声明的 requirements；它不能发明 requirement，也不能输出占位 source ref。
+6. completeness 是 deterministic stage，只评估 Stage 1 已显式声明的 requirements；它不能发明 requirement，也不能输出占位 source ref。
 7. contradiction detection 是独立 typed semantic pass，不是 completeness 的副作用。
 8. structural failure 可以提前终止；semantic incompleteness、contradiction、uncertainty 和 outcome mismatch 必须等相关 semantic passes 执行后，才由 final gate 处置。
 9. canonical support 按 graph reachability 计算；不得要求每个 derived Claim 或 Decision 再重复添加 direct source edge。
@@ -49,9 +49,9 @@ flowchart TD
     D1 --> E[3. Independent Contradiction Pass]
     E --> E1[Deterministic candidate validation + precedence]
     E1 -->|structural error| X
-    E1 --> F[4. Requirement Completeness]
-    F --> F1[Deterministic reachability + assessment validation]
-    F1 -->|structural error| X
+    E1 --> F[4. Deterministic Requirement Completeness]
+    F --> F1[Reachability + assessment computation]
+    F1 -->|internal invariant failure| Y[RUN_FAILED]
     F1 --> G[5. Deterministic Acceptance Gate]
     G -->|ACCEPTED| H[Deterministic Canonicalizer]
     G -->|REJECT / REVIEW| I[Immutable non-accepted CompilationResult]
@@ -71,18 +71,25 @@ stateDiagram-v2
     CONTEXT_READY --> REQUIREMENTS_VALIDATED
     REQUIREMENTS_VALIDATED --> BINDINGS_VALIDATED
     BINDINGS_VALIDATED --> CONTRADICTIONS_VALIDATED
-    CONTRADICTIONS_VALIDATED --> COMPLETENESS_VALIDATED
-    COMPLETENESS_VALIDATED --> GATE_EVALUATED
+    CONTRADICTIONS_VALIDATED --> COMPLETENESS_COMPUTED
+    COMPLETENESS_COMPUTED --> GATE_EVALUATED
     GATE_EVALUATED --> CANONICALIZED: ACCEPTED
     GATE_EVALUATED --> COMPLETED_NOT_ACCEPTED: REJECT / REVIEW
     CANONICALIZED --> COMPLETED_ACCEPTED
 
-    RECEIVED --> RUN_BLOCKED: auth / transport / budget
+    RECEIVED --> RUN_BLOCKED: context auth / budget
+    CONTEXT_READY --> RUN_BLOCKED: Stage 1 provider / budget
+    REQUIREMENTS_VALIDATED --> RUN_BLOCKED: Stage 2 provider / budget
+    BINDINGS_VALIDATED --> RUN_BLOCKED: Stage 3 provider / budget
     CONTEXT_READY --> TERMINAL_STRUCTURAL_ERROR
     REQUIREMENTS_VALIDATED --> TERMINAL_STRUCTURAL_ERROR
     BINDINGS_VALIDATED --> TERMINAL_STRUCTURAL_ERROR
-    CONTRADICTIONS_VALIDATED --> TERMINAL_STRUCTURAL_ERROR
-    COMPLETENESS_VALIDATED --> TERMINAL_STRUCTURAL_ERROR
+    RECEIVED --> RUN_FAILED: internal / persistence invariant
+    CONTEXT_READY --> RUN_FAILED: internal / persistence invariant
+    REQUIREMENTS_VALIDATED --> RUN_FAILED: internal / persistence invariant
+    BINDINGS_VALIDATED --> RUN_FAILED: internal / persistence invariant
+    CONTRADICTIONS_VALIDATED --> RUN_FAILED: internal / persistence invariant
+    COMPLETENESS_COMPUTED --> RUN_FAILED: internal / persistence invariant
 ```
 
 `RUN_BLOCKED` 是 execution status，不是 semantic compilation disposition。Credential、transport、budget 或 provider outage 不能伪装成 `REJECTED_*`，更不能产生 canonical output。
@@ -91,6 +98,19 @@ stateDiagram-v2
 
 以下四个类型是 immutable analysis IR。它们不是 Runtime entity，也没有 canonical mutation capability。所有 local IDs、source refs 和 cross-links 都必须经 deterministic validation 后才能进入下一 stage。
 
+Stage 1 的 transport envelope 是：
+
+```text
+DecisionAnalysisProposal
+  request_id: string
+  decision_type: string
+  proposed_outcome: one trusted request outcome option
+  requirements: list[Requirement]
+  rationale_summary: string
+```
+
+`proposed_outcome` 仍是 model proposal，不是 canonical state。Trusted request只提供完整 outcome vocabulary及其 `APPROVE | DENY | REVIEW` class mapping，不提供 case expected outcome。Deterministic gate根据 RequirementAssessments独立计算 expected class并校验 proposal。
+
 ### 1. `Requirement`
 
 ```text
@@ -98,10 +118,9 @@ Requirement
   requirement_local_id: string
   proposition: string
   kind: FACT | RULE | AUTHORIZATION | EVIDENCE_PRESENCE | NEGATIVE_CONSTRAINT
-  necessity: CRITICAL | SUPPORTING
-  polarity: MUST_HOLD | MUST_NOT_HOLD
+  expected_truth: TRUE | FALSE
+  proof_mode: DIRECT | DERIVED_ALL
   depends_on_requirement_ids: list[string]
-  applies_to_outcomes: non-empty list[outcome option]
   rationale_summary: string
 ```
 
@@ -109,10 +128,12 @@ Requirement
 
 - `proposition` 必须是独立可判定的语义命题，例如“requester 已完成当前安全培训”，不能是 `access-policy#training`。
 - Stage 1 schema **禁止任何 source-ref 字段**。
-- `depends_on_requirement_ids` 形成 DAG，并表达 requirement-level derivation；self-edge、unknown ID 和 cycle 是 structural error。
-- `applies_to_outcomes` 只能取自 trusted request 提供的 outcome vocabulary，不能读取 benchmark expected outcome。
-- `necessity=CRITICAL` 表示该命题不成立或证据不足时，相关 outcome 的 validity 会改变。
-- 空 requirement set 或某个 `APPROVE` outcome 没有 applicable CRITICAL Requirement 是 semantic gap，不是 schema shortcut；pipeline 继续到 Stage 3/4，最终由 gate 拒绝。
+- P0 中每个 Requirement 都是 APPROVE validity 的必要前提，不存在 `SUPPORTING Requirement`。解释性信息不进入 Requirement set；`CRITICAL | SUPPORTING` 只用于 EvidenceBinding。
+- `expected_truth` 定义该 proposition 对 APPROVE 必须取的真值。例如 proposition“requester is suspended”配 `FALSE`；assessment 证明其为 false 时 Requirement 才是 `SATISFIED`。
+- `proof_mode=DIRECT` 要求 `depends_on_requirement_ids` 为空，并且其 proposition可由一个 source fragment独立判定真值。若必须联合多个事实/规则才能成立，Stage 1 必须拆成多个 DIRECT prerequisites，再用 DERIVED_ALL 汇合。
+- `proof_mode=DERIVED_ALL` 要求至少一个 dependency，且仅当所有 prerequisite Requirements 都 `SATISFIED` 时才 `SATISFIED`；它不要求 redundant direct CRITICAL binding。CRITICAL binding 只能目标为 `DIRECT` Requirement，避免 direct 与 derived proof互相冲突。
+- `depends_on_requirement_ids` 形成 conjunction-only DAG；self-edge、unknown ID 和 cycle 是 structural error。P0 不支持模型自定义 boolean expression 或 `DERIVED_ANY`；alternative evidence 应绑定到同一个 DIRECT Requirement。
+- 空 requirement set 是 semantic gap，不是 schema shortcut；pipeline 继续到 Stage 3/4，最终由 gate 拒绝。
 - Stage 1 如果漏掉真实 requirement，Stage 4 不得“补猜”。该风险由独立 requirement ground truth 和 benchmark recall 暴露，而不是由另一个 open-ended critic 掩盖。
 
 ### 2. `EvidenceBinding`
@@ -122,8 +143,8 @@ EvidenceBinding
   binding_local_id: string
   requirement_local_id: string
   source_ref: canonical SourceRef
-  semantic_role: EVIDENCE | GOVERNING_AUTHORITY | SATISFACTION_RECORD | COUNTEREVIDENCE
-  stance: SUPPORTS | OPPOSES
+  semantic_role: EVIDENCE | GOVERNING_AUTHORITY | SATISFACTION_RECORD
+  entailed_truth: TRUE | FALSE
   materiality: CRITICAL | SUPPORTING
   validity_impact: MAY_CHANGE_VALIDITY | EXPLANATION_ONLY
   counterfactual_summary: string
@@ -132,22 +153,25 @@ EvidenceBinding
 约束：
 
 - `source_ref` 必须来自 request-scoped `SourceRegistry` inventory，并在当前 world snapshot 下通过 identity、scope、temporal 和 authority validation。
+- `entailed_truth` 表示该 fragment 对 Requirement proposition 本身支持 true 还是 false，不是对 proposed outcome 的投票。deterministic assessment 将它与 Requirement `expected_truth` 比较：相等是支持 APPROVE 前提，相反是 counterevidence。
 - `CRITICAL` 当且仅当 `validity_impact=MAY_CHANGE_VALIDITY`；`SUPPORTING` 当且仅当 `EXPLANATION_ONLY`。deterministic code 强制字段一致性，benchmark 验证语义是否正确。
 - `counterfactual_summary` 必须回答“这个 fragment 的相关内容变化时，哪个 requirement/outcome 可能改变”；它是 concise audit rationale，不是 chain-of-thought。
 - `CONTEXTUAL` 不进入 binding contract。纯上下文仍可记录为 model-read telemetry，但不能成为 validity edge。
 - Binding stage 追求 minimal sufficient set。相关但对 validity 无反事实影响的 evidence 必须是 `SUPPORTING` 或省略。
 - Stage 2 不能创建 canonical edge，只能提出 binding。
+- CRITICAL binding 只能指向 `proof_mode=DIRECT` Requirement；DERIVED_ALL 的 validity 来自 prerequisite Claim closure。SUPPORTING binding 可以附着于任一 Requirement用于解释，但不参与 gate 或 stale propagation。
+- 同一 DIRECT Requirement若有多个 precedence 后同向 CRITICAL candidates，deterministic completeness按 `authority_rank DESC, canonical_source_ref ASC` 选择一个 `proof_binding_id`；其他 candidates留在 compiler analysis record，不进入 Runtime critical graph。相反真值同时存活则是 `CONTRADICTED`，不能用排序掩盖。
 
 ### 3. `Contradiction`
 
 ```text
-Contradiction
+ContradictionCandidate                     # model proposal
   contradiction_local_id: string
   requirement_local_id: string
   lhs_ref: canonical SourceRef
   rhs_ref: canonical SourceRef
-  lhs_binding_id: string | null
-  rhs_binding_id: string | null
+  lhs_entailed_truth: TRUE | FALSE
+  rhs_entailed_truth: TRUE | FALSE
   proposition: string
   contradiction_type:
     DIRECT_NEGATION | VALUE_MISMATCH | SCOPE_CONFLICT |
@@ -155,18 +179,27 @@ Contradiction
   severity: CRITICAL | SUPPORTING
   model_resolvable_by_precedence: boolean
   model_recommended_disposition: BLOCK | HUMAN_REVIEW | IGNORE_AFTER_PRECEDENCE
+
+Contradiction                              # deterministic validated record
+  candidate: ContradictionCandidate
+  lhs_binding_id: string | null
+  rhs_binding_id: string | null
   deterministic_resolution: LHS_PRECEDES | RHS_PRECEDES | UNRESOLVED
   precedence_rule_id: string | null
+  validation_finding_codes: list[string]
 ```
 
 Ownership：
 
-- model 提出 ref pair、semantic proposition、type、severity 和非权威 recommendation；
+- model 只输出 `ContradictionCandidate` 的 ref pair、entailed truth、semantic proposition、type、severity 和非权威 recommendation；
 - deterministic code 验证 refs、scope、temporal validity、source classes、authority rank 和 pair identity；
+- validator 生成 `Contradiction` record；`lhs_entailed_truth` / `rhs_entailed_truth` 都相对于 Requirement proposition，若对应 binding存在则要求 truth 与 binding 完全一致，并把匹配 ID 写入 record；
 - deterministic precedence policy 独立计算 `deterministic_resolution` 与 `precedence_rule_id`；model 的 `resolvable` 或 `recommended_disposition` 不能覆盖该结果；
-- `lhs_binding_id` / `rhs_binding_id` 可以为空，因为 dedicated pass 必须能发现尚未被 Evidence Binding 选中的 relevant authoritative ref；若不为空，deterministic validator 必须验证 binding 与 ref 完全一致。
+- `lhs_binding_id` / `rhs_binding_id` 由 validator解析，可以为空，因为 dedicated pass 必须能发现尚未被 Evidence Binding 选中的 current/in-scope ref。
 
-Stage 3 的输入是：explicit requirements、validated bindings、bounded inventory 中与这些 requirements 相关的 authoritative fragments、authority metadata 和 current snapshot。它不能访问 benchmark contradiction labels。
+Stage 3 不拥有 binding promotion。若 precedence winner 没有与其 ref/truth/Requirement匹配的 validated CRITICAL EvidenceBinding，结果不能 ACCEPT；Completeness 将其视为 incomplete。Contradiction stage 不能通过“发现 ref”直接把它送进 canonical graph。
+
+Stage 3 的输入是：explicit requirements、validated bindings、request-scoped bounded inventory 中**全部 current/in-scope candidate fragments**、authority metadata 和 current snapshot，而不是只看 Stage 2 选择的 refs。Semantic detector 自己判断哪些 candidates 与 Requirement 相关；它不能访问 benchmark contradiction labels。P0 不在 contradiction pass 前增加另一个未评估的 semantic retrieval filter。
 
 ### 4. `RequirementAssessment`
 
@@ -176,19 +209,26 @@ RequirementAssessment
   status: SATISFIED | UNSATISFIED | CONTRADICTED | INSUFFICIENT_EVIDENCE
   critical_binding_ids: list[string]
   supporting_binding_ids: list[string]
+  proof_binding_id: string | null
   contradiction_ids: list[string]
-  support_path_requirement_ids: list[string]
+  support_paths: list[list[string]]
+  blocking_requirement_ids: list[string]
   missing_evidence_proposition: string | null
+  finding_codes: list[string]
   assessment_summary: string
 ```
 
 约束：
 
+- `RequirementAssessment` 完全由 deterministic completeness stage生成；model 没有该类型的写权限。
 - 每个 explicit `Requirement` 必须且只能有一个 assessment。
-- `critical_binding_ids`、`supporting_binding_ids` 和 `contradiction_ids` 必须引用前序 validated objects。
-- `support_path_requirement_ids` 是 deterministic-validated DAG path，用于接受 transitive support；它不能凭空引入 requirement。
-- `missing_evidence_proposition` 只能描述缺失的语义证据，例如“缺少当前培训状态的可验证记录”。它**没有 source-ref 类型**，不得包含 `UNKNOWN_SOURCE_REQUIRED` 或任何 invented ref。
-- Completeness 不新增 binding、不改 materiality、不改 outcome，只评估 explicit requirement 是否有充分且一致的 evidence path。
+- 对 `DIRECT`：precedence 后的 CRITICAL bindings 只支持 `expected_truth` → `SATISFIED`；只支持相反真值 → `UNSATISFIED`；两边仍成立 → `CONTRADICTED`；无充分 CRITICAL binding → `INSUFFICIENT_EVIDENCE`。SATISFIED/UNSATISFIED 按固定 authority/ref排序得到唯一 `proof_binding_id`。
+- 对 `DERIVED_ALL` 按优先级：任一 `CONTRADICTED` → `CONTRADICTED`；否则任一 `UNSATISFIED` → `UNSATISFIED`；否则全部 `SATISFIED` → `SATISFIED`；否则 → `INSUFFICIENT_EVIDENCE`。这保证 unresolved material conflict不会被另一个已知 false prerequisite掩盖。
+- `critical_binding_ids`、`supporting_binding_ids`、`proof_binding_id` 和 `contradiction_ids` 必须引用前序 validated objects；DERIVED_ALL 的 `proof_binding_id` 必须为空。
+- 只有 unresolved `severity=CRITICAL` Contradiction 或相反真值的 CRITICAL binding collision能产生 `CONTRADICTED`；SUPPORTING contradiction保留为 finding，不改变 status或 disposition。
+- `support_paths` 由 code计算为从 DIRECT Requirement 到当前 Requirement 的 ordered DAG paths；`blocking_requirement_ids` 精确列出导致 derived assessment不能满足的 prerequisites。
+- `missing_evidence_proposition` 对缺证的 DIRECT Requirement只能 deterministic copy/format该 Requirement proposition。它**没有 source-ref 类型**，不得包含 `UNKNOWN_SOURCE_REQUIRED` 或任何 invented ref。
+- `finding_codes` 和 `assessment_summary` 使用 deterministic templates；Completeness 不新增 binding、不改 materiality、不改 outcome。
 
 ## Canonical graph mapping 与 transitive semantics
 
@@ -197,9 +237,9 @@ RequirementAssessment
 ```text
 SourceFragment
     --SUPPORTED_BY / GOVERNED_BY[CRITICAL]-->
-Claim(requirement leaf)
+Claim(requirement assessment: SATISFIED or UNSATISFIED)
     --DERIVED_FROM / REQUIRES[CRITICAL]-->
-Claim(derived requirement)
+Claim(derived requirement assessment)
     --REQUIRES[CRITICAL]-->
 Decision
 ```
@@ -208,12 +248,13 @@ Decision
 
 规则：
 
-1. 一个 `Requirement` canonicalize 为一个 auditable Claim；requirement DAG canonicalize 为 Claim → Claim edges。
-2. Evidence Binding 只在实际 evidence leaf 创建 SourceFragment → Claim edge。
+1. 一个 `RequirementAssessment` canonicalize 为一个 auditable Claim，statement 同时记录 Requirement proposition、`expected_truth` 与 validated assessment status；DERIVED_ALL DAG canonicalize 为 prerequisite Claim → derived Claim edges。
+2. Evidence Binding 只在 DIRECT evidence leaf 创建 SourceFragment → assessment Claim edge。无论 source 支持 expected truth（APPROVE）还是支持相反真值（DENY），accepted Decision 都通过 validity-bearing `SUPPORTED_BY` / `GOVERNED_BY` CRITICAL edge 依赖该 source。
 3. completeness 用 validity-bearing `CRITICAL` edge closure 判断 support。
-4. derived requirement 已经存在有效 transitive path 时，不要求 redundant direct SourceFragment → derived Claim 或 SourceFragment → Decision edge。
+4. 只有 DAG root Requirement Claims（未被其他 Requirement作为 prerequisite 引用）连接到 Decision；derived requirement 已有有效 transitive path 时，不创建 redundant direct SourceFragment → derived Claim，也不把每个 intermediate Claim重复直连 Decision。
 5. `SUPPORTING` edge 不参与 validity reachability，也不能触发 Runtime stale propagation。
-6. Stage 3 发现但被 deterministic precedence 解决的 source pair保存在 compiler findings 中；只有经 gate 接受并由 canonicalizer 明确映射的 binding 才进入 Runtime graph。
+6. `CONTRADICTED_BY` 不是当前 Runtime kernel 的 direct invalidation relation，不能作为 accepted DENY 的唯一 provenance edge。Unresolved contradiction 只产生 non-accepted compiler finding；resolved contradiction 只有在 winner 已有匹配 validated CRITICAL EvidenceBinding时，才把该 binding映射到 assessment Claim。
+7. Stage 3 发现但被 deterministic precedence 解决的 source pair保存在 compiler findings 中；只有经 gate 接受并由 canonicalizer 明确映射的 binding 才进入 Runtime graph。
 
 这直接修复旧 critic 在 `vendor-onboarding-009` 中忽略 `derived_from_claims` 和 Decision `REQUIRES` path、强制要求重复 direct edges 的错误。
 
@@ -222,11 +263,11 @@ Decision
 | Stage | Model ownership | Deterministic ownership | 不拥有 |
 |---|---|---|---|
 | Context Assembly | 无 | bounded inventory、allowed refs、snapshot、authority metadata、trusted outcome semantics | semantic requirement discovery |
-| Requirement Decomposition | 提出 atomic propositions 与 requirement DAG | schema、IDs、DAG、outcome vocabulary、size limits | source refs、canonical claims、disposition |
+| Requirement Decomposition | 提出 APPROVE validity 所需的 atomic propositions、DIRECT/DERIVED_ALL proof mode 与 requirement DAG | schema、IDs、conjunction DAG、expected-truth vocabulary、size limits | source refs、canonical claims、disposition |
 | Evidence Binding | 提出 requirement↔source semantic bindings、materiality、counterfactual rationale | ref identity、scope、time、source type、authority legality、field consistency | canonical edges、precedence、acceptance |
 | Contradiction Pass | 提出 semantic conflict candidates | candidate integrity、authority metadata、precedence、resolution | completeness、final disposition、state mutation |
-| Requirement Completeness | 对 explicit requirements 提出 sufficiency assessment | graph closure、cross-link integrity、one-assessment-per-requirement、status consistency | 新 requirement、新 source ref、新 binding、outcome rewrite |
-| Acceptance Gate | 无 | outcome constraints、all critical requirement coverage、contradiction policy、disposition | semantic invention、model retry |
+| Requirement Completeness | 无 | 按固定 truth table计算每个 assessment、graph closure、support paths、blocking IDs、deterministic findings | 新 requirement、新 source ref、新 binding、semantic invention、outcome rewrite |
+| Acceptance Gate | 无 | trusted outcome class、all Requirement coverage、contradiction policy、disposition | semantic invention、model retry |
 | Canonicalizer | 无 | stable IDs、edge mapping、hash、ordering、dedupe | semantic repair、Runtime commit |
 | RuntimeAcceptanceService | 无 | immutable accepted-result check、mission revision、world snapshot、atomic Runtime mutation | compiler semantics、LLM execution |
 
@@ -252,7 +293,7 @@ Decision
 | Condition | 旧行为问题 | 新行为 |
 |---|---|---|
 | explicit requirement 没有 critical binding | validator 可能立即 incomplete | 继续 contradiction + completeness；gate 决定 incomplete |
-| requirement set 为空或 APPROVE 无 applicable critical requirement | 容易被当成“无问题” | 继续 semantic passes；gate 产生 incomplete |
+| requirement set 为空 | 容易被当成“无问题” | 继续 semantic passes；gate 产生 incomplete |
 | blocking unresolved question | `BLOCKING_QUESTION_UNRESOLVED` 使 critic 跳过 | 表达为 `INSUFFICIENT_EVIDENCE` assessment；相关 semantic passes 全部执行 |
 | high-risk proposal 暂无 support path | validator 立即 block | 继续全部 semantic passes；gate 检查最终 closure |
 | conflicting authorities | 常被 incomplete 提前截断 | dedicated contradiction pass 必须执行并产出 typed finding |
@@ -262,18 +303,35 @@ Decision
 
 ## Deterministic Acceptance Gate
 
-`DecisionRequest` 必须由 trusted caller 提供 `outcome_semantics`，将每个允许的 domain outcome 映射到 `APPROVE | DENY | REVIEW`。这不是 benchmark ground truth，也不暴露 case-specific allowed outcome。
+`DecisionRequest` 必须由 trusted caller 提供 `outcome_semantics`，将每个允许的 domain outcome 映射到 `APPROVE | DENY | REVIEW`。这不是 benchmark ground truth，也不暴露 case-specific allowed outcome。P0 中所有 Requirements 都描述 APPROVE validity；model 不能自行把 Requirement 分配给某个 outcome class。
 
 Gate 按以下固定顺序执行：
 
 1. 若 run 存在 structural terminal error，不进入 gate。
-2. 验证每个 applicable `CRITICAL Requirement` 恰有一个 validated assessment；`APPROVE` 至少必须存在一个 applicable critical requirement，否则为 incomplete。
-3. `APPROVE`：所有 applicable critical requirements 必须 `SATISFIED`，且每个都有至少一条 current、authorized、validity-bearing critical support path；不得有 unresolved CRITICAL contradiction。
-4. `DENY`：必须至少有一个 applicable critical requirement 为 `UNSATISFIED`，或 deterministic policy 明确禁止该 outcome；单纯缺证据不能伪装成 `DENY`。
-5. `REVIEW`：必须至少有一个 applicable critical requirement 为 `INSUFFICIENT_EVIDENCE` / `CONTRADICTED`，或存在 unresolved CRITICAL contradiction。
-6. resolved contradiction 若 winning authority 与 proposed outcome 冲突，产生 `REJECTED_CONTRADICTION`；equal-authority unresolved critical conflict 产生 `NEEDS_HUMAN_REVIEW`。
-7. requirement gap 产生 `REJECTED_INCOMPLETE_REQUIREMENTS`；outcome 与上述语义不符产生 `REJECTED_OUTCOME_CONSTRAINT`。
-8. 只有 `ACCEPTED` 才调用 canonicalizer；其他 disposition 不包含 canonical Decision、Claim 或 Edge。
+2. 验证 Requirement set 非空，且每个 Requirement 恰有一个 deterministic assessment；识别所有 DAG roots。
+3. 计算 expected outcome class：root closure有 unresolved CRITICAL contradiction → `REVIEW`；否则全部 roots `SATISFIED` → `APPROVE`；否则任一 root `UNSATISFIED` → `DENY`；否则 → `REVIEW`。
+4. resolved contradiction 的 winning authority必须有匹配的 validated CRITICAL binding并折入对应 RequirementAssessment；缺少 winner binding 立即产生 `REJECTED_INCOMPLETE_REQUIREMENTS`，绝不由 Stage 3 自动补边。
+5. 若 expected class=`REVIEW` 且原因包含 unresolved CRITICAL contradiction，统一返回 `NEEDS_HUMAN_REVIEW`；即使 model错误提议 APPROVE/DENY，也不能 ACCEPT。
+6. 若 expected class=`REVIEW` 且原因只有 insufficient evidence：model提议 REVIEW → `NEEDS_HUMAN_REVIEW`；model提议 APPROVE/DENY → `REJECTED_INCOMPLETE_REQUIREMENTS`。两者都不产生 canonical graph。
+7. 若 expected class=`APPROVE`：所有 roots必须 `SATISFIED`并可追溯到 current、authorized、validity-bearing CRITICAL DIRECT source paths；proposal class不是 APPROVE → `REJECTED_OUTCOME_CONSTRAINT`。
+8. 若 expected class=`DENY`：至少一个 root必须 `UNSATISFIED`且其 closure内有 current、authorized、validity-bearing CRITICAL counterevidence path；proposal class不是 DENY时，若直接原因是 precedence winner则 `REJECTED_CONTRADICTION`，否则 `REJECTED_OUTCOME_CONSTRAINT`。单纯缺证据不能伪装成 DENY。
+9. 只有 expected class为 APPROVE/DENY且 proposal class完全匹配时才可 `ACCEPTED`。Gate 同时生成 deterministic `DecisionJustification`，canonicalizer只消费该 proof slice。
+
+```text
+DecisionJustification
+  outcome_class: APPROVE | DENY
+  selected_root_requirement_ids: list[string]
+  selected_requirement_ids: list[string]
+  selected_critical_binding_ids: list[string]
+  selection_rule: ALL_APPROVAL_ROOTS | CANONICAL_FIRST_FAILED_ROOT_PATH
+```
+
+- APPROVE 的 minimal sufficient proof 是全部 satisfied root closures。
+- DENY 的 conjunction false proof只需一个 failed root path；若有多个，按 normalized canonical requirement key（kind、proposition、expected truth、proof mode）排序，稳定选择第一个。不能按 benchmark case ID、domain 或 model local-ID顺序选择。
+- `selected_critical_binding_ids` 只包含 selected DIRECT assessments 的唯一 `proof_binding_id`，不包含未选中的同向 alternatives。
+- DENY 的其他 failed/satisfied roots仍保存在 compiler analysis record，但不进入 Runtime critical graph。这样 source 改变只会使实际选用的 denial rationale stale，而不会因未参与该 Decision justification 的 sibling变化造成过度 invalidation。
+- selected path上的 counterevidence变化会使原 Decision rationale不再有效，即使重新计算后可能因另一失败 root继续 DENY；这正是 Semantic Resume 应触发 revalidation 的条件。
+- REVIEW 没有 `DecisionJustification`，也没有 canonical graph。
 
 Gate 是 deterministic 的，但它不会把 probabilistic semantic labels magically 变成 truth。Requirement decomposition、binding materiality 和 semantic contradiction quality仍必须由 DEV/HOLDOUT/live-provider benchmark falsify。
 
@@ -296,7 +354,7 @@ Gate 是 deterministic 的，但它不会把 probabilistic semantic labels magic
 
 - 新 typed contracts 和 stage outputs 使用独立 version namespace；不得把旧 `CriticProposal` 字段复用成 requirement/contradiction/completeness 类型。
 - 在 v2 通过 integrated DEV subset 前，generic model-backed compiler 保持 not accepted for product claims；deterministic reference demo不计 model evidence。
-- persisted result 显式记录 `pipeline_version`、每个 stage 的 prompt/schema/model metadata、usage 和 execution status。
+- persisted result 显式记录 `pipeline_version`、Stage 1–3 的 prompt/schema/model metadata与 usage，以及所有 stage 的 execution status；Stage 4/5不得伪造 model metadata。
 
 ### M3 — Cutover
 
@@ -315,7 +373,7 @@ Gate 是 deterministic 的，但它不会把 probabilistic semantic labels magic
 
 现有 120 cases 的 refs/outcomes/mutations 不得修改。为评估 Stage 1，在写 v2 prompt/schema 前，由 method-blind annotation 单独生成 `requirement-ground-truth-v1`：
 
-- 每个 case 只描述 semantic propositions、polarity、necessity 和 outcome applicability；
+- 每个 case 只描述 APPROVE-validity semantic propositions、expected truth、proof mode 和 conjunction DAG；
 - 不复制 model output，不改变现有 required/forbidden refs；
 - annotation 与 corpus file hashes 一起 freeze；
 - production code/prompts 不得 import 或读取 annotation；
@@ -373,8 +431,9 @@ A/B 使用 Experiment 1 的 immutable paired reasoner evidence重算，不新增
 
 ### 共同 metrics
 
-- requirement proposition recall；
-- critical dependency recall / precision；
+- requirement proposition/proof-mode recall（C only；A/B明确记 `N/A`，不能伪记 0 或 100%）；
+- EvidenceBinding proposal critical recall / precision；
+- accepted `DecisionJustification` canonical critical recall / precision与 corpus coverage；
 - CRITICAL↔SUPPORTING confusion matrix；
 - contradiction recall / critical severity recall；
 - outcome compliance / must-block compliance；
@@ -382,8 +441,11 @@ A/B 使用 Experiment 1 的 immutable paired reasoner evidence重算，不新增
 - unsupported canonical refs；
 - accepted-only stale escape / unnecessary invalidation，连同 denominator；
 - compilation determinism；
+- deterministic outcome-class / minimal-justification selection；
 - stage execution coverage；
 - calls、input/cache-write/cache-read/output tokens、latency、settled cost。
+
+三臂 headline comparison只使用所有 arms均可定义的 dependency、contradiction、outcome、disposition、Runtime mutation、coverage与 cost metrics。C-only typed diagnostics单列，不混入 A/B aggregate。
 
 不得再把 proposal-union recall、accepted canonical coverage 和 NOT_ACCEPTED mutation records混成同一指标。
 
@@ -393,9 +455,12 @@ A/B 使用 Experiment 1 的 immutable paired reasoner evidence重算，不新增
 
 - supporting ref 被错误提升为 CRITICAL → 保持 SUPPORTING 或省略；
 - critical fragment 变化 → accepted Decision becomes STALE；
+- DENY 所依赖的 CRITICAL counterevidence fragment变化 → accepted DENY Decision becomes STALE；
+- DENY 未选入 minimal proof 的 sibling fragment变化 → Decision stays VALID；
 - supporting/irrelevant fragment 变化 → Decision stays VALID；
 - equal-authority contradiction → dedicated pass发现且不能 silently ACCEPT；
-- omission → assessment 为 insufficient，并在 gate block；
+- v1 遗漏的 material dependency → Stage 1/2 形成 explicit Requirement + EvidenceBinding，并进入 accepted canonical graph；
+- 真实 evidence 缺失 → assessment 为 insufficient，并在 gate block；
 - existing Source → Claim → Claim → Decision path → completeness 接受，无 redundant direct edge；
 - stale historical ref不能支持 accepted requirement；
 - prompt injection 不能创建 authority edge；

@@ -25,9 +25,9 @@ Input:
 - decision type, risk class, and outcome vocabulary/semantics;
 - bounded source summaries/content as data.
 
-Output: `Requirement[]` only.
+Output: `DecisionAnalysisProposal` containing one proposed outcome from the trusted vocabulary plus `Requirement[]`.
 
-The instruction asks for atomic propositions that must hold or must not hold for the relevant outcomes. It explicitly forbids source refs and filenames in Requirement fields. The model must express semantic applicability, authorization, evidence-presence, and negative constraints as propositions rather than citations.
+The instruction asks for atomic APPROVE-validity propositions and DIRECT/DERIVED_ALL proof structure. It explicitly forbids source refs and filenames in Requirement fields. The model must express semantic applicability, authorization, evidence-presence, and negative constraints as propositions rather than citations. Its proposed outcome remains non-authoritative and is checked against deterministic RequirementAssessments at the gate.
 
 ## Stage 2 — Evidence Binding
 
@@ -39,30 +39,32 @@ Input:
 
 Output: `EvidenceBinding[]` only.
 
-For each proposed CRITICAL binding, the model must answer a counterfactual question: if this fragment's relevant content changed, could requirement/decision validity change? “Relevant”, “was read”, or “supports the explanation” is insufficient. The prompt asks for a minimal sufficient set and separates validity-bearing CRITICAL evidence from explanatory SUPPORTING evidence.
+For each binding, the model states whether the fragment entails the Requirement proposition as true or false. For each proposed CRITICAL binding, it must also answer a counterfactual question: if this fragment's relevant content changed, could requirement/decision validity change? “Relevant”, “was read”, or “supports the explanation” is insufficient. The prompt asks for a minimal sufficient set and separates validity-bearing CRITICAL evidence from explanatory SUPPORTING evidence.
 
 ## Stage 3 — Independent Contradiction Pass
 
 Input:
 
 - validated Requirements and EvidenceBindings;
-- bounded relevant authoritative fragments, including relevant refs not selected by Stage 2;
+- the complete request-scoped bounded current/in-scope candidate fragment inventory, including refs not selected by Stage 2;
 - source values/claims and authority metadata.
 
 Output: semantic contradiction proposals conforming to the `Contradiction` candidate fields.
 
-This prompt does not ask for omissions, dependency repair, outcome rewrite, or final disposition. It identifies ref pairs and the proposition on which they conflict. Model precedence recommendations are explicitly non-authoritative; deterministic policy computes the actual resolution.
+This prompt does not ask for omissions, dependency repair, outcome rewrite, or final disposition. It identifies ref pairs, the proposition on which they conflict, and each side's entailed truth relative to that proposition. Model precedence recommendations are explicitly non-authoritative; deterministic policy computes the actual resolution. An unbound winner cannot be promoted into EvidenceBinding or canonical state by this pass.
 
-## Stage 4 — Requirement Completeness
+## Stage 4 — Deterministic Requirement Completeness
+
+This stage has no model invocation.
 
 Input:
 
 - validated Requirements, bindings, contradictions, and transitive requirement graph;
-- deterministic direct/transitive support-path summaries.
+- DIRECT/DERIVED_ALL requirement DAG.
 
-Output: exactly one `RequirementAssessment` proposal per explicit Requirement.
+Output: exactly one deterministic `RequirementAssessment` per explicit Requirement.
 
-This stage cannot add a Requirement, source ref, binding, contradiction pair, or materiality change. If evidence is insufficient, it describes the missing semantic proposition in `missing_evidence_proposition`; `UNKNOWN_SOURCE_REQUIRED` and invented refs are schema-invalid.
+For DIRECT Requirements, code compares precedence-filtered CRITICAL bindings' `entailed_truth` with `expected_truth`. For DERIVED_ALL Requirements, code evaluates the conjunction of prerequisite assessments and records exact support paths/blocking IDs. If evidence is insufficient, `missing_evidence_proposition` is deterministic text derived from the existing Requirement. This stage cannot add a Requirement, source ref, binding, contradiction pair, or materiality change; `UNKNOWN_SOURCE_REQUIRED` is unrepresentable.
 
 ## Failure handling
 

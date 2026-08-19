@@ -11,9 +11,9 @@ The SDC sits between agent reasoning and Continuum's canonical decision graph.
 ```text
 Enterprise artifacts / tools
         ↓
-Gemini bounded reasoning
+Bounded model reasoning
         ↓
-Decision Draft
+DecisionAnalysisProposal
         ↓
 Semantic Dependency Compiler
         ↓
@@ -35,11 +35,11 @@ The module must support:
 1. Versioned source artifacts with stable identity.
 2. Stable fragment/section references within artifacts.
 3. Gemini-generated structured decision proposals.
-4. Atomic claims rather than one free-text verdict.
-5. Explicit material dependency references for claims and decisions.
+4. Atomic semantic Requirements rather than one free-text verdict.
+5. Explicit CRITICAL/SUPPORTING EvidenceBindings and canonical assessment Claims.
 6. Deterministic reference validation and temporal validation.
-7. A second-pass completeness check for omitted material dependencies.
-8. Contradiction detection across sources.
+7. Deterministic completeness over explicit DIRECT/DERIVED_ALL Requirements, with omission quality measured against frozen ground truth.
+8. Independent typed contradiction detection across the complete bounded source inventory.
 9. Canonical graph compilation with reproducible output.
 10. A benchmark with ground-truth dependency sets and drift outcomes.
 11. Live Gemini evaluation; mock-only validation is insufficient.

@@ -77,7 +77,7 @@ expected_staleness_after_mutation
 
 Ground truth is manually authored and version-controlled.
 
-For v2, a separate frozen annotation adds method-neutral semantic Requirements (proposition, polarity, necessity, and outcome applicability). This additive annotation does not change existing required/forbidden refs or expected outcomes. It must be committed before v2 implementation and never exposed to production compiler paths.
+For v2, a separate frozen annotation adds method-neutral APPROVE-validity Requirements (proposition, expected truth, DIRECT/DERIVED_ALL proof mode, and conjunction DAG). This additive annotation does not change existing required/forbidden refs or expected outcomes. It must be committed before v2 implementation and never exposed to production compiler paths.
 
 The model request receives the complete decision-type outcome vocabulary (`APPROVED`, `DENIED`, `NEEDS_HUMAN_REVIEW`) so the categorical field is well-defined. It never receives the case's ground-truth `allowed_outcomes`; exposing that singleton would leak the answer and invalidate outcome compliance.
 
@@ -152,7 +152,11 @@ Primary three-arm comparison:
 
 The primary Option A/B-legacy/Option B-new comparison uses the same frozen 30-case stratified subset, tasks, sources, provider/model settings, and metric implementation. Architecture-specific prompt/schema/call topology is an explicit experimental variable and must be reported with stage calls, latency, tokens, and cost.
 
+Requirement/proof-mode metrics apply only to the new architecture and are reported as `N/A` for legacy arms. Three-arm headline deltas use only metrics defined identically across all arms; C-only diagnostics remain separate.
+
 Proposal-union refs, accepted canonical refs, accepted compilation coverage, and Runtime mutation outcomes are distinct metrics. NOT_ACCEPTED cases are not counted as Runtime stale escapes; accepted-only mutation rates always disclose their denominators.
+
+For v2, report EvidenceBinding-proposal recall/precision separately from accepted `DecisionJustification` canonical recall/precision and corpus coverage. A minimal proof slice is not allowed to make unaccepted or unselected ground-truth dependencies disappear from the coverage denominator.
 
 The benchmark should demonstrate why the compiler adds value beyond “ask Gemini to list citations”.
 
