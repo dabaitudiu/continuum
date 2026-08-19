@@ -60,4 +60,4 @@ This module is done only when all P0 rows in `13_ACCEPTANCE_MATRIX_AND_KILL_CRIT
 
 ## Current status
 
-Phases A–G are implemented and Compiler Lab is locally deliverable. The module itself remains **not done**: authenticated OpenAI evidence now exists but fails the precision, contradiction, outcome, must-block, and stale-escape gates, while the required live Gemini row remains `BLOCKED`. See the current acceptance matrix and `docs/reports/module-01-dependency-compiler.md`.
+Phases A–G are implemented and Compiler Lab is locally deliverable. The module itself remains **not done**. The preserved 120-case evidence fails canonical dependency quality, contradiction, outcome, must-block, and acceptance-coverage requirements; the required live Gemini row remains `BLOCKED`. The bounded live paired ablation in `docs/reports/module-01-critic-ablation.md` triggers K3 for the current critic, which recovered no true omission or contradiction signal and added false refs/false blocks. Do not begin Module 02 or remove/replace the critic without product-owner review. See the current acceptance matrix, failure analysis, and ablation report.

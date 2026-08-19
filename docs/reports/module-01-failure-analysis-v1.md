@@ -310,7 +310,7 @@ The old report therefore cannot answer reasoner-versus-critic responsibility or 
 EXPERIMENT: module-01-exp-01-current-critic-ablation
 METHOD VERSION: reasoner-v2 / critic-v1 / sdc-1 / validation-v1
 PROVIDER/MODEL: OpenAI / gpt-5.6-luna
-STATUS: DESIGN ONLY — NOT EXECUTED
+STATUS AT PRE-REGISTRATION: DESIGN ONLY — NOT EXECUTED
 ```
 
 ### Hypothesis
@@ -407,13 +407,33 @@ Stop the run immediately and preserve partial immutable evidence if:
 
 Do not proceed to Experiment 2 on an incomplete or ambiguous ablation.
 
-## Kill/redesign assessment after Experiment 0
+## Experiment 1 — executed result
+
+Experiment 1 subsequently completed on the exact frozen 30-case subset without changing the method, thresholds, corpus, or ground truth. The canonical result is `docs/reports/module-01-critic-ablation.md`:
+
+- run ID: `critic-ablation:51646ddf01693a9b`;
+- immutable live evidence SHA-256: `cfd09ac11e1f0cb8b659c1bf58d244ce082a715df6d7a5e969ef3f60f9e01494`;
+- 30 reasoner calls + 8 critic calls; no schema retry and no UNKNOWN call;
+- total incremental cost: `$0.065727100`, below the `$0.25` pre-registered cap;
+- required omissions recovered by critic: `0`;
+- correct contradictions added by critic: `0`;
+- false-positive refs added by critic: `4`;
+- spurious blocks introduced by critic: `5`;
+- accepted cases: `8/30` reasoner-only versus `3/30` critic-on;
+- accepted canonical recall: `28.57%` reasoner-only versus `11.90%` critic-on;
+- accepted-only mutation results remained directionally correct but tiny: reasoner-only tested 2 material + 6 unrelated mutations; critic-on tested 1 material + 2 unrelated mutations.
+
+The first generated v2 evaluator output incorrectly excluded unknown critic-proposed refs from the false-positive count. It is preserved as `module-01-critic-ablation-evaluator-v2.*`. The v3 report recomputes only derived evaluator fields from the immutable raw draft/review evidence; model responses, Runtime receipts, token usage, and cost are unchanged.
+
+The pre-registered positive-signal rule failed. K3 is therefore triggered for the current critic: **REMOVE OR REDESIGN IT**, subject to product-owner architecture approval. Do not run a paid 120-case ablation or begin Experiment 2 before that decision.
+
+## Kill/redesign assessment after Experiment 1
 
 - K1 not triggered: proposal-union critical recall is above 0.80, though this is not canonical coverage.
 - K2 not triggered: refs remain fragment-level; broad `$.scope` selection is a precision defect but not whole-document dependence.
-- K3 unresolved until the paired live ablation; current evidence is strongly adverse because contradiction gain is zero and acceptance is low.
+- K3 triggered for the current critic: it added no true omission or contradiction signal and only false-positive refs/false blocks.
 - K4 not triggered by recall, but vendor acceptance is only 2/40 and requires redesign.
 - K5 not triggered: no injected ref becomes predicted critical or accepted canonical; supporting refs in injection cases are still over-promoted.
 - K6 not cleared: only 20/120 model compilations are accepted and product demos remain authored fixtures.
 
-The project-wide thesis is not killed by Experiment 0, but the current compiler/evaluator configuration is not fit for progression. Live Gemini remains `BLOCKED` until Gemini API or Vertex credentials exist and cannot be waived.
+The project-wide thesis is not yet killed, but the current critic configuration is killed for progression and K6 remains uncleared. Live Gemini remains `BLOCKED` until Gemini API or Vertex credentials exist and cannot be waived.
