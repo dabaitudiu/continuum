@@ -345,6 +345,7 @@ def _write_graph_projection(
     graph = snapshot.graph
     _set_models(transaction, mission_reference, "artifacts", graph.artifacts.values(), "artifact_id")
     _set_models(transaction, mission_reference, "evidence", graph.evidences.values(), "evidence_id")
+    _set_models(transaction, mission_reference, "claims", graph.claims.values(), "claim_id")
     _set_models(transaction, mission_reference, "decisions", graph.decisions.values(), "decision_id")
     _set_models(transaction, mission_reference, "actions", graph.actions.values(), "action_id")
     _set_models(transaction, mission_reference, "dependency_edges", graph.edges, "edge_id")

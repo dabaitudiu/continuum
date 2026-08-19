@@ -32,6 +32,15 @@ def graph_read_model(
     )
     nodes.extend(
         {
+            "id": node.claim_id,
+            "kind": "claim",
+            "label": node.statement,
+            **node.model_dump(mode="json"),
+        }
+        for node in snapshot.claims.values()
+    )
+    nodes.extend(
+        {
             "id": node.decision_id,
             "kind": "decision",
             "label": node.decision_type,

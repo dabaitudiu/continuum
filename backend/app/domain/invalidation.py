@@ -52,20 +52,37 @@ class InvalidationService:
         )
 
         newly_stale = deque[str]()
-        for edge in snapshot.edges:
-            if (
-                edge.from_node_id == old_artifact.artifact_id
-                and edge.critical
-                and edge.relation_type in DIRECT_INVALIDATION_RELATIONS
-                and edge.to_node_id in snapshot.decisions
-            ):
-                decision = snapshot.decisions[edge.to_node_id]
-                if decision.status is not DecisionStatus.STALE:
-                    decision.status = DecisionStatus.STALE
-                    snapshot.cause_by_node_id[decision.decision_id] = (
-                        old_artifact.artifact_id
-                    )
-                    newly_stale.append(decision.decision_id)
+        affected_provenance = deque(
+            [
+                old_artifact.artifact_id,
+                *(
+                    evidence.evidence_id
+                    for evidence in snapshot.evidences.values()
+                    if evidence.artifact_id == old_artifact.artifact_id
+                ),
+            ]
+        )
+        visited_provenance: set[str] = set()
+        while affected_provenance:
+            source_id = affected_provenance.popleft()
+            if source_id in visited_provenance:
+                continue
+            visited_provenance.add(source_id)
+            for edge in snapshot.edges:
+                if (
+                    edge.from_node_id != source_id
+                    or not edge.critical
+                    or edge.relation_type not in DIRECT_INVALIDATION_RELATIONS
+                ):
+                    continue
+                if edge.to_node_id in snapshot.claims:
+                    affected_provenance.append(edge.to_node_id)
+                elif edge.to_node_id in snapshot.decisions:
+                    decision = snapshot.decisions[edge.to_node_id]
+                    if decision.status is not DecisionStatus.STALE:
+                        decision.status = DecisionStatus.STALE
+                        snapshot.cause_by_node_id[decision.decision_id] = source_id
+                        newly_stale.append(decision.decision_id)
 
         self._propagate(snapshot, newly_stale)
         snapshot.events.append(event.model_copy(deep=True))

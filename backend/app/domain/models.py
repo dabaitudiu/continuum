@@ -34,6 +34,7 @@ class RelationType(StrEnum):
     DERIVED_FROM = "DERIVED_FROM"
     REQUIRES = "REQUIRES"
     AUTHORIZES = "AUTHORIZES"
+    CONTRADICTED_BY = "CONTRADICTED_BY"
 
 
 class WorldArtifact(BaseModel):
@@ -49,7 +50,18 @@ class EvidenceNode(BaseModel):
     evidence_id: str
     kind: str
     revision: str
+    artifact_id: str | None = None
+    source_ref: str | None = None
     status: EvidenceStatus = EvidenceStatus.VALID
+
+
+class ClaimNode(BaseModel):
+    claim_id: str
+    claim_type: str
+    statement: str
+    materiality: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    compilation_id: str
 
 
 class DecisionNode(BaseModel):
@@ -59,6 +71,9 @@ class DecisionNode(BaseModel):
     status: DecisionStatus = DecisionStatus.VALID
     supersedes_decision_id: str | None = None
     execution_count: int = Field(default=1, ge=0)
+    compilation_id: str | None = None
+    compilation_hash: str | None = None
+    world_snapshot_id: str | None = None
 
 
 class ActionNode(BaseModel):
@@ -102,6 +117,7 @@ class GraphSnapshot(BaseModel):
     mission_id: str
     artifacts: dict[str, WorldArtifact] = Field(default_factory=dict)
     evidences: dict[str, EvidenceNode] = Field(default_factory=dict)
+    claims: dict[str, ClaimNode] = Field(default_factory=dict)
     decisions: dict[str, DecisionNode] = Field(default_factory=dict)
     actions: dict[str, ActionNode] = Field(default_factory=dict)
     edges: list[DependencyEdge] = Field(default_factory=list)

@@ -82,6 +82,7 @@ class EnterpriseWorld(BaseModel):
     artifacts: dict[str, EnterpriseArtifact] = Field(default_factory=dict)
     documents: list[str] = Field(default_factory=list)
     execution_mode: ExecutionMode = ExecutionMode.LOCAL_DETERMINISTIC
+    world_snapshot_id: str | None = None
 
 
 class Mission(BaseModel):

@@ -8,6 +8,7 @@ from threading import RLock
 
 from app.domain.models import (
     ActionNode,
+    ClaimNode,
     DecisionNode,
     DependencyEdge,
     DispatchRecord,
@@ -133,6 +134,14 @@ CREATE TABLE IF NOT EXISTS evidence_nodes (
     PRIMARY KEY (mission_id, evidence_id),
     FOREIGN KEY (mission_id) REFERENCES missions(mission_id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS claim_nodes (
+    mission_id TEXT NOT NULL,
+    claim_id TEXT NOT NULL,
+    claim_type TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    PRIMARY KEY (mission_id, claim_id),
+    FOREIGN KEY (mission_id) REFERENCES missions(mission_id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS decisions (
     mission_id TEXT NOT NULL,
     decision_id TEXT NOT NULL,
@@ -189,6 +198,7 @@ CHILD_TABLES = (
     "simulator_world",
     "world_artifacts",
     "evidence_nodes",
+    "claim_nodes",
     "decisions",
     "actions",
     "dependency_edges",
@@ -395,6 +405,12 @@ class SQLiteRuntimeRepository:
                 mission_id,
                 EvidenceNode,
             ),
+            claims=self._load_dict(
+                "claim_nodes",
+                "claim_id",
+                mission_id,
+                ClaimNode,
+            ),
             decisions=self._load_dict(
                 "decisions",
                 "decision_id",
@@ -561,6 +577,12 @@ class SQLiteRuntimeRepository:
             mission_id,
             snapshot.graph.evidences.values(),
             lambda item: (item.evidence_id, item.kind, item.status.value),
+        )
+        self._insert_graph_dict(
+            "claim_nodes",
+            mission_id,
+            snapshot.graph.claims.values(),
+            lambda item: (item.claim_id, item.claim_type),
         )
         self._insert_graph_dict(
             "decisions",
