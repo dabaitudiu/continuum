@@ -275,6 +275,7 @@ def ingest_json_revision(
 ) -> IngestedSource:
     """Create immutable identities for leaf fields in a JSON-like value."""
 
+    normalized_array_keys = _normalize_array_identity_keys(array_identity_keys)
     digest = content_hash(value)
     revision_identity_hash = content_hash(
         {
@@ -293,7 +294,7 @@ def ingest_json_revision(
         source_uri=source_uri,
     )
     parser_config_hash = content_hash(
-        {"array_identity_keys": dict(sorted((array_identity_keys or {}).items()))}
+        {"array_identity_keys": normalized_array_keys}
     )
     representation_hash = content_hash(
         {
@@ -311,7 +312,22 @@ def ingest_json_revision(
         parser_config_hash=parser_config_hash,
         created_at=created_at,
     )
-    leaves = sorted(_json_leaves(value, "$"), key=lambda item: item[0])
+    used_array_paths: set[str] = set()
+    leaves = sorted(
+        _json_leaves(
+            value,
+            "$",
+            normalized_array_keys,
+            used_array_paths,
+        ),
+        key=lambda item: item[0],
+    )
+    unused_array_paths = set(normalized_array_keys) - used_array_paths
+    if unused_array_paths:
+        raise ValueError(
+            "array identity paths do not identify arrays: "
+            f"{sorted(unused_array_paths)}"
+        )
     fragments = tuple(
         Fragment(
             fragment_id=str(
@@ -349,21 +365,103 @@ def _decode_ref_component(value: str) -> str:
     return unquote(value, encoding="utf-8", errors="strict")
 
 
-def _json_leaves(value: Any, path: str) -> list[tuple[str, Any]]:
+def _json_leaves(
+    value: Any,
+    path: str,
+    array_identity_keys: Mapping[str, str],
+    used_array_paths: set[str],
+) -> list[tuple[str, Any]]:
     if isinstance(value, dict):
         leaves: list[tuple[str, Any]] = []
         for key in sorted(value):
             if not isinstance(key, str) or not key:
                 raise ValueError("JSON object keys must be non-empty strings")
-            leaves.extend(_json_leaves(value[key], _field_path(path, key)))
+            leaves.extend(
+                _json_leaves(
+                    value[key],
+                    _field_path(path, key),
+                    array_identity_keys,
+                    used_array_paths,
+                )
+            )
         return leaves
     if isinstance(value, list):
+        identity_key = array_identity_keys.get(path)
+        if identity_key is None:
+            return [(path, value)]
+        used_array_paths.add(path)
         leaves = []
-        for index, item in enumerate(value):
-            leaves.extend(_json_leaves(item, f"{path}[{index}]"))
+        seen_identities: set[str] = set()
+        for item in value:
+            if not isinstance(item, dict):
+                raise ValueError(
+                    f"array identity at {path} requires object items"
+                )
+            if identity_key not in item:
+                raise ValueError(
+                    f"array identity key {identity_key!r} is missing at {path}"
+                )
+            identity = item[identity_key]
+            if identity is None or isinstance(identity, (dict, list)):
+                raise ValueError(
+                    f"array identity key {identity_key!r} must be a scalar"
+                )
+            try:
+                encoded_identity = json.dumps(
+                    identity,
+                    ensure_ascii=False,
+                    allow_nan=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    f"array identity key {identity_key!r} must be a JSON scalar"
+                ) from error
+            identity_token = content_hash(
+                {"type": type(identity).__name__, "value": identity}
+            )
+            if identity_token in seen_identities:
+                raise ValueError(
+                    f"array identity key {identity_key!r} is duplicated at {path}"
+                )
+            seen_identities.add(identity_token)
+            selector_key = (
+                identity_key
+                if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", identity_key)
+                else json.dumps(identity_key, ensure_ascii=False)
+            )
+            leaves.extend(
+                _json_leaves(
+                    item,
+                    f"{path}[{selector_key}={encoded_identity}]",
+                    array_identity_keys,
+                    used_array_paths,
+                )
+            )
         return leaves
     content_hash(value)
     return [(path, value)]
+
+
+def _normalize_array_identity_keys(
+    value: Mapping[str, str] | None,
+) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for path, key in (value or {}).items():
+        if (
+            not isinstance(path, str)
+            or not path
+            or path != path.strip()
+            or not isinstance(key, str)
+            or not key
+            or key != key.strip()
+        ):
+            raise ValueError(
+                "array identity paths and keys must be non-empty strings"
+            )
+        normalized[path] = key
+    return dict(sorted(normalized.items()))
 
 
 def _field_path(parent: str, key: str) -> str:

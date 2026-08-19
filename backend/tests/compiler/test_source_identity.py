@@ -144,7 +144,7 @@ def test_json_field_refs_survive_unrelated_field_addition() -> None:
     )
 
 
-def test_json_ingestion_is_deterministic_and_includes_nested_fields() -> None:
+def test_json_ingestion_is_deterministic_for_nested_objects_and_arrays() -> None:
     source_artifact = artifact()
     value = {
         "contacts": [{"email": "security@example.test"}],
@@ -169,10 +169,10 @@ def test_json_ingestion_is_deterministic_and_includes_nested_fields() -> None:
     )
 
     assert left == right
-    assert left.fragment_at("$.contacts[0].email").text_hash == content_hash(
-        "security@example.test"
+    assert left.fragment_at("$.contacts").text_hash == content_hash(
+        [{"email": "security@example.test"}]
     )
-    assert left.fragment_at("$.contacts[0].email").ordinal < left.fragment_at(
+    assert left.fragment_at("$.contacts").ordinal < left.fragment_at(
         "$.risk.tier"
     ).ordinal
 
@@ -228,3 +228,127 @@ def test_qualified_source_ref_round_trips_representation_identity() -> None:
         "policy:security-policy@v13!sha256:abc123#section/7.3"
     )
     assert SourceRef.parse(raw) == ref
+
+
+def test_structured_field_names_with_reserved_and_unicode_characters_round_trip() -> None:
+    source_artifact = artifact()
+    values = {
+        "security#level": "high",
+        "owner@email": "security@example.test",
+        'quote"key': True,
+        "控制/等级": 3,
+        "100%": "complete",
+    }
+
+    ingested = ingest_json_revision(
+        source_artifact,
+        revision_label="special-keys",
+        value=values,
+        created_at=NOW,
+        valid_from=NOW,
+        parser_version="json-v1",
+    )
+
+    assert {fragment.logical_path for fragment in ingested.fragments} == {
+        '$["security#level"]',
+        '$["owner@email"]',
+        '$["quote\\"key"]',
+        '$["控制/等级"]',
+        '$["100%"]',
+    }
+    for fragment in ingested.fragments:
+        ref = fragment.source_ref()
+        assert SourceRef.parse(str(ref)) == ref
+    serialized = [str(fragment.source_ref()) for fragment in ingested.fragments]
+    assert any("%23" in raw for raw in serialized)
+    assert any("%40" in raw for raw in serialized)
+    assert any("%E6%8E%A7%E5%88%B6" in raw for raw in serialized)
+
+
+def test_unconfigured_array_is_atomic_not_positionally_addressed() -> None:
+    ingested = ingest_json_revision(
+        artifact(),
+        revision_label="arrays-atomic",
+        value={
+            "controls": [
+                {"id": "A", "result": "pass"},
+                {"id": "B", "result": "fail"},
+            ]
+        },
+        created_at=NOW,
+        valid_from=NOW,
+        parser_version="json-v1",
+    )
+
+    assert [fragment.logical_path for fragment in ingested.fragments] == [
+        "$.controls"
+    ]
+    assert ingested.fragment_at("$.controls").text_hash == content_hash(
+        [
+            {"id": "A", "result": "pass"},
+            {"id": "B", "result": "fail"},
+        ]
+    )
+
+
+def test_keyed_array_insertion_preserves_existing_item_reference() -> None:
+    source_artifact = artifact()
+    common = {
+        "artifact": source_artifact,
+        "created_at": NOW,
+        "valid_from": NOW,
+        "parser_version": "json-v1",
+        "array_identity_keys": {"$.controls": "id"},
+    }
+    before = ingest_json_revision(
+        **common,
+        revision_label="controls-r1",
+        value={
+            "controls": [
+                {"id": "A", "result": "pass"},
+                {"id": "B", "result": "fail"},
+            ]
+        },
+    )
+    after = ingest_json_revision(
+        **common,
+        revision_label="controls-r2",
+        value={
+            "controls": [
+                {"id": "X", "result": "pass"},
+                {"id": "A", "result": "pass"},
+                {"id": "B", "result": "fail"},
+            ]
+        },
+    )
+
+    path = '$.controls[id="B"].result'
+    assert before.fragment_at(path).logical_path == after.fragment_at(path).logical_path
+    assert before.fragment_at(path).text_hash == after.fragment_at(path).text_hash
+    assert all("[0]" not in fragment.logical_path for fragment in after.fragments)
+
+
+@pytest.mark.parametrize(
+    ("value", "identity_keys"),
+    [
+        ({"controls": [{"id": "A"}, {"id": "A"}]}, {"$.controls": "id"}),
+        ({"controls": [{"id": "A"}, {"result": "pass"}]}, {"$.controls": "id"}),
+        ({"controls": [{"id": "A"}, "not-an-object"]}, {"$.controls": "id"}),
+        ({"controls": [{"id": {"nested": True}}]}, {"$.controls": "id"}),
+        ({"controls": [{"id": "A"}]}, {"$.missing": "id"}),
+    ],
+)
+def test_invalid_keyed_array_identity_never_falls_back_to_positions(
+    value: dict[str, object],
+    identity_keys: dict[str, str],
+) -> None:
+    with pytest.raises(ValueError, match="array identity"):
+        ingest_json_revision(
+            artifact(),
+            revision_label="invalid-array",
+            value=value,
+            created_at=NOW,
+            valid_from=NOW,
+            parser_version="json-v1",
+            array_identity_keys=identity_keys,
+        )
