@@ -160,3 +160,32 @@ def test_independent_sweeper_retries_pending_outbox_without_command_replay() -> 
     assert retried.failed_mission_ids == []
     assert retried.published_messages == 1
     assert repository.load("m-1").outbox[0].published_at is not None
+
+
+def test_sweeper_pages_over_pending_missions_instead_of_recent_missions() -> None:
+    repository = InMemoryRuntimeRepository()
+    old_pending = runtime_snapshot("m-000-old-pending")
+    old_pending.mission.updated_at = datetime(2020, 1, 1, tzinfo=UTC)
+    old_pending.outbox = [
+        OutboxMessage(
+            outbox_message_id="outbox:old",
+            mission_id="m-000-old-pending",
+            event_type="mission.created",
+            correlation_id="create:old",
+            causation_id="create:old",
+        )
+    ]
+    repository.create(old_pending)
+    for index in range(501):
+        repository.create(runtime_snapshot(f"m-{index + 1:03d}-new-idle"))
+    publisher = RecordingPublisher()
+
+    result = OutboxSweeper(
+        repository,
+        OutboxRelay(repository, publisher),
+    ).sweep(mission_limit=100)
+
+    assert result.scanned_missions == 1
+    assert result.pending_missions == 1
+    assert result.published_messages == 1
+    assert publisher.published == ["outbox:old"]

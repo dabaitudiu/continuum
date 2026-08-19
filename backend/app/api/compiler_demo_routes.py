@@ -7,7 +7,7 @@ from decimal import Decimal
 from pathlib import Path
 from threading import RLock
 from time import monotonic
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.compiler.acceptance import CompilerAcceptanceError
 from app.compiler.budget import SQLiteBudgetLedger
 from app.compiler.context import CompilationContext, RiskClass
+from app.compiler.models import CompilerExecutionStage
 from app.compiler.reasoner import openai_luna_pricing
 from app.compiler.repository import (
     CompilationAggregate,
@@ -125,6 +126,19 @@ class RuntimeReceipt(FrozenModel):
     audit_link: str
 
 
+class CompilerStageTraceItem(FrozenModel):
+    stage: Literal[
+        "REQUESTED",
+        "DRAFT_RECEIVED",
+        "VALIDATED",
+        "REVIEWED",
+        "COMPILED",
+        "RUNTIME_ACCEPTED",
+    ]
+    owner: Literal["COMPILER", "MODEL PROPOSAL", "RUNTIME"]
+    state: Literal["DONE", "ACTIVE", "SKIPPED", "WAITING"]
+
+
 class CompilerLabView(FrozenModel):
     scenario_id: str
     scenario_label: str
@@ -133,6 +147,7 @@ class CompilerLabView(FrozenModel):
     aggregate: CompilationAggregate
     sources: list[ReferenceSourceView]
     evidence: CompilerEvidence
+    stage_trace: list[CompilerStageTraceItem]
     runtime_receipt: RuntimeReceipt | None = None
 
 
@@ -397,8 +412,68 @@ def _view(
         aggregate=aggregate,
         sources=catalog.source_views(resolved_scenario_id),
         evidence=evidence,
+        stage_trace=_stage_trace(aggregate, receipt),
         runtime_receipt=receipt,
     )
+
+
+def _stage_trace(
+    aggregate: CompilationAggregate,
+    receipt: RuntimeReceipt | None,
+) -> list[CompilerStageTraceItem]:
+    result = aggregate.result
+    review_executed = (
+        result is not None and CompilerExecutionStage.REVIEWED in result.executed_stages
+    )
+    compilation_executed = (
+        result is not None and CompilerExecutionStage.COMPILED in result.executed_stages
+    )
+    if receipt is not None:
+        runtime_state = "DONE"
+    elif result is not None and result.compilation_hash is not None:
+        runtime_state = "ACTIVE"
+    elif result is not None:
+        runtime_state = "SKIPPED"
+    else:
+        runtime_state = "WAITING"
+    return [
+        CompilerStageTraceItem(
+            stage="REQUESTED",
+            owner="COMPILER",
+            state="DONE",
+        ),
+        CompilerStageTraceItem(
+            stage="DRAFT_RECEIVED",
+            owner="MODEL PROPOSAL",
+            state="DONE" if aggregate.draft is not None else "WAITING",
+        ),
+        CompilerStageTraceItem(
+            stage="VALIDATED",
+            owner="COMPILER",
+            state="DONE" if result is not None else "WAITING",
+        ),
+        CompilerStageTraceItem(
+            stage="REVIEWED",
+            owner="MODEL PROPOSAL",
+            state="DONE" if review_executed else "SKIPPED" if result else "WAITING",
+        ),
+        CompilerStageTraceItem(
+            stage="COMPILED",
+            owner="COMPILER",
+            state=(
+                "DONE"
+                if compilation_executed
+                else "SKIPPED"
+                if result is not None
+                else "WAITING"
+            ),
+        ),
+        CompilerStageTraceItem(
+            stage="RUNTIME_ACCEPTED",
+            owner="RUNTIME",
+            state=runtime_state,
+        ),
+    ]
 
 
 def _runtime_receipt(

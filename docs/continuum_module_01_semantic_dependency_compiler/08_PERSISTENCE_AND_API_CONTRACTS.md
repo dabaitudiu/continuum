@@ -41,7 +41,7 @@ Validation, completeness, contradiction, security findings.
 
 ### CompilationResultRecord
 
-Canonical normalized result, compiler version, compilation hash, disposition.
+Canonical normalized result, compiler version, compilation hash, disposition, and an explicit `executed_stages` trace. Validator rejection records only `VALIDATED`; reviewer rejection records `VALIDATED / REVIEWED`; accepted canonical output records `VALIDATED / REVIEWED / COMPILED`. Consumers must not infer executed stages merely from the existence of a result.
 
 ## Proposed API
 
@@ -107,4 +107,4 @@ compiler.rejected
 
 These are compiler events, distinct from final `decision.created` runtime events.
 
-Runtime outbox publication is retried independently by `app.events.outbox_worker` (deployed as a Cloud Run Job). A command replay is not required to recover a pending projection.
+Runtime outbox publication is retried independently by `app.events.outbox_worker` (deployed as a Cloud Run Job with a two-minute Cloud Scheduler trigger). The worker pages over the pending projection by stable Mission ID, so old pending Missions cannot be hidden by a recent-Mission limit. A command replay is not required to recover a pending projection.

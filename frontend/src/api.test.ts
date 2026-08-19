@@ -20,4 +20,18 @@ describe('HTTP API error boundary', () => {
       message: 'Request failed with status 504: upstream timeout',
     })
   })
+
+  it('preserves HTTP status when an error response is a JSON primitive', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('null', {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    ))
+
+    await expect(httpApi.getCompilerLabStatus?.()).rejects.toMatchObject({
+      code: 'HTTP_502',
+      message: 'Request failed with status 502: null',
+    })
+  })
 })

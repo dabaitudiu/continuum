@@ -44,6 +44,27 @@ class InMemoryRuntimeRepository:
             )[:limit]
             return [snapshot.model_copy(deep=True) for snapshot in recent]
 
+    def list_pending_outbox(
+        self,
+        *,
+        limit: int,
+        after_mission_id: str | None = None,
+    ) -> list[RuntimeSnapshot]:
+        with self._lock:
+            pending = sorted(
+                (
+                    snapshot
+                    for snapshot in self._snapshots.values()
+                    if any(message.published_at is None for message in snapshot.outbox)
+                    and (
+                        after_mission_id is None
+                        or snapshot.mission.mission_id > after_mission_id
+                    )
+                ),
+                key=lambda snapshot: snapshot.mission.mission_id,
+            )[:limit]
+            return [snapshot.model_copy(deep=True) for snapshot in pending]
+
     def find_inbox(
         self,
         mission_id: str,

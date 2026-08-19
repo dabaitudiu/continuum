@@ -12,6 +12,13 @@ class RuntimeRepository(Protocol):
 
     def list_recent(self, limit: int) -> list[RuntimeSnapshot]: ...
 
+    def list_pending_outbox(
+        self,
+        *,
+        limit: int,
+        after_mission_id: str | None = None,
+    ) -> list[RuntimeSnapshot]: ...
+
     def find_inbox(
         self,
         mission_id: str,

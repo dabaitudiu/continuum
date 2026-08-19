@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from app.repository.runtime_firestore import FirestoreRuntimeRepository
 from app.runtime.entities import Commitment, WorkItem
@@ -29,34 +30,60 @@ class FakeDocumentSnapshot:
 
 
 class FakeDocumentReference:
-    def __init__(self, client: "FakeFirestoreClient", path: str) -> None:
+    def __init__(self, client: FakeFirestoreClient, path: str) -> None:
         self._client = client
         self.path = path
 
-    def collection(self, name: str) -> "FakeCollectionReference":
+    def collection(self, name: str) -> FakeCollectionReference:
         return FakeCollectionReference(self._client, f"{self.path}/{name}")
 
 
 class FakeCollectionReference:
-    def __init__(self, client: "FakeFirestoreClient", path: str) -> None:
+    def __init__(self, client: FakeFirestoreClient, path: str) -> None:
         self._client = client
         self.path = path
 
     def document(self, document_id: str) -> FakeDocumentReference:
         return FakeDocumentReference(self._client, f"{self.path}/{document_id}")
 
-    def order_by(self, field: str, *, direction: Any) -> "FakeQuery":
-        return FakeQuery(self._client, self.path, field)
+    def order_by(self, field: str, *, direction: Any) -> FakeQuery:
+        return FakeQuery(self._client, self.path).order_by(
+            field,
+            direction=direction,
+        )
+
+    def where(self, *, filter: Any) -> FakeQuery:
+        return FakeQuery(self._client, self.path).where(filter=filter)
 
 
 class FakeQuery:
-    def __init__(self, client: "FakeFirestoreClient", path: str, field: str) -> None:
+    def __init__(self, client: FakeFirestoreClient, path: str) -> None:
         self._client = client
         self._path = path
-        self._field = field
+        self._field = "mission_id"
+        self._descending = False
+        self._filter: tuple[str, str, Any] | None = None
+        self._after: dict[str, Any] | None = None
         self._limit = 20
 
-    def limit(self, value: int) -> "FakeQuery":
+    def where(self, *, filter: Any) -> FakeQuery:
+        self._filter = (
+            str(filter.field_path),
+            str(filter.op_string),
+            filter.value,
+        )
+        return self
+
+    def order_by(self, field: str, *, direction: Any) -> FakeQuery:
+        self._field = field
+        self._descending = direction == "DESCENDING"
+        return self
+
+    def start_after(self, values: dict[str, Any]) -> FakeQuery:
+        self._after = values
+        return self
+
+    def limit(self, value: int) -> FakeQuery:
         self._limit = value
         return self
 
@@ -67,18 +94,25 @@ class FakeQuery:
             for path, data in self._client._documents.items()
             if path.startswith(prefix) and "/" not in path.removeprefix(prefix)
         ]
+        if self._filter is not None:
+            field, operation, value = self._filter
+            assert operation == "=="
+            documents = [item for item in documents if item[1].get(field) == value]
+        if self._after is not None:
+            after = self._after[self._field]
+            documents = [item for item in documents if item[1][self._field] > after]
         documents.sort(
             key=lambda item: (item[1][self._field], item[0]),
-            reverse=True,
+            reverse=self._descending,
         )
         return [
             FakeDocumentSnapshot(data, document_id)
-            for document_id, data in documents[:self._limit]
+            for document_id, data in documents[: self._limit]
         ]
 
 
 class FakeTransaction:
-    def __init__(self, client: "FakeFirestoreClient") -> None:
+    def __init__(self, client: FakeFirestoreClient) -> None:
         self._client = client
         self._writes: list[tuple[str, str, dict[str, Any]]] = []
 

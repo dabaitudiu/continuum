@@ -35,7 +35,6 @@ from app.runtime.entities import (
 from app.runtime.errors import RuntimeDomainError
 from app.runtime.mutations import RuntimeMutation
 
-
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS missions (
     mission_id TEXT PRIMARY KEY,
@@ -268,6 +267,31 @@ class SQLiteRuntimeRepository:
             ]
             return [self._load_locked(mission_id) for mission_id in recent_ids]
 
+    def list_pending_outbox(
+        self,
+        *,
+        limit: int,
+        after_mission_id: str | None = None,
+    ) -> list[RuntimeSnapshot]:
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT mission_id
+                FROM missions
+                WHERE mission_id > ?
+                  AND EXISTS (
+                    SELECT 1
+                    FROM outbox_messages
+                    WHERE outbox_messages.mission_id = missions.mission_id
+                      AND json_extract(outbox_messages.payload, '$.published_at') IS NULL
+                  )
+                ORDER BY mission_id ASC
+                LIMIT ?
+                """,
+                (after_mission_id or "", limit),
+            ).fetchall()
+            return [self._load_locked(str(row["mission_id"])) for row in rows]
+
     def find_inbox(
         self,
         mission_id: str,
@@ -485,7 +509,7 @@ class SQLiteRuntimeRepository:
     def _delete_children(self, mission_id: str) -> None:
         for table in CHILD_TABLES:
             self._connection.execute(
-                f"DELETE FROM {table} WHERE mission_id = ?",  # noqa: S608
+                f"DELETE FROM {table} WHERE mission_id = ?",
                 (mission_id,),
             )
 
@@ -641,7 +665,7 @@ class SQLiteRuntimeRepository:
             values = columns(item)
             placeholders = ", ".join("?" for _ in range(len(values) + 3))
             self._connection.execute(
-                f"INSERT INTO {table} VALUES ({placeholders})",  # noqa: S608
+                f"INSERT INTO {table} VALUES ({placeholders})",
                 (mission_id, *values, position, item.model_dump_json()),
             )
 
@@ -656,13 +680,13 @@ class SQLiteRuntimeRepository:
             values = columns(item)
             placeholders = ", ".join("?" for _ in range(len(values) + 2))
             self._connection.execute(
-                f"INSERT INTO {table} VALUES ({placeholders})",  # noqa: S608
+                f"INSERT INTO {table} VALUES ({placeholders})",
                 (mission_id, *values, item.model_dump_json()),
             )
 
     def _load_list(self, table, mission_id, model):  # type: ignore[no-untyped-def]
         rows = self._connection.execute(
-            f"SELECT payload FROM {table} WHERE mission_id = ? ORDER BY position",  # noqa: S608
+            f"SELECT payload FROM {table} WHERE mission_id = ? ORDER BY position",
             (mission_id,),
         ).fetchall()
         return [model.model_validate_json(row[0]) for row in rows]
@@ -675,7 +699,7 @@ class SQLiteRuntimeRepository:
         model,  # type: ignore[no-untyped-def]
     ):
         rows = self._connection.execute(
-            f"SELECT {identity_column}, payload FROM {table} WHERE mission_id = ?",  # noqa: S608
+            f"SELECT {identity_column}, payload FROM {table} WHERE mission_id = ?",
             (mission_id,),
         ).fetchall()
         return {row[0]: model.model_validate_json(row[1]) for row in rows}

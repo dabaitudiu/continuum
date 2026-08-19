@@ -5,11 +5,11 @@
 - one public Cloud Run service containing Mission Control and the control-plane API;
 - a named Firestore Native-mode database used as the Mission and compiler system of record (`missions` and `compiler_requests` collections);
 - one Pub/Sub topic receiving durable outbox events;
-- one independent Cloud Run Job that scans and retries pending outbox projections;
+- one independent Cloud Run Job plus Cloud Scheduler trigger that page through and retry pending outbox projections every two minutes;
 - Google ADK agents using Gemini through Vertex AI;
 - FastAPI/OpenTelemetry spans exported to Google Cloud Trace.
 
-The runtime service account receives `roles/datastore.user`, `roles/pubsub.publisher`, `roles/aiplatform.user`, and `roles/cloudtrace.agent`. The deployer still needs permission to enable APIs, create resources, grant those roles, build, and deploy Cloud Run services.
+The runtime service account receives `roles/datastore.user`, `roles/pubsub.publisher`, `roles/aiplatform.user`, `roles/cloudtrace.agent`, and `roles/run.invoker` so Cloud Scheduler can execute the relay job with OAuth. The deployer still needs permission to enable APIs, create resources, grant those roles, act as the scheduler service account, build, and deploy Cloud Run and Scheduler resources.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ CONTINUUM_VERTEX_LOCATION=global \
 
 The positional region controls Cloud Run and Firestore placement. Gemini uses the separate `CONTINUUM_VERTEX_LOCATION`, which defaults to the Vertex AI `global` endpoint recommended by Google's current Gemini quickstart. Keeping these values separate prevents an invalid Cloud Run region when the model endpoint is `global`.
 
-The script is idempotent for existing APIs, service account, Firestore database, Pub/Sub topic, service, and outbox relay job. It prints the deployed URL and then calls `/api/health`. A healthy cloud response must report:
+The script is idempotent for existing APIs, service account, Firestore database, Pub/Sub topic, service, outbox relay job, and scheduler trigger. It prints the deployed URL and then calls `/api/health`. A healthy cloud response must report:
 
 ```json
 {
@@ -72,7 +72,7 @@ The whole generic `/api/compiler` surface is disabled unless a separate `CONTINU
 
 The public reference runner validates a bounded request identity and applies a per-instance sliding-window rate limit before creating an aggregate. For internet-scale deployment, place the service behind Cloud Armor/API Gateway for a shared cross-instance quota; the in-process guard is the prototype safety boundary, not a distributed quota service.
 
-The deployed `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay` job runs `app.events.outbox_worker`. It scans durable Firestore outboxes, republishes unpublished messages, and exits nonzero when any mission remains failed so Cloud Run retries the task. Trigger it periodically with your deployment scheduler; it is intentionally independent of command replay. A manual operational check is:
+The deployed `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay` job runs `app.events.outbox_worker`. It queries only missions with pending outbox messages, pages by stable Mission ID so old records cannot be hidden behind newer idle records, republishes every page, and exits nonzero when any mission remains failed so Cloud Run retries the task. `${CONTINUUM_CLOUD_RUN_SERVICE}-outbox-relay-schedule` invokes the Cloud Run Jobs v2 `:run` endpoint with OAuth every two minutes by default. Override the cron using `CONTINUUM_OUTBOX_SCHEDULE`. This path is intentionally independent of command replay. A manual operational check is:
 
 ```bash
 gcloud run jobs execute continuum-outbox-relay \

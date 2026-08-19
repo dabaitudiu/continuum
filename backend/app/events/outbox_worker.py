@@ -30,7 +30,9 @@ def main() -> int:
     result = OutboxSweeper(
         repository,
         OutboxRelay(repository, publisher),
-    ).sweep(mission_limit=int(os.environ.get("CONTINUUM_OUTBOX_SWEEP_LIMIT", "500")))
+    ).sweep(
+        mission_limit=int(os.environ.get("CONTINUUM_OUTBOX_SWEEP_PAGE_SIZE", "500"))
+    )
     print(json.dumps(result.model_dump(mode="json"), sort_keys=True))
     return 1 if result.failed_mission_ids else 0
 

@@ -15,7 +15,6 @@ from app.runtime.entities import InboxRecord, OutboxMessage, RuntimeSnapshot
 from app.runtime.errors import RuntimeDomainError
 from app.runtime.mutations import RuntimeMutation
 
-
 Result = TypeVar("Result")
 
 
@@ -51,7 +50,7 @@ class FirestoreRuntimeRepository:
         project: str | None = None,
         database: str | None = None,
         collection: str = "missions",
-    ) -> "FirestoreRuntimeRepository":
+    ) -> FirestoreRuntimeRepository:
         options: dict[str, str] = {}
         if project:
             options["project"] = project
@@ -89,11 +88,31 @@ class FirestoreRuntimeRepository:
 
     def list_recent(self, limit: int) -> list[RuntimeSnapshot]:
         documents = (
-            self._missions
-            .order_by("updated_at", direction=firestore.Query.DESCENDING)
+            self._missions.order_by("updated_at", direction=firestore.Query.DESCENDING)
             .limit(limit)
             .stream()
         )
+        return [
+            _snapshot_from_document(document.id, document).model_copy(deep=True)
+            for document in documents
+        ]
+
+    def list_pending_outbox(
+        self,
+        *,
+        limit: int,
+        after_mission_id: str | None = None,
+    ) -> list[RuntimeSnapshot]:
+        query = self._missions.where(
+            filter=firestore.FieldFilter(
+                "has_unpublished_outbox",
+                "==",
+                True,
+            )
+        ).order_by("mission_id", direction=firestore.Query.ASCENDING)
+        if after_mission_id is not None:
+            query = query.start_after({"mission_id": after_mission_id})
+        documents = query.limit(limit).stream()
         return [
             _snapshot_from_document(document.id, document).model_copy(deep=True)
             for document in documents
@@ -212,6 +231,9 @@ def _snapshot_from_document(mission_id: str, document: Any) -> RuntimeSnapshot:
 
 def _mission_document(snapshot: RuntimeSnapshot) -> dict[str, Any]:
     mission = snapshot.mission
+    unpublished_outbox_count = sum(
+        message.published_at is None for message in snapshot.outbox
+    )
     return {
         "mission_id": mission.mission_id,
         "mission_type": mission.mission_type,
@@ -221,9 +243,8 @@ def _mission_document(snapshot: RuntimeSnapshot) -> dict[str, Any]:
         "event_sequence": mission.event_sequence,
         "created_at": mission.created_at,
         "updated_at": mission.updated_at,
-        "unpublished_outbox_count": sum(
-            message.published_at is None for message in snapshot.outbox
-        ),
+        "unpublished_outbox_count": unpublished_outbox_count,
+        "has_unpublished_outbox": unpublished_outbox_count > 0,
         "schema_version": 1,
         "snapshot_json": snapshot.model_dump_json(),
     }
@@ -234,7 +255,13 @@ def _write_full_projection(
     mission_reference: Any,
     snapshot: RuntimeSnapshot,
 ) -> None:
-    _set_models(transaction, mission_reference, "work_items", snapshot.work_items, "work_item_id")
+    _set_models(
+        transaction,
+        mission_reference,
+        "work_items",
+        snapshot.work_items,
+        "work_item_id",
+    )
     _set_models(
         transaction,
         mission_reference,
@@ -274,7 +301,13 @@ def _write_mutation_projection(
     committed: RuntimeSnapshot,
     mutation: RuntimeMutation,
 ) -> None:
-    _set_models(transaction, mission_reference, "work_items", mutation.work_upserts, "work_item_id")
+    _set_models(
+        transaction,
+        mission_reference,
+        "work_items",
+        mutation.work_upserts,
+        "work_item_id",
+    )
     _set_models(
         transaction,
         mission_reference,
@@ -343,14 +376,42 @@ def _write_graph_projection(
     snapshot: RuntimeSnapshot,
 ) -> None:
     graph = snapshot.graph
-    _set_models(transaction, mission_reference, "artifacts", graph.artifacts.values(), "artifact_id")
-    _set_models(transaction, mission_reference, "evidence", graph.evidences.values(), "evidence_id")
-    _set_models(transaction, mission_reference, "claims", graph.claims.values(), "claim_id")
-    _set_models(transaction, mission_reference, "decisions", graph.decisions.values(), "decision_id")
-    _set_models(transaction, mission_reference, "actions", graph.actions.values(), "action_id")
-    _set_models(transaction, mission_reference, "dependency_edges", graph.edges, "edge_id")
-    _set_models(transaction, mission_reference, "graph_events", graph.events, "event_id")
-    _set_models(transaction, mission_reference, "dispatches", graph.dispatches, "dispatch_id")
+    _set_models(
+        transaction,
+        mission_reference,
+        "artifacts",
+        graph.artifacts.values(),
+        "artifact_id",
+    )
+    _set_models(
+        transaction,
+        mission_reference,
+        "evidence",
+        graph.evidences.values(),
+        "evidence_id",
+    )
+    _set_models(
+        transaction, mission_reference, "claims", graph.claims.values(), "claim_id"
+    )
+    _set_models(
+        transaction,
+        mission_reference,
+        "decisions",
+        graph.decisions.values(),
+        "decision_id",
+    )
+    _set_models(
+        transaction, mission_reference, "actions", graph.actions.values(), "action_id"
+    )
+    _set_models(
+        transaction, mission_reference, "dependency_edges", graph.edges, "edge_id"
+    )
+    _set_models(
+        transaction, mission_reference, "graph_events", graph.events, "event_id"
+    )
+    _set_models(
+        transaction, mission_reference, "dispatches", graph.dispatches, "dispatch_id"
+    )
     transaction.set(
         mission_reference.collection("graph_state").document("current"),
         {
@@ -369,7 +430,9 @@ def _set_models(
 ) -> None:
     for model in models:
         if not isinstance(model, BaseModel):
-            raise TypeError(f"projection requires Pydantic models, found {type(model)!r}")
+            raise TypeError(
+                f"projection requires Pydantic models, found {type(model)!r}"
+            )
         document_id = str(getattr(model, identity_field))
         transaction.set(
             mission_reference.collection(collection).document(document_id),

@@ -144,6 +144,14 @@ def test_authorized_reference_scenario_compiles_and_exposes_honest_evidence(
         "pricing_version": "openai-2026-08-19",
     }
     assert payload["evidence"]["gemini"]["status"] == "BLOCKED"
+    assert {item["stage"]: item["state"] for item in payload["stage_trace"]} == {
+        "REQUESTED": "DONE",
+        "DRAFT_RECEIVED": "DONE",
+        "VALIDATED": "DONE",
+        "REVIEWED": "DONE",
+        "COMPILED": "DONE",
+        "RUNTIME_ACCEPTED": "ACTIVE",
+    }
     assert payload["runtime_receipt"] is None
 
 
@@ -216,6 +224,28 @@ def test_reference_scenarios_cover_all_blocking_dispositions(tmp_path: Path) -> 
         assert payload["runtime_receipt"] is None
 
 
+def test_validation_rejection_reports_unexecuted_stages_as_skipped(
+    tmp_path: Path,
+) -> None:
+    client, _, _ = _demo_client(tmp_path)
+
+    response = client.post(
+        "/api/demo/compiler/scenarios/obsolete-policy-ref",
+        json={"request_id": "browser-stage-truth"},
+    )
+
+    assert response.status_code == 200
+    stages = {item["stage"]: item["state"] for item in response.json()["stage_trace"]}
+    assert stages == {
+        "REQUESTED": "DONE",
+        "DRAFT_RECEIVED": "DONE",
+        "VALIDATED": "DONE",
+        "REVIEWED": "SKIPPED",
+        "COMPILED": "SKIPPED",
+        "RUNTIME_ACCEPTED": "SKIPPED",
+    }
+
+
 def test_demo_orchestrator_accepts_only_registered_accepted_fixture_once(
     tmp_path: Path,
 ) -> None:
@@ -233,6 +263,11 @@ def test_demo_orchestrator_accepts_only_registered_accepted_fixture_once(
     assert first.status_code == 200
     assert second.status_code == 200
     receipt = first.json()["runtime_receipt"]
+    assert first.json()["stage_trace"][-1] == {
+        "stage": "RUNTIME_ACCEPTED",
+        "owner": "RUNTIME",
+        "state": "DONE",
+    }
     assert receipt["duplicate"] is False
     assert receipt["mission_revision"] == 1
     assert receipt["decision_id"]

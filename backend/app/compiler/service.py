@@ -6,6 +6,7 @@ from app.compiler.models import (
     CanonicalCompilation,
     CompilationDisposition,
     CompilationResult,
+    CompilerExecutionStage,
     CriticReview,
     DecisionDraft,
     ValidationReport,
@@ -87,6 +88,11 @@ class CompilerService:
             compilation_hash=canonical.compilation_hash,
             model_metadata=draft.model_metadata,
             critic_model_metadata=review.model_metadata,
+            executed_stages=[
+                CompilerExecutionStage.VALIDATED,
+                CompilerExecutionStage.REVIEWED,
+                CompilerExecutionStage.COMPILED,
+            ],
         )
 
     def _blocked_result(
@@ -108,4 +114,12 @@ class CompilerService:
             validation_policy_version=self._validation_policy_version,
             model_metadata=draft.model_metadata,
             critic_model_metadata=None if review is None else review.model_metadata,
+            executed_stages=(
+                [CompilerExecutionStage.VALIDATED]
+                if review is None
+                else [
+                    CompilerExecutionStage.VALIDATED,
+                    CompilerExecutionStage.REVIEWED,
+                ]
+            ),
         )

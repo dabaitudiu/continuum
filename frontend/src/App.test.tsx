@@ -137,6 +137,7 @@ function compilerViewFixture(status = 'ACCEPTED', withReceipt = false) {
         compilation_hash: accepted ? 'a'.repeat(64) : null,
         model_metadata: { provider: 'REFERENCE', model_name: 'deterministic-reference-v1', prompt_version: 'reasoner-v1', temperature: 0, execution_id: 'reference:reasoner:1', input_tokens: 0, cached_input_tokens: 0, output_tokens: 0 },
         critic_model_metadata: null,
+        executed_stages: accepted ? ['VALIDATED', 'REVIEWED', 'COMPILED'] : ['VALIDATED'],
       },
       outbox: [], updated_at: '2026-08-19T04:30:00Z',
     },
@@ -146,6 +147,14 @@ function compilerViewFixture(status = 'ACCEPTED', withReceipt = false) {
       revision_label: ['v13', 'r18', 'r45'][index], source_hash: String(index + 1).repeat(64), fragment_hash: String(index + 4).repeat(64), logical_path: ['$.rule', '$.status', '$.scope'][index], content: 'Reference content', historical: false,
     })),
     evidence: compilerStatusFixture().evidence,
+    stage_trace: [
+      { stage: 'REQUESTED', owner: 'COMPILER', state: 'DONE' },
+      { stage: 'DRAFT_RECEIVED', owner: 'MODEL PROPOSAL', state: 'DONE' },
+      { stage: 'VALIDATED', owner: 'COMPILER', state: 'DONE' },
+      { stage: 'REVIEWED', owner: 'MODEL PROPOSAL', state: accepted ? 'DONE' : 'SKIPPED' },
+      { stage: 'COMPILED', owner: 'COMPILER', state: accepted ? 'DONE' : 'SKIPPED' },
+      { stage: 'RUNTIME_ACCEPTED', owner: 'RUNTIME', state: withReceipt ? 'DONE' : accepted ? 'ACTIVE' : 'SKIPPED' },
+    ],
     runtime_receipt: withReceipt ? {
       duplicate: false, mission_id: 'compiler-reference-1', mission_revision: 1, decision_id: 'decision:123',
       claim_ids: ['claim:policy-rule', 'claim:employee-status', 'claim:request-scope'], evidence_ids: sourceRefs,

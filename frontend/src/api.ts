@@ -16,28 +16,33 @@ class ContinuumApiError extends Error {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
   const raw = await response.text()
-  let body: Record<string, unknown> = {}
+  let body: unknown = {}
   if (raw) {
     try {
-      body = JSON.parse(raw) as Record<string, unknown>
+      body = JSON.parse(raw) as unknown
     } catch {
       body = { raw: raw.slice(0, 500) }
     }
   }
   if (!response.ok) {
-    const detail = typeof body.detail === 'object' && body.detail !== null
-      ? body.detail as Record<string, unknown>
+    const errorBody = isRecord(body) ? body : { raw: raw.slice(0, 500) }
+    const detail = isRecord(errorBody.detail)
+      ? errorBody.detail
       : {}
     throw new ContinuumApiError(
       typeof detail.message === 'string'
         ? detail.message
-        : `Request failed with status ${response.status}${typeof body.raw === 'string' ? `: ${body.raw}` : ''}`,
+        : `Request failed with status ${response.status}${typeof errorBody.raw === 'string' ? `: ${errorBody.raw}` : ''}`,
       typeof detail.code === 'string' ? detail.code : `HTTP_${response.status}`,
     )
   }

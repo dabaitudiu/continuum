@@ -302,6 +302,7 @@ export interface CompilerAggregateDto {
     compilation_hash?: string | null
     model_metadata?: Record<string, unknown> | null
     critic_model_metadata?: Record<string, unknown> | null
+    executed_stages: Array<'VALIDATED' | 'REVIEWED' | 'COMPILED'>
   } | null
   outbox: Array<Record<string, unknown>>
   updated_at: string
@@ -320,6 +321,12 @@ export interface RuntimeReceiptDto {
   audit_link: string
 }
 
+export interface CompilerStageTraceDto {
+  stage: 'REQUESTED' | 'DRAFT_RECEIVED' | 'VALIDATED' | 'REVIEWED' | 'COMPILED' | 'RUNTIME_ACCEPTED'
+  owner: 'COMPILER' | 'MODEL PROPOSAL' | 'RUNTIME'
+  state: 'DONE' | 'ACTIVE' | 'SKIPPED' | 'WAITING'
+}
+
 export interface CompilerLabViewDto {
   scenario_id: string
   scenario_label: string
@@ -328,6 +335,7 @@ export interface CompilerLabViewDto {
   aggregate: CompilerAggregateDto
   sources: ReferenceSourceDto[]
   evidence: CompilerEvidenceDto
+  stage_trace: CompilerStageTraceDto[]
   runtime_receipt?: RuntimeReceiptDto | null
 }
 

@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from app.compiler.models import (
     ClaimDraft,
     ClaimType,
     CompilationDisposition,
     CompilationResult,
+    DecisionDraft,
     DependencyRef,
     DependencyRelation,
     Materiality,
     ModelMetadata,
     UnresolvedQuestion,
-    DecisionDraft,
 )
+from pydantic import ValidationError
 
 
 def _dependency(**overrides: object) -> dict[str, object]:
@@ -159,10 +158,11 @@ def test_compilation_result_serializes_the_specified_disposition() -> None:
         "contradictions": [],
         "compiler_version": "sdc-1",
         "validation_policy_version": "validation-v1",
-            "compilation_hash": None,
-            "model_metadata": None,
-            "critic_model_metadata": None,
-        }
+        "compilation_hash": None,
+        "model_metadata": None,
+        "critic_model_metadata": None,
+        "executed_stages": [],
+    }
 
 
 def test_value_objects_are_immutable_after_validation() -> None:

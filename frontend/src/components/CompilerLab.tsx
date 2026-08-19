@@ -20,6 +20,8 @@ import type {
   ReferenceScenarioDto,
 } from '../types'
 
+type StageState = 'active' | 'done' | 'skipped' | 'waiting'
+
 function requestId(): string {
   const suffix = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
   return `compiler-lab-${suffix}`
@@ -108,6 +110,9 @@ export function CompilerLab({ api }: { api: ContinuumApi }) {
   const evidence = view?.evidence ?? status?.evidence
   const result = view?.aggregate.result
   const accepted = result?.status === 'ACCEPTED'
+  const stageTrace = new Map<string, StageState>(
+    view?.stage_trace.map((item) => [item.stage, item.state.toLowerCase() as StageState]) ?? [],
+  )
   const retry = () => {
     if (retryIntent === 'status') void loadStatus()
     if (retryIntent === 'run') void run()
@@ -139,12 +144,12 @@ export function CompilerLab({ api }: { api: ContinuumApi }) {
       ) : null}
 
       <div className="compiler-stage-ruler" aria-label="Compilation stages">
-        <Stage number="01" label="REQUESTED" owner="COMPILER" state={view ? 'done' : 'active'} />
-        <Stage number="02" label="DRAFT_RECEIVED" owner="MODEL PROPOSAL" state={view ? 'done' : 'waiting'} />
-        <Stage number="03" label="VALIDATED" owner="COMPILER" state={result ? 'done' : 'waiting'} />
-        <Stage number="04" label="REVIEWED" owner="MODEL PROPOSAL" state={result ? 'done' : 'waiting'} />
-        <Stage number="05" label="COMPILED" owner="COMPILER" state={result ? 'done' : 'waiting'} />
-        <Stage number="06" label="RUNTIME_ACCEPTED" owner="RUNTIME" state={view?.runtime_receipt ? 'done' : accepted ? 'active' : 'waiting'} />
+        <Stage number="01" label="REQUESTED" owner="COMPILER" state={stageTrace.get('REQUESTED') ?? (view ? 'done' : 'active')} />
+        <Stage number="02" label="DRAFT_RECEIVED" owner="MODEL PROPOSAL" state={stageTrace.get('DRAFT_RECEIVED') ?? (view ? 'done' : 'waiting')} />
+        <Stage number="03" label="VALIDATED" owner="COMPILER" state={stageTrace.get('VALIDATED') ?? (result ? 'done' : 'waiting')} />
+        <Stage number="04" label="REVIEWED" owner="MODEL PROPOSAL" state={stageTrace.get('REVIEWED') ?? 'waiting'} />
+        <Stage number="05" label="COMPILED" owner="COMPILER" state={stageTrace.get('COMPILED') ?? 'waiting'} />
+        <Stage number="06" label="RUNTIME_ACCEPTED" owner="RUNTIME" state={stageTrace.get('RUNTIME_ACCEPTED') ?? (view?.runtime_receipt ? 'done' : accepted ? 'active' : 'waiting')} />
       </div>
 
       <div className="compiler-scenario-bar">
@@ -210,7 +215,7 @@ function EvidenceCell({ label, evidence }: { label: string; evidence: ProviderEv
   )
 }
 
-function Stage({ number, label, owner, state }: { number: string; label: string; owner: string; state: 'active' | 'done' | 'waiting' }) {
+function Stage({ number, label, owner, state }: { number: string; label: string; owner: string; state: StageState }) {
   return (
     <div className={`compiler-stage stage-${state}`}>
       <span>{number}</span><strong>{label}</strong><small>{owner}</small><i />

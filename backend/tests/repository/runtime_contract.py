@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-
 from app.domain.models import GraphSnapshot
 from app.runtime.entities import (
     AuditEvent,
@@ -142,6 +141,39 @@ class RuntimeRepositoryContract:
             "m-middle",
         ]
         assert repo.load("m-newest").mission.status is MissionStatus.CREATED
+
+    def test_list_pending_outbox_is_filtered_ordered_and_paginated(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        repo = self.make_repo(tmp_path)
+        for mission_id in ("m-c", "m-idle", "m-a"):
+            snapshot = runtime_snapshot(mission_id)
+            if mission_id != "m-idle":
+                snapshot.outbox = [
+                    OutboxMessage(
+                        outbox_message_id=f"outbox:{mission_id}",
+                        mission_id=mission_id,
+                        event_type="mission.created",
+                        correlation_id=f"create:{mission_id}",
+                        causation_id=f"create:{mission_id}",
+                    )
+                ]
+            repo.create(snapshot)
+
+        first = repo.list_pending_outbox(limit=1)
+        second = repo.list_pending_outbox(
+            limit=1,
+            after_mission_id=first[-1].mission.mission_id,
+        )
+        exhausted = repo.list_pending_outbox(
+            limit=1,
+            after_mission_id=second[-1].mission.mission_id,
+        )
+
+        assert [item.mission.mission_id for item in first] == ["m-a"]
+        assert [item.mission.mission_id for item in second] == ["m-c"]
+        assert exhausted == []
 
     def test_find_inbox_rejects_unknown_mission(self, tmp_path: Path) -> None:
         repo = self.make_repo(tmp_path)

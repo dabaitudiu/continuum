@@ -6,6 +6,8 @@ CONTINUUM_REGION="${2:-${CONTINUUM_CLOUD_REGION:-us-east1}}"
 CONTINUUM_VERTEX_LOCATION="${CONTINUUM_VERTEX_LOCATION:-global}"
 CONTINUUM_SERVICE="${CONTINUUM_CLOUD_RUN_SERVICE:-continuum}"
 CONTINUUM_OUTBOX_JOB="${CONTINUUM_OUTBOX_RELAY_JOB:-${CONTINUUM_SERVICE}-outbox-relay}"
+CONTINUUM_OUTBOX_SCHEDULER="${CONTINUUM_OUTBOX_SCHEDULER_JOB:-${CONTINUUM_OUTBOX_JOB}-schedule}"
+CONTINUUM_OUTBOX_SCHEDULE="${CONTINUUM_OUTBOX_SCHEDULE:-*/2 * * * *}"
 CONTINUUM_DATABASE="${CONTINUUM_FIRESTORE_DATABASE:-continuum}"
 CONTINUUM_TOPIC="${CONTINUUM_PUBSUB_TOPIC:-continuum-events}"
 CONTINUUM_SERVICE_ACCOUNT_ID="${CONTINUUM_SERVICE_ACCOUNT_ID:-continuum-runtime}"
@@ -28,6 +30,7 @@ gcloud services enable \
   aiplatform.googleapis.com \
   artifactregistry.googleapis.com \
   cloudbuild.googleapis.com \
+  cloudscheduler.googleapis.com \
   cloudtrace.googleapis.com \
   firestore.googleapis.com \
   pubsub.googleapis.com \
@@ -45,7 +48,8 @@ for CONTINUUM_ROLE in \
   roles/aiplatform.user \
   roles/cloudtrace.agent \
   roles/datastore.user \
-  roles/pubsub.publisher; do
+  roles/pubsub.publisher \
+  roles/run.invoker; do
   gcloud projects add-iam-policy-binding "${CONTINUUM_PROJECT_ID}" \
     --member="serviceAccount:${CONTINUUM_SERVICE_ACCOUNT}" \
     --role="${CONTINUUM_ROLE}" \
@@ -97,7 +101,28 @@ gcloud run jobs deploy "${CONTINUUM_OUTBOX_JOB}" \
   --args=-m,app.events.outbox_worker \
   --max-retries=3 \
   --task-timeout=300s \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${CONTINUUM_PROJECT_ID},CONTINUUM_FIRESTORE_DATABASE=${CONTINUUM_DATABASE},CONTINUUM_FIRESTORE_COLLECTION=missions,CONTINUUM_PUBSUB_TOPIC=${CONTINUUM_TOPIC},CONTINUUM_OUTBOX_SWEEP_LIMIT=500"
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=${CONTINUUM_PROJECT_ID},CONTINUUM_FIRESTORE_DATABASE=${CONTINUUM_DATABASE},CONTINUUM_FIRESTORE_COLLECTION=missions,CONTINUUM_PUBSUB_TOPIC=${CONTINUUM_TOPIC},CONTINUUM_OUTBOX_SWEEP_PAGE_SIZE=500"
+
+CONTINUUM_OUTBOX_RUN_URI="https://run.googleapis.com/v2/projects/${CONTINUUM_PROJECT_ID}/locations/${CONTINUUM_REGION}/jobs/${CONTINUUM_OUTBOX_JOB}:run"
+if gcloud scheduler jobs describe "${CONTINUUM_OUTBOX_SCHEDULER}" \
+  --location="${CONTINUUM_REGION}" \
+  --project="${CONTINUUM_PROJECT_ID}" >/dev/null 2>&1; then
+  CONTINUUM_SCHEDULER_ACTION="update"
+else
+  CONTINUUM_SCHEDULER_ACTION="create"
+fi
+gcloud scheduler jobs "${CONTINUUM_SCHEDULER_ACTION}" http \
+  "${CONTINUUM_OUTBOX_SCHEDULER}" \
+  --location="${CONTINUUM_REGION}" \
+  --project="${CONTINUUM_PROJECT_ID}" \
+  --schedule="${CONTINUUM_OUTBOX_SCHEDULE}" \
+  --time-zone="Etc/UTC" \
+  --uri="${CONTINUUM_OUTBOX_RUN_URI}" \
+  --http-method=POST \
+  --oauth-service-account-email="${CONTINUUM_SERVICE_ACCOUNT}" \
+  --oauth-token-scope="https://www.googleapis.com/auth/cloud-platform" \
+  --max-retry-attempts=5 \
+  --quiet
 
 CONTINUUM_SERVICE_URL="$(gcloud run services describe "${CONTINUUM_SERVICE}" \
   --region="${CONTINUUM_REGION}" \
@@ -108,3 +133,4 @@ echo "${CONTINUUM_SERVICE_URL}"
 curl --fail --silent --show-error "${CONTINUUM_SERVICE_URL}/api/health"
 echo
 echo "outbox relay job: ${CONTINUUM_OUTBOX_JOB}"
+echo "outbox relay schedule: ${CONTINUUM_OUTBOX_SCHEDULER} (${CONTINUUM_OUTBOX_SCHEDULE})"

@@ -63,6 +63,23 @@ printf '%s\\n' '{"status":"ok"}'
     assert "continuum-outbox-relay" in outbox_job
     assert "app.events.outbox_worker" in outbox_job
     assert "--max-retries=3" in outbox_job
+    assert "cloudscheduler.googleapis.com" in commands
+    assert "roles/run.invoker" in commands
+    scheduler = next(
+        line
+        for line in commands.splitlines()
+        if line.startswith(("scheduler jobs create http ", "scheduler jobs update http "))
+    )
+    assert "continuum-outbox-relay-schedule" in scheduler
+    assert "--schedule=*/2 * * * *" in scheduler
+    assert (
+        "--uri=https://run.googleapis.com/v2/projects/continuum-test/locations/"
+        "us-east1/jobs/continuum-outbox-relay:run"
+    ) in scheduler
+    assert (
+        "--oauth-service-account-email=continuum-runtime@continuum-test.iam.gserviceaccount.com"
+        in scheduler
+    )
 
 
 def _write_executable(path: Path, content: str) -> None:

@@ -57,6 +57,12 @@ class ValidationStage(StrEnum):
     SECURITY = "SECURITY"
 
 
+class CompilerExecutionStage(StrEnum):
+    VALIDATED = "VALIDATED"
+    REVIEWED = "REVIEWED"
+    COMPILED = "COMPILED"
+
+
 class CriticFindingType(StrEnum):
     MISSING_DEPENDENCY = "MISSING_DEPENDENCY"
     UNSUPPORTED_CLAIM = "UNSUPPORTED_CLAIM"
@@ -424,6 +430,7 @@ class CompilationResult(FrozenModel):
     compilation_hash: str | None = None
     model_metadata: ModelMetadata | None = None
     critic_model_metadata: ModelMetadata | None = None
+    executed_stages: list[CompilerExecutionStage] = Field(default_factory=list)
 
     @field_validator("compilation_hash")
     @classmethod

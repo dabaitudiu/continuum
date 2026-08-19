@@ -127,26 +127,36 @@ class OutboxSweeper:
     def sweep(self, *, mission_limit: int = 500) -> OutboxSweepResult:
         if mission_limit < 1:
             raise ValueError("mission_limit must be positive")
-        snapshots = self._repository.list_recent(mission_limit)
+        scanned_missions = 0
         pending_missions = 0
         published_messages = 0
         failed: list[str] = []
-        for snapshot in snapshots:
-            if not any(message.published_at is None for message in snapshot.outbox):
-                continue
-            pending_missions += 1
-            try:
-                published_messages += len(
-                    self._relay.drain(snapshot.mission.mission_id)
-                )
-            except Exception:
-                failed.append(snapshot.mission.mission_id)
-                LOGGER.exception(
-                    "independent outbox sweep failed; messages remain pending",
-                    extra={"mission_id": snapshot.mission.mission_id},
-                )
+        after_mission_id: str | None = None
+        while True:
+            snapshots = self._repository.list_pending_outbox(
+                limit=mission_limit,
+                after_mission_id=after_mission_id,
+            )
+            if not snapshots:
+                break
+            scanned_missions += len(snapshots)
+            pending_missions += len(snapshots)
+            for snapshot in snapshots:
+                try:
+                    published_messages += len(
+                        self._relay.drain(snapshot.mission.mission_id)
+                    )
+                except Exception:
+                    failed.append(snapshot.mission.mission_id)
+                    LOGGER.exception(
+                        "independent outbox sweep failed; messages remain pending",
+                        extra={"mission_id": snapshot.mission.mission_id},
+                    )
+            after_mission_id = snapshots[-1].mission.mission_id
+            if len(snapshots) < mission_limit:
+                break
         return OutboxSweepResult(
-            scanned_missions=len(snapshots),
+            scanned_missions=scanned_missions,
             pending_missions=pending_missions,
             published_messages=published_messages,
             failed_mission_ids=failed,
