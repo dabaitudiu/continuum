@@ -236,18 +236,25 @@ class ReadOnlySourceTools:
         )
 
     def _catalog(self) -> list[ResolvedSource]:
-        try:
-            catalog = self._context.source_registry.catalog(
-                self._context.owner_scope,
-                self._context.world_snapshot_id,
-            )
-        except SourceRegistryError as error:
-            raise SourceToolError(error.code, error.message) from error
-        return [
-            source
-            for source in catalog
-            if str(source.ref) in self._context.allowed_source_refs
-        ]
+        catalog: list[ResolvedSource] = []
+        for raw_ref in sorted(self._context.allowed_source_refs):
+            try:
+                catalog.append(
+                    self._context.source_registry.resolve(
+                        SourceRef.parse(raw_ref),
+                        self._context.world_snapshot_id,
+                        request_scope=self._context.owner_scope,
+                        allow_historical=self._context.allow_historical,
+                    )
+                )
+            except (SourceRegistryError, ValueError) as error:
+                if isinstance(error, SourceRegistryError):
+                    raise SourceToolError(error.code, error.message) from error
+                raise SourceToolError(
+                    "SOURCE_TOOL_REF_INVALID",
+                    f"invalid source ref: {raw_ref}",
+                ) from error
+        return catalog
 
     def _resolve_allowed(self, raw_ref: str) -> ResolvedSource:
         if raw_ref not in self._context.allowed_source_refs:

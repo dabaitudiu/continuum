@@ -1,0 +1,273 @@
+from __future__ import annotations
+
+from collections import defaultdict
+from enum import StrEnum
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.compiler.benchmark.corpus import BenchmarkDomain
+
+
+class FrozenModel(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+class EvaluationRecord(FrozenModel):
+    case_id: str = Field(min_length=1)
+    domain: BenchmarkDomain
+    required_critical_refs: tuple[str, ...] = ()
+    known_source_refs: tuple[str, ...] = ()
+    expected_blocking_contradictions: tuple[tuple[str, str], ...] = ()
+    expected_stale_after_mutation: bool
+    predicted_critical_refs: tuple[str, ...] = ()
+    accepted_canonical_refs: tuple[str, ...] = ()
+    detected_contradictions: tuple[tuple[str, str], ...] = ()
+    predicted_stale_after_mutation: bool
+    repeat_compilation_hashes: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def _validate_unique_sets(self) -> EvaluationRecord:
+        for name in (
+            "required_critical_refs",
+            "known_source_refs",
+            "predicted_critical_refs",
+            "accepted_canonical_refs",
+        ):
+            values = getattr(self, name)
+            if len(values) != len(set(values)):
+                raise ValueError(f"{name} must be unique")
+        return self
+
+
+class MetricCounts(FrozenModel):
+    recovered_critical: int = Field(ge=0)
+    required_critical: int = Field(ge=0)
+    predicted_critical: int = Field(ge=0)
+    unsupported_accepted: int = Field(ge=0)
+    accepted_canonical: int = Field(ge=0)
+    detected_blocking_contradictions: int = Field(ge=0)
+    expected_blocking_contradictions: int = Field(ge=0)
+    stale_escapes: int = Field(ge=0)
+    expected_stale: int = Field(ge=0)
+    unnecessary_invalidations: int = Field(ge=0)
+    expected_unchanged: int = Field(ge=0)
+    deterministic_records: int = Field(ge=0)
+    repeated_records: int = Field(ge=0)
+
+
+class MetricSnapshot(FrozenModel):
+    critical_recall: float = Field(ge=0.0, le=1.0)
+    critical_precision: float = Field(ge=0.0, le=1.0)
+    unsupported_reference_rate: float = Field(ge=0.0, le=1.0)
+    contradiction_recall: float = Field(ge=0.0, le=1.0)
+    stale_escape_rate: float = Field(ge=0.0, le=1.0)
+    unnecessary_invalidation_rate: float = Field(ge=0.0, le=1.0)
+    compilation_determinism: float = Field(ge=0.0, le=1.0)
+    domain_critical_recall: dict[BenchmarkDomain, float]
+    counts: MetricCounts
+
+
+class GateComparison(StrEnum):
+    MINIMUM = "MINIMUM"
+    MAXIMUM_EXCLUSIVE = "MAXIMUM_EXCLUSIVE"
+    EXACT = "EXACT"
+
+
+class GateRow(FrozenModel):
+    metric: str
+    value: float
+    target: float
+    comparison: GateComparison
+    passed: bool
+
+
+class GateResult(FrozenModel):
+    passed: bool
+    rows: list[GateRow]
+
+
+def measure(records: list[EvaluationRecord]) -> MetricSnapshot:
+    recovered_critical = 0
+    required_critical = 0
+    predicted_critical = 0
+    unsupported_accepted = 0
+    accepted_canonical = 0
+    detected_blocking_contradictions = 0
+    expected_blocking_contradictions = 0
+    stale_escapes = 0
+    expected_stale = 0
+    unnecessary_invalidations = 0
+    expected_unchanged = 0
+    deterministic_records = 0
+    repeated_records = 0
+    domain_recovered: defaultdict[BenchmarkDomain, int] = defaultdict(int)
+    domain_required: defaultdict[BenchmarkDomain, int] = defaultdict(int)
+
+    for record in records:
+        required = set(record.required_critical_refs)
+        predicted = set(record.predicted_critical_refs)
+        accepted = set(record.accepted_canonical_refs)
+        known = set(record.known_source_refs)
+        recovered = len(required & predicted)
+        recovered_critical += recovered
+        required_critical += len(required)
+        predicted_critical += len(predicted)
+        unsupported_accepted += len(accepted - known)
+        accepted_canonical += len(accepted)
+        domain_recovered[record.domain] += recovered
+        domain_required[record.domain] += len(required)
+
+        expected_pairs = {
+            _pair(source_a, source_b)
+            for source_a, source_b in record.expected_blocking_contradictions
+        }
+        detected_pairs = {
+            _pair(source_a, source_b)
+            for source_a, source_b in record.detected_contradictions
+        }
+        detected_blocking_contradictions += len(expected_pairs & detected_pairs)
+        expected_blocking_contradictions += len(expected_pairs)
+
+        if record.expected_stale_after_mutation:
+            expected_stale += 1
+            if not record.predicted_stale_after_mutation:
+                stale_escapes += 1
+        else:
+            expected_unchanged += 1
+            if record.predicted_stale_after_mutation:
+                unnecessary_invalidations += 1
+
+        if len(record.repeat_compilation_hashes) >= 2:
+            repeated_records += 1
+            if len(set(record.repeat_compilation_hashes)) == 1:
+                deterministic_records += 1
+
+    counts = MetricCounts(
+        recovered_critical=recovered_critical,
+        required_critical=required_critical,
+        predicted_critical=predicted_critical,
+        unsupported_accepted=unsupported_accepted,
+        accepted_canonical=accepted_canonical,
+        detected_blocking_contradictions=detected_blocking_contradictions,
+        expected_blocking_contradictions=expected_blocking_contradictions,
+        stale_escapes=stale_escapes,
+        expected_stale=expected_stale,
+        unnecessary_invalidations=unnecessary_invalidations,
+        expected_unchanged=expected_unchanged,
+        deterministic_records=deterministic_records,
+        repeated_records=repeated_records,
+    )
+    return MetricSnapshot(
+        critical_recall=_ratio(recovered_critical, required_critical, empty=1.0),
+        critical_precision=_ratio(
+            recovered_critical,
+            predicted_critical,
+            empty=1.0,
+        ),
+        unsupported_reference_rate=_ratio(
+            unsupported_accepted,
+            accepted_canonical,
+            empty=0.0,
+        ),
+        contradiction_recall=_ratio(
+            detected_blocking_contradictions,
+            expected_blocking_contradictions,
+            empty=1.0,
+        ),
+        stale_escape_rate=_ratio(stale_escapes, expected_stale, empty=0.0),
+        unnecessary_invalidation_rate=_ratio(
+            unnecessary_invalidations,
+            expected_unchanged,
+            empty=0.0,
+        ),
+        compilation_determinism=_ratio(
+            deterministic_records,
+            repeated_records,
+            empty=0.0,
+        ),
+        domain_critical_recall={
+            domain: _ratio(
+                domain_recovered[domain],
+                domain_required[domain],
+                empty=1.0,
+            )
+            for domain in domain_required
+        },
+        counts=counts,
+    )
+
+
+def evaluate_gate(metrics: MetricSnapshot) -> GateResult:
+    rows = [
+        _minimum("critical_recall", metrics.critical_recall, 0.92),
+        _minimum("critical_precision", metrics.critical_precision, 0.82),
+        _exact(
+            "unsupported_reference_rate",
+            metrics.unsupported_reference_rate,
+            0.0,
+        ),
+        _minimum("contradiction_recall", metrics.contradiction_recall, 0.90),
+        _maximum_exclusive("stale_escape_rate", metrics.stale_escape_rate, 0.02),
+        _maximum_exclusive(
+            "unnecessary_invalidation_rate",
+            metrics.unnecessary_invalidation_rate,
+            0.08,
+        ),
+        _exact("compilation_determinism", metrics.compilation_determinism, 1.0),
+    ]
+    rows.extend(
+        _minimum(
+            f"domain_critical_recall:{domain.value}",
+            metrics.domain_critical_recall.get(domain, 0.0),
+            0.88,
+        )
+        for domain in BenchmarkDomain
+    )
+    return GateResult(passed=all(row.passed for row in rows), rows=rows)
+
+
+def _ratio(numerator: int, denominator: int, *, empty: float) -> float:
+    return empty if denominator == 0 else numerator / denominator
+
+
+def _pair(source_a: str, source_b: str) -> tuple[str, str]:
+    return tuple(sorted((source_a, source_b)))  # type: ignore[return-value]
+
+
+def _minimum(metric: str, value: float, target: float) -> GateRow:
+    return GateRow(
+        metric=metric,
+        value=value,
+        target=target,
+        comparison=GateComparison.MINIMUM,
+        passed=value >= target,
+    )
+
+
+def _maximum_exclusive(metric: str, value: float, target: float) -> GateRow:
+    return GateRow(
+        metric=metric,
+        value=value,
+        target=target,
+        comparison=GateComparison.MAXIMUM_EXCLUSIVE,
+        passed=value < target,
+    )
+
+
+def _exact(metric: str, value: float, target: float) -> GateRow:
+    return GateRow(
+        metric=metric,
+        value=value,
+        target=target,
+        comparison=GateComparison.EXACT,
+        passed=value == target,
+    )
+
+
+__all__ = [
+    "EvaluationRecord",
+    "GateResult",
+    "MetricSnapshot",
+    "evaluate_gate",
+    "measure",
+]

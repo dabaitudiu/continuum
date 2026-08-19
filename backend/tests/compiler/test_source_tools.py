@@ -197,3 +197,65 @@ def test_catalog_query_is_bounded() -> None:
         tools.search_source_catalog("x" * 501)
 
     assert raised.value.code == "SOURCE_TOOL_QUERY_INVALID"
+
+
+def test_explicit_historical_allowlist_entry_is_visible_to_model_inventory() -> None:
+    registry = InMemorySourceRegistry()
+    artifact = Artifact(
+        artifact_id="policy:versioned",
+        artifact_type=ArtifactType.POLICY,
+        logical_key="versioned-policy",
+        owner_scope=SCOPE,
+        trust_class=TrustClass.AUTHORITATIVE,
+        source_type=SourceType.POLICY,
+        authority_rank=100,
+        created_at=NOW,
+    )
+    registry.add_artifact(artifact)
+    revisions = []
+    for label, value in (("v12", "optional"), ("v13", "required")):
+        ingested = ingest_json_revision(
+            artifact,
+            revision_label=label,
+            value={"training": value},
+            created_at=NOW,
+            valid_from=NOW,
+            parser_version="json-v1",
+        )
+        registry.add_revision(ingested.revision)
+        registry.add_representation(
+            ingested.representation,
+            ingested.fragments,
+            fragment_values=ingested.fragment_values,
+        )
+        revisions.append(ingested)
+    current = revisions[1]
+    registry.add_world_snapshot(
+        WorldSnapshot(
+            world_snapshot_id="world:versioned",
+            owner_scope=SCOPE,
+            current_revisions={artifact.artifact_id: current.revision.revision_id},
+            current_representations={
+                current.revision.revision_id: current.representation.representation_id,
+            },
+            created_at=NOW,
+        )
+    )
+    refs = frozenset(
+        str(revision.fragment_at("$.training").source_ref())
+        for revision in revisions
+    )
+    tools = ReadOnlySourceTools(
+        CompilationContext(
+            source_registry=registry,
+            world_snapshot_id="world:versioned",
+            owner_scope=SCOPE,
+            allowed_source_refs=refs,
+            risk_class=RiskClass.HIGH,
+            allow_historical=True,
+        )
+    )
+
+    inventory = tools.list_source_inventory()
+
+    assert {source.revision_label for source in inventory} == {"v12", "v13"}
