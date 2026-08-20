@@ -50,7 +50,7 @@ The module must support:
 14. Selective invalidation plus zero-fan-out ChangeSet publication/per-envelope authorization without async stale window.
 15. Method-blind annotations、K6 generality metrics、paired adversarial/mutation outcomes and external blind set.
 16. Live Gemini DEV before blind reveal and Gemini-primary blind evaluation；mock-only validation is insufficient.
-17. First-class exact upstream Decision proof and transitive Decision→Decision invalidation.
+17. First-class exact upstream Decision proof via `downstream --REQUIRES--> upstream` and transitive reverse-index invalidation.
 18. Governed material-read closure bound to one executable world/semantic sequence/component epoch.
 19. Proposal-admission results never author or rewrite the immutable business outcome.
 20. Side Effect Ledger final reauthorization closes the pre-external-call TOCTOU window.
@@ -58,6 +58,8 @@ The module must support:
 20. Disjoint input rejection、execution failure and semantic business-result taxonomy.
 21. Explicit direct same-predicate contradiction scope and registered/fail-closed cross-predicate relations.
 22. Operational success/block/calls/tokens/latency/cost gate with blocked missions retained.
+23. Closed, versioned and acyclic content-addressed identity DAG；immutable Side Effect intent core with append-only transitions.
+24. Well-founded exact-ID and supersession-lineage Decision proof graphs；D→D=`REQUIRES`, D→Action/SideEffect=`AUTHORIZES`.
 
 ## Non-goals
 
@@ -90,6 +92,9 @@ This module does **not** own:
 13. Compiler-derived records never join their input snapshot；Runtime denies at expiry、invalid upstream or any relevant intervening executable ChangeSet regardless of Decision-row lag.
 14. An unversioned、future、mixed or bypass material observation can never become canonical proof.
 15. Only independently CONFIRMED model-interpreted enterprise/applicability proof becomes canonical CRITICAL；verifier failure never becomes business DENY.
+16. `GovernedObservationSet` cannot hash a proposal back-reference；`SourceUniverseSnapshot` cannot hash a descendant read view；the compilation envelope hashes only `CompilationCore`.
+17. Runtime acceptance rejects self、exact-ID、two-node and supersession-lineage Decision cycles before any canonical mutation；upstream Decisions must already be accepted immutable nodes.
+18. Side Effect status、execution receipts and results never mutate `intent_core_hash`；only a verified contiguous transition chain may advance its CAS head.
 
 ## Why this module is competition-worthy
 

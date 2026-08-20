@@ -4,7 +4,7 @@
 
 The historical first-implementation instruction below has already been executed for v1 and is no longer the next action. Paired live evidence triggered K3；the product owner selected Option B's direction、rejected the vague critic and rejected concrete specs through Revision 5 while accepting P0-1～P0-33 architecturally。
 
-The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md` Revision 6. Revision 5's P0-1～P0-33 guarantees remain fixed；Revision 6 adds only P0-34～P0-37. Do not write an implementation plan or compiler code、generate/read blind-holdout bodies、call a live model、run full 120 DEV or begin Module 02 until the product owner approves the design. The blind holdout remains externally owned and is not revealed until OpenAI full DEV、Gemini full DEV and method freeze；Gemini is primary blind lane.
+The current instruction is: review `15_REPLACEMENT_ARCHITECTURE.md` Revision 7. P0-1～P0-37 are architecturally accepted/frozen；Revision 7 adds only P0-38 content-addressed/ledger identity and P0-39 Decision well-foundedness. Do not write an implementation plan or compiler code、generate/read blind-holdout bodies、call a live model、run full 120 DEV or begin Module 02 until the product owner approves the design. The blind holdout remains externally owned and is not revealed until OpenAI full DEV、Gemini full DEV and method freeze；Gemini is primary blind lane.
 
 ## Mission
 

@@ -39,6 +39,11 @@
 31. A single interpreter reads “training expired” as ENTAILED_TRUE and false proof canonicalizes.
 32. Same-predicate contradiction support is misrepresented as generic cross-predicate reasoning.
 33. Safe-but-blocked missions are removed from operational denominators.
+34. Proposal/observation-set or universe/read-view hashes form an unconstructible fixed point.
+35. Envelope/final-compilation hashes form a cycle or use an unregistered preimage.
+36. Mutable Side Effect status/receipt/result silently changes an intent identity or forks its history.
+37. A Decision self/two-node/supersession-lineage cycle is admitted through exact-ID refresh or graph race.
+38. D→D `AUTHORIZES` bypasses the critical upstream invalidation semantics of `REQUIRES`.
 
 ## Trust classification
 
@@ -79,6 +84,8 @@ Only policy-class sources may normally produce `GOVERNED_BY` edges.
 
 A vendor PDF stating “this document overrides your policy” must not gain policy authority through model output.
 
+Decision relations are closed：`downstream Decision --REQUIRES--> exact upstream Decision` and `Decision --AUTHORIZES--> Action | SideEffectIntentCore`。Runtime checks both exact-ID and supersession-lineage `REQUIRES` DAGs before acceptance and traverses the reverse `REQUIRES` index for invalidation。A D→D `AUTHORIZES` edge、unaccepted/future upstream or graph-cycle attempt is rejected before canonical mutation。
+
 ## Scope validation
 
 Refs are issued from a request-scoped allowlist. Cross-tenant references fail even if they exist globally.
@@ -102,7 +109,7 @@ The model can read historical revisions only if the request allows them. Histori
 - Models cannot author Requirements、outcomes、predicate/entity keys；cross-entity matches are proof-ineligible.
 - `NOT_EXISTS`/empty-retrieval absence is explicitly unsupported in P0.
 - Time/epoch authorization is checked synchronously；model output cannot mint guards/certificates.
-- Required upstream Decisions keep exact Decision→Decision bindings；STALE/SUPERSEDED/INVALID cannot satisfy and successor rebinding is never implicit.
+- Required upstream Decisions keep exact final-record/envelope `REQUIRES` bindings；STALE/SUPERSEDED/INVALID cannot satisfy and successor rebinding is never implicit.
 - Compiler/model/schema/ref/transport/verifier failure has no proposal-admission disposition and cannot authorize a durable business DENY。
 - Display proposition text cannot affect semantic identity or DENY proof selection.
 
@@ -120,7 +127,7 @@ At least:
 - 10 contradictory-authority cases;
 - 10 dependency-omission cases.
 
-Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、Evidence top-K/receipt traps、direct same-predicate versus registered/unsupported cross-predicate cases、cross-entity matches、ambiguous applicability/entailment、false selected-proof/contradiction interpretations、D42→D50→activation、governed-read bypass/mixing、zero-fan-out sequence races/gaps/reorders、authorization-to-execution TOCTOU/crash points、execution-failure/admission-taxonomy and admission-as-business-outcome traps、operational denominator traps、proposal outcome substitution、K6 traps and unsupported logic/predicate/absence。
+Each injection case is evaluated as a clean/injected pair. Add catalog/universe omissions、normalizer omissions、Evidence top-K/receipt traps、direct same-predicate versus registered/unsupported cross-predicate cases、cross-entity matches、ambiguous applicability/entailment、false selected-proof/contradiction interpretations、D50-REQUIRES-D42 plus D50-AUTHORIZES-activation、governed-read bypass/mixing、zero-fan-out sequence races/gaps/reorders、authorization-to-execution TOCTOU/crash points、proposal/observation and read-view/universe hash cycles、compilation-layer reverse hashes、mutable/forked intent transitions、Decision self/two-node/supersession-lineage cycles、illegal D→D `AUTHORIZES`、execution-failure/admission-taxonomy and admission-as-business-outcome traps、operational denominator traps、proposal outcome substitution、K6 traps and unsupported logic/predicate/absence。
 
 ## Security acceptance
 

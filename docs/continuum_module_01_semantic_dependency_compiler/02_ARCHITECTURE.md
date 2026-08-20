@@ -2,15 +2,16 @@
 
 ## Status
 
-The product owner selected **Option B's direction** and rejected concrete specifications through Revision 5 while accepting P0-1～P0-33 architecturally. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 6 is normative for the four P0-34～P0-37 amendments and all preserved contracts.
+The product owner selected **Option B's direction** and architecturally accepted/froze P0-1～P0-37 after Revision 6. The former `DecisionDraft → validator → vague critic → canonicalizer` architecture remains rejected after K3. This document is the compiler topology overview；[15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md) Revision 7 is normative only for P0-38/P0-39 and preserves all frozen contracts.
 
-Revision 6 is presented for product-owner review and is not approved、planned or implemented. Module 01 remains `REDESIGN REQUIRED`.
+Revision 7 is presented for product-owner review and is not approved、planned or implemented. Module 01 remains `REDESIGN REQUIRED`.
 
 ## Component topology
 
 ```mermaid
 flowchart TD
-    A[Proposal + Entity + Governed Observations + Upstream Decisions] --> G[0G. Executable Read / Epoch Fence]
+    A[Universe + ReadView + Observations + Proposal + Entity + Upstream Decisions] --> H0[0H. Hash Registry / Input DAG]
+    H0 --> G[0G. Executable Read / Epoch Fence]
     G --> V[0I. Trusted Input Validation]
     V --> D0[0D. Exact Upstream Decision Binding]
     D0 --> U[0U. Authoritative SourceUniverseSnapshot]
@@ -30,11 +31,13 @@ flowchart TD
     PV --> PR[4R. Remove / Reselect / Re-reduce]
     PR --> I[4B. Confirmed Proof + Contradiction + Completeness + Temporal Guards]
     I --> J[5. Deterministic Proposal Acceptance Gate]
-    J -->|ACCEPTED| K[Deterministic Canonicalizer]
-    J -->|NOT ADMITTED / ADMISSION REVIEW| L[Immutable non-admitted CompilationResult]
-    K --> M[Immutable accepted CompilationResult]
-    M --> N[RuntimeAcceptanceService]
-    N --> B[Ordered ChangeSet Publication / Envelope Authorization]
+    J --> C0[Seal CompilationCore]
+    C0 -->|NOT ADMITTED / FAILED / BLOCKED| L[FinalCompilationRecord without envelope]
+    C0 -->|ACCEPTED| VE[Seal Envelope → Justification → FinalRecord]
+    VE --> N[RuntimeAcceptance: hash DAG + Decision cycle check]
+    N -->|rejected| NR[No canonical mutation]
+    N -->|acyclic| CD[Append canonical Decision + receipt]
+    CD --> B[Ordered ChangeSet Publication / Envelope Authorization]
     B --> S[Side Effect Ledger Final Reauthorization]
     S --> O[Continuum canonical Runtime / External Adapter]
 ```
@@ -69,10 +72,13 @@ Trusted-input rejection、execution failure and semantic proposal non-admission 
 - finite temporal validity horizons for time-sensitive proofs and explicit P0 `NOT_EXISTS` non-support；
 - semantic-sequence validity envelope / contiguous ChangeSet-range authorization contract；irrelevance certificates are optional caches；
 - complete governed-observation closure and executable read/epoch fencing；
-- exact `UpstreamDecisionBinding` and canonical Decision→Decision reachability；
+- exact `UpstreamDecisionBinding`、acyclic `downstream --REQUIRES--> upstream` proof and reverse invalidation reachability；
 - independent disposition-critical verification for selected proof/applicability and both sides of critical direct conflicts；
 - executable ChangeSet log + per-envelope authorization intersection without fleet-wide writes；
 - immutable Runtime acceptance under exact proposal/entity/mission/world/universe/policy/derived-artifact binding.
+- closed `continuum-hash-v1` preimage registry and acyclic construction order；no observation/proposal、universe/read-view or compilation/envelope fixed point；
+- exact-ID plus supersession-lineage Decision DAG checks before acceptance；D→D=`REQUIRES`, D→Action/SideEffect=`AUTHORIZES`；
+- immutable `SideEffectIntentCore` plus append-only transition hash chain and non-content-addressed CAS head；
 
 ### Probabilistic boundary
 
@@ -84,9 +90,9 @@ Model output is immutable analysis IR only. It cannot author business outcome、
 
 ## Compiler stages
 
-### Stage 0G/0I/0D/0U/0N/0S — Governed input、upstream Decisions、universe、normalization and selection
+### Stage 0H/0G/0I/0D/0U/0N/0S — Hash DAG、governed input、upstream Decisions、universe、normalization and selection
 
-Validate one executable governed read/epoch closure、proposal/entity inputs and exact upstream Decision envelopes/status；then validate universe、normalization、selection and selective guards. Mixed/future/bypass observations are input rejection；a stale/superseded upstream cannot satisfy proof and is never auto-rebound。
+First recompute every registered v7 digest/ID and validate the constructible input DAG。Then validate one executable governed read/epoch closure、proposal/entity inputs and exact upstream Decision final records/envelopes/status；then validate universe completeness、normalization、selection and selective guards. Mixed/future/bypass observations、unregistered preimages and descendant back-references are input rejection；a stale/superseded upstream cannot satisfy proof and is never auto-rebound。
 
 ### Stage 1A/1B — Deterministic Requirement Decomposition and Accounting
 
@@ -158,9 +164,13 @@ Claim(derived requirement)
   --REQUIRES[CRITICAL]-->
 Decision
 
-UpstreamDecision(exact envelope)
-  --REQUIRES / AUTHORIZES[CRITICAL]-->
 DownstreamDecision
+  --REQUIRES[CRITICAL]-->
+UpstreamDecision(exact final record + envelope)
+
+Decision
+  --AUTHORIZES[CRITICAL]-->
+Action / SideEffectIntentCore
 
 CompilerPolicyArtifact / selective CoverageGuard
   --GOVERNED_BY[CRITICAL]-->
@@ -175,10 +185,10 @@ DecisionValidityEnvelope(validated semantic sequence + component epoch)
 Decision
 ```
 
-Support and later invalidation use graph reachability. Existing Source → Claim → Claim → Decision semantics remain valid, and contract-required upstream proof is a distinct first-class Decision → Decision edge. Canonical state contains independently verified selected proof、applicability/upstream guards and materially participating policy/coverage semantic keys；full manifests/receipts remain immutable audit derivation. APPROVE uses all root closures；DENY uses one stable failed path selected without proposition text. No redundant direct source edge is required.
+Support and later invalidation use graph reachability. Existing Source → Claim → Claim → Decision semantics remain valid, and contract-required upstream proof is the distinct edge `downstream --REQUIRES--> upstream`; invalidation traverses its reverse index. Exact-ID and lineage projections are both acyclic before acceptance. Canonical state contains independently verified selected proof、applicability/upstream guards and materially participating policy/coverage semantic keys；full manifests/receipts remain immutable audit derivation. APPROVE uses all root closures；DENY uses one stable failed path selected without proposition text. No redundant direct source edge is required.
 
 ## Integration boundary
 
-The compiler produces an immutable `CompilationResult`. `RuntimeAcceptanceService` alone may translate `proposal_admission_disposition=ACCEPTED` into Runtime graph mutations, after checking exact proposal/entity/observation/upstream/mission/world/universe/policy hashes、clock horizon and derived envelope；the canonical outcome remains the proposal's exact value. `PublishEpochTxn` assigns the next owner-scope `semantic_sequence` and advances the complete ChangeSet/read fence without Decision fan-out. The Side Effect Ledger's `ReauthorizeForExecutionTxn` checks every intervening ordered ChangeSet/upstream/horizon and atomically transitions `INTENDED→EXECUTING` before—but not atomically with—the external call. Runtime owns lifecycle、stale projection、action blocking、idempotency and reconciliation.
+The compiler produces immutable layers `CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`. `RuntimeAcceptanceService` alone may translate `proposal_admission_disposition=ACCEPTED` into Runtime graph mutations, after checking the closed hash DAG、exact proposal/entity/observation/upstream/mission/world/universe/policy hashes、clock horizon、derived envelope and both Decision DAG projections；the canonical outcome remains the proposal's exact value. `PublishEpochTxn` assigns the next owner-scope `semantic_sequence` and advances the complete ChangeSet/read fence without Decision fan-out. The Side Effect Ledger's `ReauthorizeForExecutionTxn` checks every intervening ordered ChangeSet/upstream/horizon and atomically appends the `EXECUTING` transition before—but not atomically with—the external call. Runtime owns lifecycle、stale projection、action blocking、idempotency and reconciliation.
 
 The old critic and reasoner-only routes remain only as explicit benchmark baselines during migration. Neither is a production fallback for the replacement pipeline.

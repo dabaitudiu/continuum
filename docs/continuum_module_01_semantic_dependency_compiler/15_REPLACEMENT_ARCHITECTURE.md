@@ -3,8 +3,8 @@
 ## 文档状态
 
 - Product owner 决策：**Option B 的方向已批准**。
-- Product owner 评审：第一版及 Revision 2～5 的具体规范均 **REJECTED**；Option B 方向仍获批准。Revision 5 的 P0-1～P0-33 已获架构层认可，必须保持。
-- 本文状态：**REVISION 6 — FOR PRODUCT-OWNER REVIEW，尚未批准实施或实施规划**。
+- Product owner 评审：第一版及 Revision 2～6 的具体规范均 **REJECTED**；Option B 方向仍获批准。P0-1～P0-37 已获架构层认可并冻结。
+- 本文状态：**REVISION 7 — FOR PRODUCT-OWNER REVIEW，尚未批准实施或实施规划**。
 - Module 01：**REDESIGN REQUIRED**。
 - 当前 vague critic：已被 K3 与产品决策否决，不得成为生产 fallback。
 - Option A（reasoner-only）只保留为 ablation baseline；Option C 不执行。
@@ -37,6 +37,8 @@ Revision 4 保留 P0-1～P0-19，并作出以下单一权威选择：domain agen
 Revision 5 保留 P0-1～P0-27，并补齐六个边界：upstream Continuum Decision 是一等 proof/dependency；所有 material reads 都绑定 executable snapshot/epoch；epoch publication 以 `SemanticChangeSet` 为真相且不 fan-out 写所有 Decision；execution failure 与 business non-acceptance 分离；selected enterprise proof 经过窄化独立复核；P0 contradiction 只保证同一 normalized predicate/entity/target 的直接冲突，cross-predicate invariants 必须预注册。Operational gate 同时衡量安全、成功执行率、context block、调用、Token、延迟与成本。
 
 Revision 6 不重写上述设计，只修正四个剩余边界：semantic result 表达 **proposal admission** 而不是 Continuum 自创的业务处置；Side Effect Ledger 在 `INTENDED → EXECUTING` 的原子转换中执行最终重授权，外部调用不被伪称为数据库事务的一部分；所有可直接改变 admission disposition 的预选 model semantic claim（selected proof、applicability guard、critical direct-contradiction 两侧）进入统一窄化复核；每个 owner scope 增加严格单调 `semantic_sequence`，作为 ChangeSet range、重放和授权的全序。
+
+Revision 7 冻结 P0-1～P0-37，只关闭两个构造性缺口：所有内容寻址对象必须服从一个显式、可拓扑排序的 hash DAG，mutable Side Effect Ledger 必须拆为 immutable intent core 与 append-only transition chain；accepted Decision proof graph 及其 lineage projection 必须 well-founded，D→D 只允许 `REQUIRES`，D→Action/SideEffect 才允许 `AUTHORIZES`。
 
 ## 架构不变量
 
@@ -75,6 +77,10 @@ Revision 6 不重写上述设计，只修正四个剩余边界：semantic result
 33. Semantic authorization 与 Side Effect Ledger 的 `INTENDED → EXECUTING` 转换在同一 conditional transaction 内线性化；外部网络调用不属于该事务。进入 `EXECUTING` 前的相关变化取消 intent，进入后使用 idempotency/reconciliation 处理不确定结果。
 34. Any preselected model semantic observation that can directly change final proposal admission is independently verified through the same minimal three-valued contract；unconfirmed contradiction observations cannot become confirmed contradictions。
 35. Every executable semantic publication in one owner scope has exactly one contiguous monotonic `semantic_sequence`。Epoch component counters explain **what** changed；the sequence defines **when** and is the only ChangeSet range-order key。
+36. Every content-addressed identity is derived by the frozen `continuum-hash-v1` profile from an explicitly registered preimage；no preimage may contain its own digest or a descendant digest, and the complete dependency graph must be acyclic。
+37. Side-effect intent identity is immutable。Mutable status、receipts、attempts and external results exist only in an append-only hash chain plus a CAS ledger head；there is no hash over a mutating intent record。
+38. The accepted exact-ID Decision `REQUIRES` graph and its supersession-lineage projection are both acyclic。A candidate may require only already-accepted immutable upstream Decisions, and Runtime acceptance rejects self/cycle insertion before canonical mutation。
+39. Canonical relation semantics are fixed：`downstream Decision --REQUIRES--> upstream Decision`；`Decision --AUTHORIZES--> Action | SideEffectIntentCore`。Invalidation follows the reverse index of `REQUIRES`；`AUTHORIZES` is not a D→D relation。
 
 ## Artifact namespaces and trust boundary
 
@@ -111,6 +117,227 @@ CompilerDerivedArtifact
 - Continuum 可证明：枚举、revision/hash、namespace/boundary 与 registry snapshot 一致；selection 只使用所声明 universe/policy；每个 fragment/rule/partition 被恰好核算；derived artifact 与 exact inputs/policies/hash 绑定；accepted proof 只引用 validated immutable identities。
 - 外部 attestation 缺失、过期或不覆盖所需 namespace 时，Continuum 只能返回 `RUN_BLOCKED`，不能把局部一致性升级为 universe completeness。
 
+## Content-addressed identity and hash DAG（P0-38）
+
+### Frozen hash profile
+
+All Continuum-owned content identities in this specification use one profile：
+
+```text
+hash_profile = continuum-hash-v1
+H(type_tag, schema_version, payload) =
+  SHA-256(
+    UTF8("continuum/hash/v1\n") ||
+    deterministic-CBOR([type_tag, schema_version, payload])
+  )
+```
+
+`deterministic-CBOR` means RFC 8949 deterministic encoding with no floats、indefinite-length items or non-canonical aliases. Integers retain their exact signed/unsigned value；money/rates are normalized base-10 decimal strings at the scale declared by their schema；text is NFC UTF-8；timestamps are UTC RFC-3339 strings with exactly microsecond precision；byte strings remain bytes. A field declared as a set is sorted by its stable identity/hash；a field declared as an ordered sequence preserves order. Map keys use deterministic-CBOR ordering。Null and absent are distinct；a schema must choose one。Changing field meaning、canonicalization、set/sequence status or hash algorithm requires a new `schema_version` or hash profile。
+
+For a content-addressed object `X`, `x_hash = H(...)` and `x_id = "<type-tag>:<schema-version>:sha256:" + lower_hex(x_hash)`。The ID and hash are two encodings of the same digest；both are excluded from their own preimage and must cross-check exactly。Signature bytes、storage location、database revision、mutable projection status、wall-clock ingestion time and transport metadata never enter an object preimage unless the registry below explicitly names them。A detached `SignatureRecord` signs `(content_id, content_hash, signer_id, key_id, algorithm)` and points **to** the content object；the content object never points to the signature digest。Opaque `request_correlation_id`、`request_id` and `mission_id` may correlate records but are not content identities and cannot be dereferenced as proof。
+
+External enterprise bytes are roots, not Continuum-derived records。Their `content_hash` is computed by the versioned representation policy named by `representation_id` over exactly the immutable canonical representation bytes；that policy/version is part of every consuming preimage。A hash whose `type_tag`/version/preimage row is not registered below is `UNREGISTERED_HASH_PREIMAGE` and cannot reach canonical acceptance。
+
+In the tables below, `payload fields` is exhaustive。`all declared fields except …` is a closed expansion of the corresponding typed contract in this document；adding any field requires a schema-version bump。Every referenced content ID is accompanied by or resolves to its matching digest before its parent is hashed；a mutable lookup key alone is never a hash dependency。
+
+### Hash-preimage registry
+
+Trusted-input and policy layer：
+
+| Output / `(type_tag, schema_version)` | Exact payload fields |
+|---|---|
+| `context_hash` / `DecisionEntityContext,v7` | `decision_type, owner_scope, role_bindings(sorted by semantic_role), typed_context_values, input_world_snapshot_id, issuer_id, signer_id, issued_at` |
+| `completeness_attestation_hash` / `UniverseCompletenessAttestation,v7` | `owner_scope, authority_id, authoritative_catalog_ref, namespaces(sorted), registry_version, connector_versions(sorted), sync_watermarks(sorted), index_versions(sorted), issued_at, valid_through`；it attests the pre-existing catalog/fence, never a `SourceUniverseSnapshot` ID/hash |
+| `snapshot_hash` / `SourceUniverseSnapshot,v7` | `owner_scope, semantic_sequence, executable_semantic_epoch, executable_world_snapshot_id, authoritative_catalog_ref, namespaces(sorted), enumerated_artifacts(sorted by artifact_id/revision_id/representation_id/content_hash/namespace), registry_version, connector_versions(sorted), sync_watermarks(sorted), index_versions(sorted), completeness_authority_id, completeness_attestation_id/hash, coverage_status`；**no `GovernedReadView` ref/hash** |
+| `bundle_hash` / `CompilerPolicyBundle,v7` | `compiler_policy_snapshot_id` plus every named policy/contract/catalog/limit ref in the typed contract, with `additional_interpretation_policy_refs` sorted；no `bundle_id/bundle_hash` |
+| `contract_hash` / `DecisionClassContract,v7` | `decision_type, contract_version, allowed_producer_classes(sorted), outcome_semantics_policy_ref, proposal_validity_requirement_templates, upstream_decision_requirements, registered_cross_predicate_constraint_refs(sorted), allowed_entity_roles(sorted), context_value_schema` |
+| `constraint_hash` / `RegisteredCrossPredicateConstraint,v7` | `constraint_id, schema_version, decision_type, input_predicate_template_ids(ordered), evaluator_policy_ref, evaluator_version, evaluator_kind, output_predicate_template_id, applicability_template_ids(ordered)` |
+| `trace_hash` / `PolicyUsageTrace,v7` | `policy_ref, rule_keys_used(sorted), input_hash, output_hash` |
+| `epoch_vector_hash` / `SemanticEpochVector,v7` | `owner_scope, world_epoch, universe_epoch, policy_epoch, catalog_epoch` |
+| `change_genesis_hash` / `SemanticChangeSetGenesis,v7` | `owner_scope, semantic_sequence=0, label="SEMANTIC_CHANGE_GENESIS"` |
+| `change_hash` / `SemanticChangeSet,v7` | `owner_scope, from_exclusive_semantic_sequence, semantic_sequence, from_epoch, executable_epoch, predecessor_change_hash, changed_enterprise_refs, universe_deltas, policy_deltas, catalog_selector_deltas, temporal_expiry_guard_ids, affected_dependency_key_summary, affected_boundary_proof_hash, executable_world_snapshot_id, executable_universe_snapshot_id, executable_policy_snapshot_id, impact_index_version`；no `change_set_id` or publication receipt/hash；ID derives from `change_hash` |
+| `epoch_hash` / `SemanticEpoch,v7` | `owner_scope, semantic_sequence, component_epoch_hash, current_change_hash, executable_world_snapshot_id, executable_universe_snapshot_id, executable_policy_snapshot_id`；at sequence 0, `current_change_hash` is the registered owner-scoped `SemanticChangeSetGenesis,v7` digest |
+| `view_hash` / `GovernedReadView,v7` | `owner_scope, semantic_sequence, semantic_epoch_hash, executable_world_snapshot_id, executable_universe_snapshot_id, executable_policy_snapshot_id, read_fence_token, issued_at, expires_at` |
+| `authorization_context_hash` / `AuthorizationContextSnapshot,v7` | `owner_scope, principal_id, authenticated_actor_chain, granted_capability_ids(sorted), purpose, governing_policy_refs(sorted), issued_at, expires_at` |
+| `gateway_authorization_attestation_hash` / `GatewayAuthorizationAttestation,v7` | `owner_scope, authorization_context_hash, source_or_tool_identity, source_or_tool_version, governed_read_view_hash, permitted_operation, issued_at, expires_at, gateway_id`；it authorizes the read before observation and contains no observation ID/hash |
+| `observation_hash` / `GovernedObservation,v7` | `source_or_tool_identity, source_or_tool_version, governed_read_view_hash, world_snapshot_id, semantic_sequence, semantic_epoch_hash, observed_at, representation_id, content_hash, observation_subject, enterprise_fragment_refs(sorted), continuum_decision_refs(sorted exact decision_id/final_record_hash/envelope_hash tuples), authorization_context_hash, gateway_authorization_attestation_id/hash, signer_id` |
+| `set_hash` / `GovernedObservationSet,v7` | `request_correlation_id, observation_ids(sorted), world_snapshot_id, governed_read_view_hash, semantic_sequence, semantic_epoch_hash, material_input_path_to_observation_id(sorted by canonical path), closure_status`；**no `proposal_id/proposal_hash`** |
+| `proposal_hash` / `DecisionProposal,v7` | `schema_version, producing_agent_id, producing_agent_version, decision_type, proposed_outcome, rationale_summary, entity_context_id/context_hash, material_observation_set_id/set_hash, upstream_decision_refs(sorted by dependency_role/upstream_decision_id), input_world_snapshot_id, governed_read_view_hash, observed_semantic_sequence, observed_semantic_epoch_hash, produced_at` |
+| `proposed_outcome_hash` / `ProposalOutcome,v7` | `decision_type, outcome_schema_ref, typed_outcome_value` |
+| `binding_hash` / `ProposalOutcomeBinding,v7` | `proposal_id/proposal_hash, proposed_outcome_hash, outcome_semantics_policy_ref, normalized_outcome_class` |
+| `binding_hash` / `UpstreamDecisionBinding,v7` | `downstream_proposal_id, downstream_requirement_id, dependency_role, relation=REQUIRES, upstream_decision_id, upstream_decision_type, upstream_final_record_hash, upstream_validity_envelope_hash, upstream_decision_lineage_id, required_outcome_class, required_semantic_condition_ref, observed_outcome_class, observed_status, validated_semantic_sequence, validated_epoch_hash, governed_observation_id` |
+
+Compiler-derived semantic layer：
+
+| Output / `(type_tag, schema_version)` | Exact payload fields |
+|---|---|
+| `manifest_hash` / `RuleNormalizationManifest,v7` | all declared fields except `normalization_manifest_id, manifest_hash`; entry order is by `fragment_ref`, rule order by `normalized_rule_id`, receipt lists by digest |
+| `manifest_hash` / `SourceSetManifest,v7` | all declared fields except `manifest_id, manifest_hash`; inventory/ref lists use their declared stable keys and include the four subhashes below |
+| `coverage_boundary_semantic_key` / `CoverageBoundary,v7` | `decision_class_id, owner_scope, source_universe_snapshot_id, source_selection_policy_ref, coverage_boundary` |
+| `rule_set_membership_hash` / `RuleSetMembership,v7` | `rule_normalization_manifest_id, normalized_governing_rule_ids(sorted), governing_fragment_refs(sorted)` |
+| `contradiction_eligibility_hash` / `ContradictionEligibility,v7` | `predicate_catalog_ref, contradiction_policy_ref, contradiction_eligible_fragment_refs(sorted), target_descriptor_keys(sorted)` |
+| `partition_plan_hash` / `SourcePartitionPlan,v7` | `context_partition_policy_ref, ordered partitions(partition_id, ordered_fragment_refs, allowed_target_keys_by_fragment, token counts, input_hash)` |
+| `receipt_hash` / `RequirementInstantiationReceipt,v7` | all declared fields except `receipt_hash`; requirement IDs are stable semantic IDs independent of this receipt digest |
+| `result_hash` / `RequirementInstantiationResult,v7` | all declared fields except `result_hash`; embedded Requirements are canonical typed values and receipts are referenced by digest |
+| `receipt_hash` / `ConstraintEvaluationReceipt,v7` | all declared fields except `receipt_hash` |
+| `applicability_justification_hash` / `ApplicabilityJustification,v7` | all declared fields except `applicability_justification_id, applicability_justification_hash`; includes `stable_semantic_key` and the exact independent `proof_receipt_hash` |
+| `stable_semantic_key` / `ApplicabilitySemanticKey,v7` | `normalized_obligation_key, applicability_predicate_semantic_keys(sorted), expected_predicate_states(aligned), selected_false_guard_predicate_key, entity_context_id`；excludes source/display text |
+| `plan_hash` / `EvidenceCoveragePlan,v7` | all declared fields except `plan_id, plan_hash`; `eligible_fragment_refs` and target descriptors are sorted, partitions remain ordered |
+| `output_hash` / `EvidenceCoverageReceipt,v7` | all declared fields except `output_hash`; referenced FragmentEvidenceObservations are included by their canonical typed-output digests |
+| `request_hash` / `DispositionCriticalVerificationRequest,v7` | all declared fields except `request_hash`; exactly one request item and exact source bytes/hash are included |
+| `output_hash` / `DispositionCriticalVerificationObservation,v7` | `verification_id, verdict` |
+| `receipt_hash` / `DispositionCriticalVerificationReceipt,v7` | all declared fields except `receipt_hash`; includes exact `request_hash/output_hash` and independence metadata |
+| `uncertainty_hash` / `DispositionCriticalSemanticUncertainty,v7` | all declared fields except `uncertainty_hash` |
+| `plan_hash` / `ContradictionCoveragePlan,v7` | all declared fields except `plan_hash`; eligible refs/targets are sorted and partitions remain ordered |
+| `output_hash` / `ContradictionCoverageReceipt,v7` | all declared fields except `output_hash`; referenced FragmentSemanticObservations are included by canonical typed-output digest |
+| `guard_hash` / `TemporalValidityGuard,v7` | all declared fields except `guard_id, guard_hash` |
+| generic `input_hash` / `StageInput,v7` | `stage_kind, stage_contract_version, ordered_input_content_ids_and_hashes, normalized_parameters` |
+| generic `output_hash` / `StageOutput,v7` | `stage_kind, output_schema_version, canonical_typed_output`；hidden reasoning and transport metadata are excluded |
+
+Compilation、Runtime acceptance and ledger layer：
+
+| Output / `(type_tag, schema_version)` | Exact payload fields |
+|---|---|
+| `compilation_core_hash` / `CompilationCore,v7` | `pipeline_version, compiler_version, schema_versions, proposal_id/hash, outcome_binding_hash, entity_context_id/hash, observation_set_id/hash, governed_read_view_hash, exact upstream binding IDs/hashes, policy bundle/world/universe/normalization/source-set IDs/hashes, sorted policy-usage hashes, requirement/template/instantiation refs, applicability refs/hashes, Evidence plan/observation/receipt/candidate/selected-binding digests, disposition-critical request/receipt/uncertainty digests, contradiction plan/observation/receipt/candidate/confirmed-record digests, assessment/unsupported-finding/selective-guard/temporal-guard digests, run_status, result_class, proposal_admission_disposition, input_rejection_or_execution_failure_code, retryability, evidence_supported_validation_class, executed_stage_trace, prompt/model-config/output hashes`；excludes envelope、justification、final record、canonical Decision、cost/timing and mutable Runtime state |
+| `envelope_hash` / `DecisionValidityEnvelope,v7` | `proposal_id/hash, proposal_outcome_binding_hash, entity_context_id/hash, governed_observation_set_id/hash, compilation_core_hash, validated_semantic_sequence, validated_epoch_hash, upstream_decision_binding_ids/hashes, upstream_validity_envelope_hashes, disposition_critical_verification_receipt_ids/hashes, temporal_guard_ids/hashes, authorization_not_after, coverage_boundary_dependency_keys, governing_rule_set_dependency_keys, evidence_eligibility_dependency_keys, contradiction_eligibility_dependency_keys, policy_dependency_keys` |
+| `derivation_binding_hash` / `DecisionDerivationBinding,v7` | `proposal_id/hash, outcome_binding_hash, entity_context_id/hash, observation_set_id/hash, compilation_core_hash, envelope_id/hash, selected_root_requirement_ids, selected_requirement_ids, selected_proof_binding_ids, selected_upstream_binding_ids, applicability_justification_ids, temporal_guard_ids, selected_policy_refs, selective_dependency_keys` |
+| `semantic_proof_key` / `DecisionSemanticProof,v7` | `decision_type, normalized_outcome_class, entity-role bindings, selected root/direct predicate semantic keys, flattened ALL_OF topology, selected proof stable source identities, exact upstream decision IDs, applicability stable semantic keys, selection_rule`；display/rationale/case/domain/model-local IDs are excluded |
+| `justification_hash` / `DecisionJustification,v7` | all declared justification fields including `compilation_core_hash, decision_validity_envelope_id/envelope_hash, derivation_binding_hash, semantic_proof_key`, except `justification_id, justification_hash` |
+| `canonical_graph_hash` / `CanonicalGraph,v7` | canonical sorted node records and canonical sorted typed edges with materiality；Runtime-assigned Decision ID and mutable status are excluded |
+| `final_record_hash` / `FinalCompilationRecord,v7` | `compilation_core_id/hash, decision_validity_envelope_id/hash?, decision_justification_id/hash?, canonical_graph_hash?, finalization_schema_version`；accepted records require all optional values, other result classes require all absent |
+| `decision_hash` / `CanonicalDecisionCore,v7` | `owner_scope, decision_lineage_id, decision_acceptance_sequence, decision_type, exact_proposed_outcome, proposal_id/hash, final_record_id/hash, validity_envelope_id/hash, supersedes_decision_id?, exact_upstream_decision_ids(sorted)`；`decision_id` is derived from this hash |
+| `graph_root` / `DecisionDependencyGraphRoot,v7` | `owner_scope, through_decision_acceptance_sequence, decision_nodes(sorted exact decision_id/decision_hash tuples), requires_edges(sorted downstream_decision_id/upstream_decision_id tuples)`；sequence 0 uses empty node/edge arrays |
+| `receipt_hash` / `DecisionDependencyAcyclicityReceipt,v7` | `candidate_decision_id/hash, candidate_lineage_id, graph_root_before, graph_root_after, exact_upstream_decision_ids, exact_upstream_lineage_ids, checked_reachability_roots, supersedes_decision_id?, decision_acceptance_sequence, validator_version, result`；the receipt is a child of the Decision and is not in `decision_hash` |
+| `proof_hash` / `ChangeSetRangeProof,v7` | all declared fields except `proof_hash`; ordered leaf IDs/hashes、endpoints and union summary are included |
+| `certificate_hash` / `DecisionIrrelevanceCertificate,v7` | all declared fields except `certificate_id, certificate_hash` |
+| `receipt_hash` / `AuthorizationReceipt,v7` | all declared fields except `receipt_hash`; `EXECUTION_START` additionally includes `intent_core_hash, execution_attempt, executor_fence_token` |
+| `intent_core_hash` / `SideEffectIntentCore,v7` | `owner_scope, mission_id, effect_type, normalized_request_hash, idempotency_key, authorizing_decision_id/hash, decision_validity_envelope_hash, intent_admission_receipt_hash, admitted_semantic_sequence, authorization_not_after, created_at`；no status、attempt、execution receipt or external result |
+| `transition_genesis_hash` / `SideEffectTransitionGenesis,v7` | `intent_core_hash, transition_sequence=-1, label="SIDE_EFFECT_TRANSITION_GENESIS"` |
+| `transition_hash` / `SideEffectTransition,v7` | `intent_core_hash, transition_sequence, previous_transition_hash, from_status, to_status, transition_kind, authorization_receipt_hash?, authorized_semantic_sequence?, execution_attempt?, executor_fence_token?, external_operation_ref?, result_hash?, failure_code?, occurred_at, actor_id` |
+| `attempt_hash` / `CompilationAttemptRecord,v7` | `request_id, attempt_number, retry_of_attempt_id?, started_at, ended_at, run_status, result_class, failure_code?, retryability?, model_invocation_ids(ordered), ledger_reservation_ids(ordered), settlement_ids(ordered), actual_input_tokens, actual_output_tokens, actual_cache_read_tokens, actual_cache_write_tokens, settled_cost_usd_decimal, partial_output_refs(sorted, audit_only=true), final_record_id/hash?`；`attempt_id` derives from the digest；the record is sealed once after termination and never mutated |
+| `profile_hash` / `OperationalLimitProfile,v7` | `provider, model_config_hash, pricing_snapshot_id/hash, median_model_calls_ceiling, p95_model_calls_ceiling, median_input_tokens_ceiling, p95_input_tokens_ceiling, median_output_tokens_ceiling, p95_output_tokens_ceiling, median_compiler_latency_ms_ceiling, p95_compiler_latency_ms_ceiling, median_settled_cost_usd_decimal_ceiling, p95_settled_cost_usd_decimal_ceiling, experiment_total_budget_usd_decimal, approved_by, frozen_at`；`profile_id` derives from the digest |
+| `annotation_file_hash` / `DevRequirementAnnotation,v1` | all declared evaluator-only fields except `annotation_file_hash` |
+| `manifest_hash` / `DevRequirementAnnotationManifest,v1` | `annotation_version, corpus_manifest_hash, predicate_catalog_ref, rule_schema_refs(sorted), annotation_file_hashes(sorted), annotator_identities(sorted), adjudicator_identities(sorted), method_blind_attestation, frozen_at` |
+
+Auxiliary/subrecord digests are also closed：
+
+| Output / `(type_tag, schema_version)` | Exact payload fields |
+|---|---|
+| `content_hash` / `SourceRevisionContent,v1` | `media_type, representation_normalization_policy_ref, immutable canonical content bytes` |
+| `text_hash` / `SourceFragmentText,v1` | `representation_id, fragment_type, logical_path, canonical fragment text bytes` |
+| `span_hash` / `SourceSpan,v1` | `fragment_id, start_offset, end_offset, exact canonical span bytes` |
+| `parser_config_hash` / `ParserConfig,v1` | `parser_id, parser_version, normalized parser options, keyed-array identity rules, text-normalization policy` |
+| `normalized_rule_hash` / `NormalizedRuleCore,v7` | `obligation_key, governing_source_ref/content_hash, requirement_templates, applicability_templates, logic_form, child_obligation_keys(ordered), scope_qualifiers, temporal_qualifiers, template_schema_version`；ID derives from this digest；the later approval receipt points to this hash and is not in the core preimage |
+| `parser_receipt_hash` / `NormalizationParserReceipt,v7` | `parser_id/version/config_hash, fragment_ref/content_hash, accounting_status, normalized_rule_ids(sorted), canonical parser output_hash` |
+| `review_receipt_hash` / `NormalizationReviewReceipt,v7` | `parser_receipt_hash, reviewer_id, reviewer_policy_ref, verdict, normalized_rule_ids(sorted), reviewed_at` |
+| `independent_approval_receipt_hash` / `IndependentApprovalReceipt,v7` | `artifact_type, artifact_id/hash, approver_id, approval_policy_ref, verdict, approved_at` |
+| `proof_receipt_hash` / `ApplicabilityProofReceipt,v7` | `normalized_obligation_key, predicate keys/expected states, selected binding IDs/hashes, disposition-critical receipt IDs/hashes, contradiction-resolution IDs, proof_selection_policy_ref, governed_read_view_hash, semantic_sequence, semantic_epoch_hash` |
+| `source_horizon_receipt_hash` / `SourceHorizonReceipt,v7` | `source_ref/content_hash, temporal field paths and canonical typed values, temporal_catalog_policy_ref, evaluated_at, valid_from, valid_until` |
+| `eligibility_matrix_hash` / `EvidenceEligibilityMatrix,v7` | `evidence_coverage_policy_ref, source_set_manifest_id/hash, target descriptor keys(sorted), eligible_fragment_refs(sorted), allowed_target_keys_by_fragment(sorted by fragment)` |
+| `eligibility_matrix_hash` / `ContradictionEligibilityMatrix,v7` | `contradiction_policy_ref, source_set_manifest_id/hash, target descriptor keys(sorted), eligible_fragment_refs(sorted), allowed_target_keys_by_fragment(sorted by fragment)` |
+| `target_set_hash` / `SemanticTargetSet,v7` | canonical sorted complete target descriptors including predicate identity、target kind、instantiated entities、allowed roles/namespaces/authority and time sensitivity |
+| `model_config_hash` / `ModelConfig,v1` | `provider, model_id, endpoint_profile, reasoning_effort, sampling parameters, max_output_tokens, response_schema_hash, tool_config, retry_policy` |
+| `pricing_snapshot_hash` / `PricingSnapshot,v1` | `provider, account_contract_ref, currency, effective_from, effective_until, ordered model price rows(model_id, uncached_input_rate, cache_read_rate, cache_write_rate, output_rate, unit_tokens), discount_or_promotion_ref?, issuer_id, issued_at`；`pricing_snapshot_id` derives from this digest and detached signature follows it |
+| `normalized_request_hash` / `SideEffectRequest,v7` | `effect_type, adapter_id/version, target_resource_identity, canonical typed request payload` |
+| external `result_hash` / `SideEffectExternalResult,v7` | `adapter_id/version, idempotency_key, external_operation_ref, canonical typed result payload` |
+| `affected_boundary_proof_hash` / `AffectedBoundaryProof,v7` | `owner_scope, semantic_sequence, changed semantic keys/categories, affected_dependency_key_summary, impact_index_version, boundary_evaluator_policy_ref` |
+| `publication_receipt_hash` / `SemanticPublicationReceipt,v7` | `change_set_id/change_hash, epoch_hash, executable_pointer_before, executable_pointer_after, coordinator_version, committed_at` |
+| `corpus_manifest_hash` / `BenchmarkCorpusManifest,v1` | `corpus_version, ordered case IDs, per-case source/proposal file hashes, decision-class/domain labels, manifest schema version` |
+| `signature_record_hash` / `SignatureRecord,v1` | `content_id, content_hash, signer_id, key_id, algorithm, signature_bytes, signed_at`；it is always a detached child and no signed content preimage may contain this digest |
+
+External representation digests use the registered `SourceRevisionContent,v1` profile above。Module 01 treats an untyped bare digest as `UNREGISTERED_HASH_PREIMAGE`。External roots may be parents of the DAG below but may never contain a back-reference to a Continuum-derived descendant。
+
+### Complete dependency DAG and construction order
+
+An arrow `A → B` means B's registered preimage may contain A's ID/hash。The diagram is the collapsed type DAG；the only recursively typed edges are the three explicitly ranked predecessor families described below：
+
+```mermaid
+flowchart LR
+    R[External bytes / policy revisions / prior accepted Decisions] --> CA[UniverseCompletenessAttestation]
+    CA --> U[SourceUniverseSnapshot + CompilerPolicyBundle + EntityContext]
+    R --> CS[SemanticChangeSet]
+    U --> CS
+    CS --> EP[SemanticEpoch]
+    U --> RV[GovernedReadView]
+    EP --> RV
+    RV --> GA[GatewayAuthorizationAttestation]
+    GA --> O[GovernedObservations]
+    RV --> O
+    O --> OS[GovernedObservationSet]
+    U --> OS
+    OS --> DP[DecisionProposal]
+    U --> DP
+    R --> UB[UpstreamDecisionBindings]
+    DP --> UB
+    U --> RN[RuleNormalizationManifest]
+    RN --> SS[SourceSetManifest]
+    DP --> A[Requirement / Evidence / Contradiction / Verification artifacts]
+    UB --> A
+    SS --> A
+    A --> CC[CompilationCore]
+    CC --> VE[DecisionValidityEnvelope]
+    VE --> J[DecisionJustification]
+    CC --> J
+    J --> FR[FinalCompilationRecord]
+    VE --> FR
+    FR --> DC[CanonicalDecisionCore]
+    R --> DC
+    DC --> AR[DecisionDependencyAcyclicityReceipt]
+    DC --> IA[Intent-admission AuthorizationReceipt]
+    IA --> IC[SideEffectIntentCore]
+    IC --> ER[Execution-start AuthorizationReceipt]
+    ER --> T[Append-only SideEffectTransition chain]
+    IC --> T
+    X[Any already-sealed content object] --> SIG[Detached SignatureRecord leaf]
+```
+
+The registry audit assigns every active hash profile to exactly one constructible stratum **within one construction batch**。An exact previously accepted immutable Decision closure may be imported as an H0 root for a later batch；because historical objects cannot gain new fields, that import cannot acquire a back-reference to the new batch。Within a batch, a row may depend only on rows above it or an earlier frozen `local_ordinal`, except for the explicitly ranked predecessor edge in that row：
+
+| Stratum | Registered type tags audited in Revision 7 | Allowed content-addressed parents |
+|---|---|---|
+| H0 external/declared roots | `SourceRevisionContent,v1`、`SourceFragmentText,v1`、`ParserConfig,v1`、`ModelConfig,v1`、`PricingSnapshot,v1`、`DecisionEntityContext,v7`、`DecisionClassContract,v7`、`RegisteredCrossPredicateConstraint,v7`、`SemanticEpochVector,v7`、`SemanticChangeSetGenesis,v7`、`AuthorizationContextSnapshot,v7`、`UniverseCompletenessAttestation,v7`、`ProposalOutcome,v7`、`SideEffectRequest,v7`、`BenchmarkCorpusManifest,v1`、`DevRequirementAnnotation,v1` | none inside the active derived graph；external immutable IDs/bytes only |
+| H1 root-derived policy/source records | `SourceSpan,v1`、`CompilerPolicyBundle,v7`、`NormalizedRuleCore,v7`、`AffectedBoundaryProof,v7`、`OperationalLimitProfile,v7`、`DevRequirementAnnotationManifest,v1` | H0 only |
+| H2 receipts before manifests/publication | `NormalizationParserReceipt,v7`、`NormalizationReviewReceipt,v7`、`IndependentApprovalReceipt,v7`、`SourceUniverseSnapshot,v7`、`SemanticChangeSet,v7` | H0–H1；a ChangeSet may additionally name only the immediately preceding lower semantic sequence |
+| H3 executable fence | `RuleNormalizationManifest,v7`、`SemanticEpoch,v7`、`SemanticPublicationReceipt,v7` | H0–H2；publication receipt is a leaf over an already-sealed ChangeSet+Epoch |
+| H4 governed read | `GovernedReadView,v7`、`GatewayAuthorizationAttestation,v7` | H0–H3 |
+| H5 observed input | `GovernedObservation,v7`、`GovernedObservationSet,v7` | H0–H4 plus imported prior accepted Decision closure；set depends on observations, never proposal |
+| H6 proposal and source-set boundary | `DecisionProposal,v7`、`ProposalOutcomeBinding,v7`、`UpstreamDecisionBinding,v7`、`CoverageBoundary,v7`、`RuleSetMembership,v7`、`ContradictionEligibility,v7`、`SourcePartitionPlan,v7`、`SourceSetManifest,v7` | H0–H5 plus exact already-accepted immutable Decision ancestors |
+| H7 semantic analysis | `RequirementInstantiationReceipt,v7`、`RequirementInstantiationResult,v7`、`ConstraintEvaluationReceipt,v7`、`ApplicabilitySemanticKey,v7`、`ApplicabilityProofReceipt,v7`、`ApplicabilityJustification,v7`、`EvidenceEligibilityMatrix,v7`、`ContradictionEligibilityMatrix,v7`、`SemanticTargetSet,v7`、`EvidenceCoveragePlan,v7`、`EvidenceCoverageReceipt,v7`、`ContradictionCoveragePlan,v7`、`ContradictionCoverageReceipt,v7`、`DispositionCriticalVerificationRequest,v7`、`DispositionCriticalVerificationObservation,v7`、`DispositionCriticalVerificationReceipt,v7`、`DispositionCriticalSemanticUncertainty,v7`、`SourceHorizonReceipt,v7`、`TemporalValidityGuard,v7`、`StageInput,v7`、`StageOutput,v7`、`PolicyUsageTrace,v7` | H0–H6 and earlier H7 stage outputs according to the frozen pipeline order；no later Gate/compilation/runtime record |
+| H8 compilation core | `CompilationCore,v7`、`CanonicalGraph,v7`、`DecisionSemanticProof,v7` | H0–H7 |
+| H9 validity layer | `DecisionValidityEnvelope,v7` | H0–H8 only |
+| H10 explanation layer | `DecisionDerivationBinding,v7`、`DecisionJustification,v7` | H0–H9 |
+| H11 final compilation | `FinalCompilationRecord,v7` | H8–H10 |
+| H12 Runtime Decision | `CanonicalDecisionCore,v7`、`DecisionDependencyGraphRoot,v7`、`DecisionDependencyAcyclicityReceipt,v7` | H0–H11 in the displayed order；Decision upstream/supersedes refs must have lower acceptance sequence；receipt is a leaf over the newly accepted Decision graph root |
+| H13 authorization/ledger | `ChangeSetRangeProof,v7`、`DecisionIrrelevanceCertificate,v7`、`AuthorizationReceipt,v7`、`SideEffectIntentCore,v7`、`SideEffectExternalResult,v7`、`SideEffectTransitionGenesis,v7`、`SideEffectTransition,v7` | H0–H12；the kind-specific receipt/core/transition order below is mandatory, and a transition may additionally name only sequence `n-1` for the same intent |
+| H14 audit leaves | `CompilationAttemptRecord,v7` terminal form、`SignatureRecord,v1` | any already-sealed ancestor permitted by its row；neither may be referenced back by the object it records/signs |
+
+Content admission is parent-first：every referenced Continuum content object must either already be sealed in the immutable store or occur earlier in the current proposed batch's topological order。The admission validator expands the entire finite batch plus imported roots and requires a unique registered preimage for every node and a successful deterministic topological sort before committing any node。Since an imported root is immutable and every new edge points from an already sealed/earlier parent to a later child, induction over admission order proves that an admitted object cannot reach itself。
+
+The three recursively typed families add an independent ordinal proof：`SemanticChangeSet(s-1) → SemanticChangeSet(s)`、`CanonicalDecisionCore(acceptance_sequence < s) → CanonicalDecisionCore(s)` and `SideEffectTransition(n-1) → SideEffectTransition(n)` strictly increase the mandatory unsigned ordinal, so following dependencies strictly decreases it。ChangeSet and transition ordinals are contiguous；Decision upstream/supersedes ordinals need only be strictly lower because unrelated Decisions may occupy intervening owner-scope acceptance sequences。An imported upstream `DecisionValidityEnvelope`/final record inherits the strictly lower acceptance rank of its owning accepted Decision；a current batch can reference it, while immutable history cannot reference the current batch。`AuthorizationReceipt` kinds occupy their separately shown positions；an admission receipt contains no intent core, while an execution-start receipt may contain an already-sealed core。`SignatureRecord` is a terminal leaf in P0 and cannot itself be a signed-content target。
+
+The build-time registry check verifies every named hash field maps to one and only one preimage row and that each batch stratum/local-order grammar is acyclic。The runtime check expands actual IDs and topologically validates the finite instance graph plus ordinal constraints；missing ancestors、wrong sequence、a descendant back-reference or an unregistered digest is rejected before canonical acceptance。This is the acyclicity proof for every registered Revision-7 hash object, not merely for the four originally reported cycles。
+
+The mandated proposal construction sequence is：
+
+1. seal `UniverseCompletenessAttestation` over the pre-existing catalog fence, then `SourceUniverseSnapshot`、`SemanticEpoch` and `GovernedReadView`；the universe snapshot does not contain the later view hash；
+2. seal `GatewayAuthorizationAttestation` over that read-view fence, then every `GovernedObservation`；neither attestation contains its descendant snapshot/observation；
+3. seal `GovernedObservationSet` using an opaque `request_correlation_id` and the observation IDs；it contains no proposal back-reference；
+4. seal `DecisionProposal` with `material_observation_set_id/set_hash`、entity context and exact already-known upstream refs；
+5. write detached signature records over the already-computed IDs/hashes。
+
+The mandated compilation layering is：
+
+1. seal semantic stage outputs and `CompilationCore`；
+2. compute `compilation_core_hash`；
+3. construct `DecisionValidityEnvelope` from that core hash and validity dependencies, then compute `envelope_id/envelope_hash`；
+4. construct `DecisionJustification` from the core plus envelope and compute `justification_id/hash`；
+5. construct `FinalCompilationRecord` and compute `final_record_id/hash`；
+6. Runtime acceptance may then construct the canonical Decision and its post-decision acyclicity receipt。
+
+`DecisionValidityEnvelope` never contains `final_record_hash`、`justification_hash` or legacy `compilation_hash`。`DecisionJustification` may contain the already-built envelope ID/hash because the envelope does not contain the justification。The active contract removes ambiguous `compilation_hash`；read-only v1/v6 API adapters may expose `compilation_hash = final_record_hash` with `hash_alias_version=legacy-final-record-v1`, but that alias is forbidden in any v7 preimage or envelope。
+
+Mutable stores are outside the content DAG。`ExecutableEpochPointer`、`DecisionDependencyGraphHead` and `SideEffectLedgerHead` are CAS projections containing the latest verified hash/sequence/status；they are never content-addressed and never become a proof without replaying their immutable chain。A topological validation over the collapsed registered strata and a rank validation over actual object instances are mandatory fixtures；a runtime object whose dependency points to itself、a descendant or a non-decreasing same-family ordinal is rejected as `CONTENT_ADDRESS_CYCLE`。Thus every v7 identity can be constructed without a fixed-point hash。
+
 ## Versioned trusted inputs
 
 ### `DecisionProposal` ownership
@@ -126,13 +353,14 @@ DecisionProposal                              # signed immutable request input; 
   decision_type: registered decision-class key
   proposed_outcome: domain outcome value
   rationale_summary: string                   # audit-only; not Requirement authority
-  entity_context_id: string
-  material_observation_set_id: string
+  entity_context_id / context_hash
+  material_observation_set_id / set_hash
   upstream_decision_refs[]:
     dependency_role / upstream_decision_id
   input_world_snapshot_id: string
+  governed_read_view_hash: SHA-256
   observed_semantic_sequence: uint64
-  observed_semantic_epoch: SemanticEpochVector
+  observed_semantic_epoch_hash: SHA-256
   produced_at: trusted timestamp
   proposal_hash: SHA-256
 
@@ -178,33 +406,38 @@ GovernedObservation                         # signed immutable observation envel
   observation_id: content-addressed ID
   source_or_tool_identity: stable registered identity
   source_or_tool_version: immutable version
+  governed_read_view_hash: SHA-256
   world_snapshot_id: string
   semantic_sequence: uint64
-  semantic_epoch: SemanticEpochVector
+  semantic_epoch_hash: SHA-256
   observed_at: trusted timestamp
+  representation_id: string
   content_hash: SHA-256
   observation_subject: ENTERPRISE_FRAGMENT | CONTINUUM_DECISION | TOOL_RESULT
   enterprise_fragment_refs[]
-  continuum_decision_ids[] / validity_envelope_hashes[]
+  continuum_decision_refs[]:
+    decision_id / final_record_hash / validity_envelope_hash
   authorization_context_hash: SHA-256
-  gateway_attestation_ref / signer_id
+  gateway_authorization_attestation_id / gateway_authorization_attestation_hash
+  signer_id                                      # detached SignatureRecord is created later
   observation_hash: SHA-256
 
 GovernedObservationSet                      # signed request input; not world membership
   observation_set_id: content-addressed ID
-  proposal_id
+  request_correlation_id: opaque non-content-addressed identifier
   observation_ids[]
   world_snapshot_id
+  governed_read_view_hash
   semantic_sequence
-  semantic_epoch
+  semantic_epoch_hash
   material_input_path_to_observation_id[]
   closure_status: COMPLETE | INCOMPLETE
   set_hash: SHA-256
 
 GovernedReadView                            # Runtime/tool-gateway read fence
   owner_scope
-  executable_semantic_sequence: uint64
-  executable_epoch
+  semantic_sequence: uint64
+  semantic_epoch_hash
   executable_world_snapshot_id
   executable_universe_snapshot_id
   executable_policy_snapshot_id
@@ -224,7 +457,7 @@ Compiler-owned source reads are also obtained from the same governed view: `Sour
 UpstreamDecisionRequirement
   dependency_role: stable decision-class role
   upstream_decision_type: registered decision type
-  relation: REQUIRES | AUTHORIZES
+  relation: REQUIRES                         # the only legal D→D relation
   required_outcome_class: APPROVE | DENY
   required_semantic_condition_ref?: CompilerPolicyRef
   proof_role: UPSTREAM_DECISION
@@ -234,8 +467,9 @@ UpstreamDecisionBinding                    # deterministic CompilerDerivedArtifa
   downstream_proposal_id / downstream_requirement_id
   dependency_role / relation
   upstream_decision_id / upstream_decision_type
-  upstream_compilation_hash
+  upstream_final_record_hash
   upstream_validity_envelope_hash
+  upstream_decision_lineage_id
   required_outcome_class / required_semantic_condition_ref
   observed_outcome_class
   observed_status: VALID | STALE | SUPERSEDED | INVALID
@@ -245,7 +479,80 @@ UpstreamDecisionBinding                    # deterministic CompilerDerivedArtifa
   binding_hash: SHA-256
 ```
 
-Only an accepted、current、`VALID` upstream Decision whose exact compilation/envelope、outcome condition、epoch and governed observation all validate can satisfy `UPSTREAM_DECISION`. `STALE | SUPERSEDED | INVALID` never satisfies it. Supersession creates a different Decision/envelope；it never rewrites the old binding. A downstream revalidation must receive a new signed proposal/ref and explicitly bind the successor. Runtime rechecks upstream currentness at canonical acceptance and every side-effect authorization, and persists a canonical `upstream Decision --REQUIRES/AUTHORIZES[CRITICAL]--> downstream Decision` edge so stale propagation remains transitive。
+Only an accepted、current、`VALID` upstream Decision whose exact final compilation record/envelope、outcome condition、epoch and governed observation all validate can satisfy `UPSTREAM_DECISION`. `STALE | SUPERSEDED | INVALID` never satisfies it. Supersession creates a different immutable Decision/envelope；it never rewrites the old binding. A downstream revalidation must receive a new signed proposal/ref and explicitly bind the successor。
+
+Canonical proof direction is `downstream Decision --REQUIRES[CRITICAL]--> upstream Decision`。Runtime maintains the deterministic reverse index `upstream Decision → dependent downstream Decisions` solely for invalidation traversal。`AUTHORIZES` is reserved for `Decision → Action | SideEffectIntentCore` and is illegal on D→D；therefore it cannot hide weaker or different invalidation semantics。
+
+### Decision proof well-foundedness（P0-39）
+
+Every immutable Decision belongs to one stable `decision_lineage_id`；a superseding Decision receives a new exact `decision_id` but retains the lineage ID and names its exact predecessor。Two graphs must both be DAGs：
+
+1. the exact-node graph `downstream decision_id --REQUIRES--> upstream decision_id`；
+2. the lineage projection `downstream decision_lineage_id --REQUIRES--> upstream decision_lineage_id` after dedupe。
+
+The lineage projection prevents a successor from laundering a logical cycle through fresh immutable IDs。A successor in lineage A may not require Decision B when B's exact or lineage `REQUIRES` closure already reaches lineage A。Same-lineage D→D dependency is a self-edge and is rejected。
+
+```text
+CanonicalDecisionCore
+  decision_id: content-addressed ID
+  owner_scope
+  decision_lineage_id: stable owner-scoped identity
+  decision_acceptance_sequence: uint64       # Runtime-owned order; distinct from semantic_sequence
+  decision_type / exact_proposed_outcome
+  proposal_id / proposal_hash
+  final_record_id / final_record_hash
+  validity_envelope_id / validity_envelope_hash
+  supersedes_decision_id?
+  exact_upstream_decision_ids[]
+  decision_hash: SHA-256
+
+DecisionDependencyGraphRoot                 # immutable graph snapshot digest
+  owner_scope
+  through_decision_acceptance_sequence
+  decision_nodes[]: sorted (decision_id, decision_hash)
+  requires_edges[]: sorted (downstream_decision_id, upstream_decision_id)
+  graph_root: SHA-256                        # sequence 0 hashes empty arrays
+
+DecisionDependencyAcyclicityReceipt
+  receipt_id: content-addressed ID
+  candidate_decision_id / candidate_decision_hash
+  candidate_lineage_id
+  graph_root_before / graph_root_after
+  exact_upstream_decision_ids[] / exact_upstream_lineage_ids[]
+  checked_reachability_roots[]
+  supersedes_decision_id?
+  decision_acceptance_sequence
+  validator_version
+  result: ACYCLIC
+  receipt_hash: SHA-256
+
+DecisionDependencyGraphHead                 # mutable CAS projection; never content-addressed
+  owner_scope
+  latest_decision_acceptance_sequence: uint64
+  canonical_decision_graph_root
+  reverse_index_root
+  cas_version
+```
+
+The owner-scope Decision graph has genesis `decision_acceptance_sequence=0` and a fixed empty graph root。Every successful `RuntimeAcceptanceTxn` assigns exactly `s+1` under the graph-head CAS；failed/retried transactions consume no sequence。This acceptance order is distinct from world `semantic_sequence` and is used only as an additional exact-node well-founded rank。
+
+Every exact `REQUIRES` edge points from the candidate at rank `s+1` to an upstream rank `<=s`，so rank strictly decreases along proof traversal；an exact-node cycle or infinite descending chain is impossible if the rule is enforced。The independent deterministic reachability check is defense in depth and detects corrupt legacy/index state。Because different immutable nodes in one lineage have different ranks, the separate lineage-projection check is still required for supersession-mediated logical cycles。
+
+`RuntimeAcceptanceTxn` performs the following before any canonical mutation：
+
+1. compute the candidate `CanonicalDecisionCore` under the next owner-scope `decision_acceptance_sequence` and verify the exact v7 hash layering；
+2. reject any D→D relation other than `REQUIRES`，then reject duplicate candidate identity、`candidate_decision_id` in upstream IDs、or candidate lineage in upstream lineages；
+3. require every upstream exact ID to already exist as an immutable `ACCEPTED` Decision with a strictly smaller acceptance sequence and the exact bound final-record/envelope hashes；uncommitted、placeholder、latest-by-alias or future refs are invalid；
+4. under one serializable/CAS graph-head transaction, run the pure graph-delta validator over canonical sorted exact-ID and lineage `REQUIRES` adjacency；reject if any upstream reaches the candidate, any upstream lineage reaches the candidate lineage, or any requested edge insertion makes an existing node reachable from itself；
+5. reject any otherwise-acyclic proposed D→D edge whose downstream origin is an already-accepted node rather than the one new candidate；accepted history is immutable；
+6. when superseding, require the predecessor to exist、belong to the same lineage and remain immutable；reject if adding the candidate's required lineages would create a lineage cycle；
+7. only after all checks pass, append the Decision node、only `REQUIRES` D→D edges、the reverse invalidation-index entries and the acyclicity receipt, then advance the graph root atomically。
+
+Typed failure precedence for the same proposed delta is closed：`INVALID_DECISION_RELATION` → `DECISION_DEPENDENCY_SELF_CYCLE` → `UPSTREAM_DECISION_NOT_ALREADY_ACCEPTED_OR_HASH_MISMATCH` → `DECISION_DEPENDENCY_CYCLE` → `DECISION_LINEAGE_CYCLE` → `DECISION_IMMUTABLE_HISTORY_MUTATION` → graph-data/resource/CAS failure。The first applicable code is returned；all are terminal for that acceptance attempt, consume no acceptance sequence and write no canonical node、edge、receipt、reverse-index entry or head update。A caller must submit a new valid proposal/transaction rather than “repair” accepted history in place。
+
+Missing graph data、cycle-check resource exhaustion、graph-root CAS conflict or inconsistent reverse index fails closed before acceptance。A retry rereads the graph and recomputes；it cannot reuse a stale acyclicity receipt。Supersession never deletes、relabels or redirects an old node/edge, and downstream Decisions remain bound to the exact old upstream until separately reproposed and accepted。
+
+`graph_root_after` is computed only over canonical immutable Decision-node hashes and canonical `REQUIRES` edge tuples；it excludes acyclicity receipts、reverse-index projections and the mutable graph head。The receipt may therefore contain both graph roots without being part of either root preimage。The reverse index is rebuilt/checked from those canonical edges and has no independent semantic authority。
 
 ### Governing Requirement authority
 
@@ -354,6 +661,7 @@ PolicyUsageTrace
   rule_keys_used[]
   input_hash: SHA-256
   output_hash: SHA-256
+  trace_hash: SHA-256
 ```
 
 Every deterministic component that can alter universe boundary、rule normalization、applicability、Requirement identity、proof eligibility/selection、authority resolution、outcome/disposition、canonical mapping or coverage records a usage entry. Gate rejects `UNVERSIONED_POLICY_INPUT` if such a code path reads configuration not resolved from the bundle. `selected_policy_refs` comes from this trace, not a manually curated audit list。
@@ -367,8 +675,9 @@ SourceUniverseSnapshot
   universe_snapshot_id: content-addressed ID
   schema_version: string
   owner_scope: string
+  semantic_sequence: uint64
   executable_semantic_epoch: SemanticEpochVector
-  governed_read_view_hash: SHA-256
+  executable_world_snapshot_id: string
   authoritative_catalog_ref: EnterpriseWorldRef | external registry identity
   namespaces[]
   enumerated_artifacts[]:
@@ -377,13 +686,15 @@ SourceUniverseSnapshot
   connector_versions[]
   sync_watermarks[]
   index_versions[]
-  completeness_authority:
-    authority_id / attestation_ref / signed_at / valid_through
+  completeness_authority_id
+  completeness_attestation_id / completeness_attestation_hash
   coverage_status: COMPLETE | INCOMPLETE | UNKNOWN
   snapshot_hash: SHA-256
 ```
 
-Required chain is `GovernedReadView → SourceUniverseSnapshot → SourceSelectionPolicy → SourceSetManifest`。Validator 必须验证 owner scope、executable epoch/world fence、namespace coverage、watermark freshness、complete enumeration、hash 与 signer authority；没有 `COMPLETE` universe root，`SourceSetManifest` 不得声明 `DECLARED_COMPLETE`。
+Required construction is `SourceUniverseSnapshot → GovernedReadView` plus `SourceUniverseSnapshot + SourceSelectionPolicy + RuleNormalizationManifest → SourceSetManifest`。Validator 必须验证 owner scope、executable sequence/epoch/world fence、namespace coverage、watermark freshness、complete enumeration、hash 与 signer authority；没有 `COMPLETE` universe root，`SourceSetManifest` 不得声明 `DECLARED_COMPLETE`。
+
+`UniverseCompletenessAttestation` is sealed first over the external catalog、namespace and watermark fence；it does not name the later universe snapshot。`SourceUniverseSnapshot` then binds that attestation plus the exact enumeration, after which the completeness authority emits a detached `SignatureRecord` over the snapshot ID/hash—preserving the frozen “authority signs U” guarantee without a back-reference。Likewise `GatewayAuthorizationAttestation` is sealed before a governed read over the authorization context、source/tool and read-view fence；it contains no resulting observation ID/hash。The observation is signed only after its hash。This keeps authorization/completeness proof distinct from a descendant-signature back-reference。
 
 ### `RuleNormalizationManifest`
 
@@ -409,7 +720,7 @@ RuleNormalizationManifest                         # CompilerDerivedArtifact
     reviewer_or_signer_id?: string
     review_receipt_hash?: SHA-256
   normalized_rules[]:
-    normalized_rule_id / obligation_keys[] / logic_form
+    normalized_rule_id / normalized_rule_hash / obligation_keys[] / logic_form
     applicability_predicate_templates[] / requirement_templates[]
     template_schema_version / independent_approval_receipt_hash
     source_fragment_refs[]
@@ -521,7 +832,8 @@ PredicateIdentity
 
 ```mermaid
 flowchart TD
-    A[Proposal + EntityContext + ObservationSet + Upstream refs] --> G[0G. Governed Read / Executable Epoch Validation]
+    A[Universe + ReadView + Observations + Proposal + EntityContext + Upstream refs] --> H0[0H. Hash Registry + Input DAG Validation]
+    H0 --> G[0G. Governed Read / Executable Epoch Validation]
     G --> V[0I. Validate Proposal / Entity / Snapshot / Policy Binding]
     V --> D[0D. Bind Exact Upstream Decisions]
     D --> U[0U. Validate SourceUniverseSnapshot]
@@ -553,17 +865,21 @@ flowchart TD
     PV --> H[4B. Confirmed Proof / Contradiction + Completeness + Temporal Guards]
     SU --> H
     H --> I[5. Deterministic Proposal Acceptance Gate]
-    I -->|ACCEPTED| J[Deterministic Canonicalizer]
-    I -->|REJECT / REVIEW| K[Immutable non-accepted CompilationResult]
-    J --> L[Immutable accepted CompilationResult]
-    L --> M[RuntimeAcceptanceService]
-    M --> EPOCH[Semantic-Epoch Publication / Authorization Barrier]
+    I --> CC[Seal CompilationCore]
+    CC -->|REJECT / REVIEW / FAILED / BLOCKED| K[FinalCompilationRecord without envelope]
+    CC -->|ACCEPTED| VE[Seal DecisionValidityEnvelope]
+    VE --> J[Seal DecisionJustification + Canonical Graph]
+    J --> L[Seal accepted FinalCompilationRecord]
+    L --> M[RuntimeAcceptanceTxn: exact-ID + lineage cycle check]
+    M -->|cycle / future ref / illegal relation| AR[ACCEPTANCE REJECTED: no canonical mutation]
+    M -->|ACYCLIC| CD[Append CanonicalDecisionCore + receipt]
+    CD --> EPOCH[Semantic-Epoch Publication / Authorization Barrier]
     EPOCH --> RT[Canonical Runtime graph mutation or side-effect authorization]
 ```
 
-### Stage 0G / 0I / 0D / 0U / 0N / 0S — Governed input、upstream Decisions、universe、normalization and selection
+### Stage 0H / 0G / 0I / 0D / 0U / 0N / 0S — Hash DAG、governed input、upstream Decisions、universe、normalization and selection
 
-Deterministic Context Assembly first validates `GovernedObservationSet` closure and one executable read fence, then proposal producer/version/hash、`DecisionEntityContext` role bindings and exact snapshot/policy binding. Stage 0D resolves every contract-required upstream Decision to its exact immutable compilation/envelope and governed observation；a valid but stale/superseded upstream is an unsatisfied upstream proof, while a malformed/unauthorized upstream ref is an input rejection. It never auto-rebinds a successor。
+Stage 0H first recomputes registered IDs/digests and validates the exact topological order `SourceUniverseSnapshot → GovernedReadView → GovernedObservation → GovernedObservationSet → DecisionProposal`；it rejects any observation-set/proposal or universe/read-view back-reference before semantic work。Deterministic Context Assembly then validates observation closure and one executable read fence, proposal producer/version/hash、`DecisionEntityContext` role bindings and exact snapshot/policy binding. Stage 0D resolves every contract-required upstream Decision to its exact immutable final record/envelope and governed observation；a valid but stale/superseded upstream is an unsatisfied upstream proof, while a malformed/unauthorized upstream ref is an input rejection. It never auto-rebinds a successor。
 
 The compiler then validates the authoritative `SourceUniverseSnapshot`. A trusted normalizer/reviewer accounts for every in-boundary fragment in `RuleNormalizationManifest`; only then may the selector derive a `SourceSetManifest` and selective coverage guards from the universe root + selection policy. It identifies normalized governing rules、evidence/applicability search inventory and contradiction-eligible fragments. None of these stages performs model-authored Requirement or outcome discovery。
 
@@ -603,9 +919,9 @@ Any selected time-sensitive semantic fact must yield a trusted `[valid_from, val
 
 ### Stage 5 — Deterministic proposal acceptance
 
-Code computes the evidence-supported validation class (`APPROVE | DENY | REVIEW`) and compares it with deterministic `ProposalOutcomeBinding.normalized_outcome_class`, which remains hash-bound to the immutable source outcome. Matching APPROVE/DENY may be admitted if all preconditions hold. Any mismatch returns a **proposal-admission** rejection/review against the supplied proposal；no replacement outcome/proposal is emitted. Canonicalization consumes only an admitted proof slice plus `DecisionValidityEnvelope`，whose canonical Decision outcome exactly equals `DecisionProposal.proposed_outcome`。
+Code computes the evidence-supported validation class (`APPROVE | DENY | REVIEW`) and compares it with deterministic `ProposalOutcomeBinding.normalized_outcome_class`, which remains hash-bound to the immutable source outcome. Matching APPROVE/DENY may be admitted if all preconditions hold. Any mismatch returns a **proposal-admission** rejection/review against the supplied proposal；no replacement outcome/proposal is emitted。
 
-Runtime acceptance revalidates exact proposal/entity/snapshot/policy/derived hashes、current clock and semantic sequence/component epoch. It publishes the graph through the sequence barrier；the compiler/model cannot directly mutate Runtime。
+The compiler seals layers only in this order：`CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`。Canonicalization consumes only an admitted core/envelope and copies the exact proposal outcome。Runtime acceptance then revalidates exact proposal/entity/snapshot/policy/derived hashes、current clock and semantic sequence/component epoch, checks the exact-ID and lineage Decision DAGs under one graph-head transaction, and only then appends the canonical node/edges/acyclicity receipt。The compiler/model cannot directly mutate Runtime。
 
 ## Typed contracts
 
@@ -685,6 +1001,7 @@ ApplicabilityJustification                    # Stage-4 finalized CompilerDerive
   input_world_snapshot_id: string
   stable_semantic_key: SHA-256
   proof_receipt_hash: SHA-256
+  applicability_justification_hash: SHA-256
 ```
 
 Stage 4 may finalize `APPLICABLE` only when selected bindings determinately satisfy **all** applicability predicates after global contradiction/precedence reduction. It may finalize `NOT_APPLICABLE` only when at least one selected binding determinately falsifies a condition；the canonical guard is chosen by predicate semantic key、authority tier、stable source identity and binding key. Missing/ambiguous/expired/unresolved-conflicted evidence produces `INDETERMINATE`, not a justification. Both finalized determinate outcomes are validity-bearing when acceptance depends on including or excluding the obligation。
@@ -789,7 +1106,7 @@ DispositionCriticalVerificationRequest      # deterministic, exact and minimal
   claimed_entailment / claimed_normalized_value
   expected_state?                           # proof/guard only
   relevant_normalized_semantics              # catalog/template semantics only
-  governed_read_view_hash / semantic_sequence / semantic_epoch
+  governed_read_view_hash / semantic_sequence / semantic_epoch_hash
   request_hash: SHA-256
 
 DispositionCriticalVerificationObservation  # independent model output
@@ -972,7 +1289,10 @@ SemanticEpoch                              # executable owner-scope publication 
   owner_scope
   semantic_sequence: uint64                # strict total order; no gaps or duplicates
   component_epoch: SemanticEpochVector     # which semantic domains advanced
-  predecessor_change_hash: SHA-256
+  current_change_hash: SHA-256              # change at this sequence; fixed genesis at 0
+  executable_world_snapshot_id
+  executable_universe_snapshot_id
+  executable_policy_snapshot_id
   epoch_hash: SHA-256
 
 DecisionValidityEnvelope                     # emitted by Module 01; enforced by Runtime
@@ -981,10 +1301,10 @@ DecisionValidityEnvelope                     # emitted by Module 01; enforced by
   proposal_outcome_binding_hash
   entity_context_id / context_hash
   governed_observation_set_id / set_hash
-  compilation_hash
+  compilation_core_hash
   validated_semantic_sequence: uint64
-  validated_epoch: SemanticEpochVector
-  upstream_decision_binding_ids[]
+  validated_epoch_hash
+  upstream_decision_binding_ids[] / binding_hashes[]
   upstream_validity_envelope_hashes[]
   disposition_critical_verification_receipt_ids[]
   temporal_guard_ids[]
@@ -1005,7 +1325,8 @@ Module 01 does not implement the Module-02 coordinator, but its output is unusab
 
 ```text
 SemanticChangeSet
-  change_set_id / owner_scope
+  change_set_id: content-addressed ID
+  owner_scope
   from_exclusive_semantic_sequence: uint64
   semantic_sequence: uint64                  # exactly from + 1
   from_epoch / executable_epoch: SemanticEpochVector
@@ -1015,10 +1336,10 @@ SemanticChangeSet
   affected_dependency_key_summary              # complete, no-false-negative summary
   affected_boundary_proof_hash
   executable_world/universe/policy snapshot IDs
-  impact_index_version / change_hash / publication_receipt_hash
+  impact_index_version / change_hash
 
 DecisionIrrelevanceCertificate
-  certificate_id
+  certificate_id: content-addressed ID
   decision_id / validity_envelope_hash
   change_set_ids_or_range_root
   from_exclusive_semantic_sequence / through_inclusive_semantic_sequence
@@ -1045,24 +1366,44 @@ AuthorizationReceipt
   clock_instant / authorization_not_after
   result: AUTHORIZED | DENIED_RELEVANT_CHANGE | DENIED_UPSTREAM_INVALID |
           DENIED_EXPIRED | DENIED_EPOCH_RACE
+  intent_core_hash? / execution_attempt? / executor_fence_token?  # EXECUTION_START only
   receipt_hash
 
-SideEffectIntent                            # Runtime Side Effect Ledger record
-  side_effect_id / mission_id / effect_type
+SideEffectIntentCore                        # immutable Runtime Side Effect Ledger identity
+  side_effect_intent_id: content-addressed ID
+  owner_scope / mission_id / effect_type
   normalized_request_hash
   idempotency_key
-  authorizing_decision_id
+  authorizing_decision_id / decision_hash
   decision_validity_envelope_hash
   intent_admission_receipt_hash
-  authorization_receipt_hash?                # EXECUTION_START receipt once EXECUTING
-  authorized_semantic_sequence
+  admitted_semantic_sequence
   authorization_not_after
-  execution_attempt / executor_fence_token?
-  status: INTENDED | EXECUTING | COMMITTED |
-          CANCELLED_STALE_AUTHORIZATION | RETRYABLE_FAILURE |
-          FAILED_FINAL | RECONCILIATION_REQUIRED
-  external_operation_ref? / result_hash? / last_failure_code?
-  intent_hash
+  created_at
+  intent_core_hash
+
+SideEffectTransition                       # immutable append-only status/event record
+  transition_id: content-addressed ID
+  intent_core_hash
+  transition_sequence: uint64               # 0..n contiguous per intent
+  previous_transition_hash                  # registered intent-scoped SideEffectTransitionGenesis,v7 at 0
+  from_status: NONE | INTENDED | EXECUTING | COMMITTED |
+               CANCELLED_STALE_AUTHORIZATION | RETRYABLE_FAILURE |
+               FAILED_FINAL | RECONCILIATION_REQUIRED
+  to_status: INTENDED | EXECUTING | COMMITTED |
+             CANCELLED_STALE_AUTHORIZATION | RETRYABLE_FAILURE |
+             FAILED_FINAL | RECONCILIATION_REQUIRED
+  transition_kind
+  authorization_receipt_hash? / authorized_semantic_sequence?
+  execution_attempt? / executor_fence_token?
+  external_operation_ref? / result_hash? / failure_code?
+  occurred_at / actor_id
+  transition_hash
+
+SideEffectLedgerHead                       # mutable CAS projection; never content-addressed
+  intent_core_hash
+  latest_transition_sequence / latest_transition_hash / current_status
+  cas_version
 ```
 
 A `ChangeSetRangeProof` from sequence 187 exclusive through 194 inclusive covers exactly seven indexed records 188…194. Its leaf count must equal `through - from`；every included ChangeSet's owner scope/sequence/predecessor chain must match its position. A Merkle form must prove those indexed leaves、range completeness and ordered endpoints, not merely membership of an unordered set. Empty range is valid only when both endpoints are equal。
@@ -1071,11 +1412,25 @@ Publication/authorization invariant：
 
 1. Before a semantic change is visible to governed readers, the coordinator builds and seals the next `SemanticChangeSet` with a complete deterministic affected-key summary、boundary proof、exact successor snapshots and predecessor hash. Unknown impact is represented as an affected boundary, never omitted。
 2. **Publication transaction boundary (`PublishEpochTxn`)**: under one owner-scope serializable/CAS transaction, read current sequence `s` and predecessor hash, require the new ChangeSet to be `semantic_sequence=s+1`, write it as `EXECUTABLE`, advance the executable pointer to `s+1`, and expose the matching `GovernedReadView`/snapshot fence atomically. Concurrent publications serialize on that pointer. If world storage is external, bytes may exist earlier but cannot be read through a governed adapter until the fence advances. No Decision-row update or per-Decision certificate is a publication prerequisite。
-3. The owner-scope genesis pointer is sequence `0` with a fixed domain-separated genesis hash；the first ChangeSet is sequence `1`. The durable safety truth is the contiguous executable hash-chained ChangeSet log. Component epochs state **which** semantic domains changed；`semantic_sequence` alone defines **when** and range order. Replay/recovery accepts only `1..pointer.semantic_sequence` with exact owner scope、contiguous numbers、predecessor hashes and snapshot/component transitions. A gap、duplicate、reorder、hash mismatch or pointer-without-record blocks the governed fence and all authorization for that owner scope. Decision `VALID/STALE` rows、reverse indexes and irrelevance certificates remain lazy projections。
-4. **Intent admission (`AuthorizeSideEffectIntentTxn`)** may persist `INTENDED` with a preliminary `AuthorizationReceipt`, exact envelope hash、sequence and idempotency identity. This proves the intent was admissible then；it is not permission to issue the external call。
-5. **Execution linearization (`ReauthorizeForExecutionTxn`)**: immediately before execution, read the `INTENDED | RETRYABLE_FAILURE` intent、exact `DecisionValidityEnvelope`、current owner-scope sequence、trusted clock、side-effect policy and every bound upstream Decision. Check the complete ordered ChangeSet range `(envelope.validated_semantic_sequence, current]` for the Decision and each upstream envelope, using exact records or a verified no-false-negative `ChangeSetRangeProof`. A union-summary intersection expands to exact ChangeSets or denies conservatively. Under an unchanged sequence pointer/upstream hashes, atomically write an `EXECUTION_START` receipt and transition exactly once to `EXECUTING` with an executor fence. Relevant change、range gap、invalid upstream、expired horizon or policy denial instead atomically writes `CANCELLED_STALE_AUTHORIZATION`; no external call is issued。
+3. The owner-scope genesis pointer is sequence `0` with the registered `SemanticChangeSetGenesis,v7` hash；the first ChangeSet is sequence `1`. The durable safety truth is the contiguous executable hash-chained ChangeSet log. Component epochs state **which** semantic domains changed；`semantic_sequence` alone defines **when** and range order. Replay/recovery accepts only `1..pointer.semantic_sequence` with exact owner scope、contiguous numbers、predecessor hashes and snapshot/component transitions. A gap、duplicate、reorder、hash mismatch or pointer-without-record blocks the governed fence and all authorization for that owner scope. Decision `VALID/STALE` rows、reverse indexes and irrelevance certificates remain lazy projections。
+4. **Intent admission (`AuthorizeSideEffectIntentTxn`)** seals a preliminary `AuthorizationReceipt`, then an immutable `SideEffectIntentCore`, then appends transition `0: NONE → INTENDED` and advances `SideEffectLedgerHead` in one conditional transaction. This proves the intent was admissible then；it is not permission to issue the external call。Status is never a field of `intent_core_hash`。
+5. **Execution linearization (`ReauthorizeForExecutionTxn`)**: immediately before execution, read the immutable intent core、verified transition chain/head in `INTENDED | RETRYABLE_FAILURE`、exact `DecisionValidityEnvelope`、current owner-scope sequence、trusted clock、side-effect policy and every bound upstream Decision. Check the complete ordered ChangeSet range `(envelope.validated_semantic_sequence, current]` for the Decision and each upstream envelope, using exact records or a verified no-false-negative `ChangeSetRangeProof`. A union-summary intersection expands to exact ChangeSets or denies conservatively. Under unchanged semantic/ledger pointers and upstream hashes, atomically seal an `EXECUTION_START` receipt and append exactly one transition to `EXECUTING` with an executor fence；or append `CANCELLED_STALE_AUTHORIZATION` on relevant change、range gap、invalid upstream、expired horizon or policy denial. The CAS head advances to that transition；no external call is issued on cancellation。
 6. The external network call occurs **after and outside** that database transaction and always carries the persisted idempotency key/executor fence where supported. Persisted `EXECUTING` is the authorization linearization point: later world changes cannot retroactively cancel or deny that already-started logical attempt. They affect future intents/retries, while this attempt completes through idempotency and reconciliation. Continuum does not claim atomic commit with an external system or exactly-once network delivery。
-7. A side-effect type is eligible for automatic execution only when the external adapter provides a stable idempotency contract and authoritative lookup/reconciliation, or an equivalent transactional outbox/receiver protocol. Otherwise unknown outcomes remain `RECONCILIATION_REQUIRED` for human resolution；they are never blindly replayed. Compiler output/model calls cannot mint receipts、publish epochs、transition the ledger or authorize effects。
+7. Every later status/result is another contiguous transition whose `previous_transition_hash` equals the current head。A gap、fork、rewrite、status-illegal edge or head/hash mismatch blocks execution and reconciliation；repair appends a new transition and never mutates history。A side-effect type is eligible for automatic execution only when the external adapter provides a stable idempotency contract and authoritative lookup/reconciliation, or an equivalent transactional outbox/receiver protocol. Otherwise unknown outcomes remain `RECONCILIATION_REQUIRED` for human resolution；they are never blindly replayed. Compiler output/model calls cannot mint receipts、publish epochs、transition the ledger or authorize effects。
+
+Legal transition edges are closed and versioned：
+
+| From | To | Required refs |
+|---|---|---|
+| `NONE` | `INTENDED` | intent-admission receipt |
+| `INTENDED | RETRYABLE_FAILURE` | `EXECUTING` | fresh `EXECUTION_START` receipt、current sequence、attempt、fence |
+| `INTENDED | RETRYABLE_FAILURE` | `CANCELLED_STALE_AUTHORIZATION` | denied reauthorization receipt；external-call count remains zero |
+| `EXECUTING` | `COMMITTED` | authoritative external operation/result ref |
+| `EXECUTING` | `RECONCILIATION_REQUIRED` | unknown-outcome/failure code |
+| `EXECUTING` | `RETRYABLE_FAILURE | FAILED_FINAL` | authoritative adapter result proving the status |
+| `RECONCILIATION_REQUIRED` | `COMMITTED | RETRYABLE_FAILURE | FAILED_FINAL` | authoritative reconciliation result |
+
+`COMMITTED | CANCELLED_STALE_AUTHORIZATION | FAILED_FINAL` are terminal。A `RETRYABLE_FAILURE` never returns to `INTENDED`；its next call requires the fresh reauthorization edge directly to `EXECUTING`。Transition sequence and previous hash are checked before transition-specific fields, and a CAS conflict appends nothing。
 
 Race coverage：
 
@@ -1091,12 +1446,12 @@ Execution/crash semantics：
 
 | Crash or race point | Required recovery behavior |
 |---|---|
-| before final reauthorization | intent remains `INTENDED | RETRYABLE_FAILURE`; retry performs the entire current-sequence check |
-| after checks but before `EXECUTING` persistence | transaction has no effect; retry rereads the pointer/range and cannot reuse an uncommitted receipt |
-| after `EXECUTING` persistence but before network call | never reset/re-authorize blindly；reconcile by idempotency key. Issue the same logical request only if authoritative external lookup proves absence and the adapter contract makes same-key execution safe；otherwise `RECONCILIATION_REQUIRED` |
+| before final reauthorization | ledger head remains `INTENDED | RETRYABLE_FAILURE`; retry performs the entire current-sequence/chain check |
+| after checks but before `EXECUTING` transition persistence | transaction has no effect; retry rereads both pointers/range and cannot reuse an uncommitted receipt |
+| after `EXECUTING` transition persistence but before network call | never reset/re-authorize blindly；reconcile by idempotency key. Issue the same logical request only if authoritative external lookup proves absence and the adapter contract makes same-key execution safe；otherwise append `RECONCILIATION_REQUIRED` |
 | after external call but before `COMMITTED` | treat outcome as unknown；lookup/reconcile by idempotency key/external operation ref, never create another logical operation |
-| timeout/unknown external outcome | persist `RECONCILIATION_REQUIRED`; only authoritative reconciliation may produce `COMMITTED` or `RETRYABLE_FAILURE`. The latter must pass a fresh `ReauthorizeForExecutionTxn` before any call |
-| relevant sequence advance before `INTENDED → EXECUTING` | persist `CANCELLED_STALE_AUTHORIZATION`; external adapter is not invoked |
+| timeout/unknown external outcome | append `RECONCILIATION_REQUIRED`; only authoritative reconciliation may append `COMMITTED` or `RETRYABLE_FAILURE`. The latter must pass a fresh `ReauthorizeForExecutionTxn` before any call |
+| relevant sequence advance before `INTENDED → EXECUTING` | append `CANCELLED_STALE_AUTHORIZATION`; external adapter is not invoked |
 | relevant sequence advance after `EXECUTING` | do not pretend the call did not occur；finish/reconcile the in-flight idempotent attempt and block future stale authorizations |
 
 This closes both stale-row lag and authorization-to-execution TOCTOU without fleet-wide fan-out. The safety claim is exact: no relevant publication completed **before the `EXECUTING` linearization point** can be skipped；after that point, external uncertainty is handled by the Side Effect Ledger rather than by fictitious cross-system atomicity。
@@ -1149,9 +1504,10 @@ This result is not an invitation to add a case-specific code. Catalog changes fo
 
 | Stage | Model owns | Deterministic code owns | Explicitly forbidden |
 |---|---|---|---|
+| 0H Hash DAG | nothing | closed type/version/preimage registry、ID/digest recomputation、input topological order | unregistered preimage、self/descendant hash、signature or mutable field in content identity |
 | 0G Governed Read | nothing | observation closure、gateway/read-fence signature、single executable world/semantic-sequence/component-epoch binding | unversioned/future/mixed/bypass reads |
 | 0I Proposal/Entity | nothing | producer/signature/version、proposal outcome mapping、entity roles、snapshot/policy/hash binding | compiler-authored outcome、model-authored entity IDs |
-| 0D Upstream Decision | nothing | exact Decision/compilation/envelope/current status/sequence/epoch/outcome binding | degrading Decision to source fragment、auto-latest、silent supersession rewrite |
+| 0D Upstream Decision | nothing | exact Decision/final-record/envelope/current status/sequence/epoch/outcome/lineage binding | degrading Decision to source fragment、auto-latest、silent supersession rewrite |
 | 0U Universe | nothing | authoritative catalog binding、namespace enumeration、watermark/attestation/hash validation | self-declared completeness、semantic requirement discovery |
 | 0N Normalization | nothing in acceptance path | fragment accounting、trusted parser/reviewer receipts、normalized rule/schema validation | silent omission、unreviewed model normalization |
 | 0S Selection | nothing | SourceSet、selective guards、evidence/contradiction inventories、hard-limit preflight | whole-manifest super-dependency、top-K semantic narrowing |
@@ -1163,9 +1519,9 @@ This result is not an invitation to add a case-specific code. Catalog changes fo
 | 4V Disposition-Critical Verification | exact preselected proof/guard/one contradiction-side observation → `CONFIRMED | REFUTED | INDETERMINATE` | minimal request、purpose/independence/receipt validation | ref/Requirement/contradiction discovery、materiality、outcome、admission disposition、state mutation |
 | 4R Recompute | nothing | remove REFUTED observations、frozen-order reselection、direct-conflict re-reduction、typed uncertainty | accepting unverified claims、model-directed search/retry |
 | 4B Proof/Completeness | nothing | verified final applicability/upstream proof、confirmed contradiction set、effective set、materiality、assessments、temporal guards | semantic invention、proposal outcome rewrite |
-| 5 Proposal Gate | nothing | validation class、proposal comparison、proposal-admission disposition、stable justification/envelope | replacement proposal/outcome、model retry as semantic repair |
-| Canonicalizer | nothing | IDs、proof/guard graph、proposal/entity/temporal/epoch/selective provenance、hash、dedupe | adding omitted evidence/requirements、embedding whole inventory as CRITICAL |
-| RuntimeAcceptance / Sequence barrier / Side Effect Ledger | nothing | derivation/currentness/upstream/clock recheck、contiguous sequence/range proof、governed-read fence、atomic `INTENDED→EXECUTING` reauthorization、idempotency/reconciliation | fleet-wide publication fan-out、Decision row as sole authority、cross-system atomicity claim、compiler/model state mutation |
+| 5 Proposal Gate | nothing | validation class、proposal comparison、proposal-admission disposition、seal `CompilationCore` | replacement proposal/outcome、model retry as semantic repair、hashing envelope/final descendants into core |
+| Canonicalizer | nothing | core→envelope→justification→final-record layering、proof/guard graph、proposal/entity/temporal/epoch/selective provenance、hash、dedupe | adding omitted evidence/requirements、embedding whole inventory as CRITICAL、reverse hash dependency |
+| RuntimeAcceptance / Sequence barrier / Side Effect Ledger | nothing | hash-DAG validation、exact-ID/lineage cycle check、derivation/currentness/upstream/clock recheck、contiguous sequence/range proof、governed-read fence、append-only `INTENDED→EXECUTING` reauthorization、idempotency/reconciliation | cyclic/future Decision proof、D→D `AUTHORIZES`、mutable intent hash/history rewrite、fleet-wide publication fan-out、Decision row as sole authority、cross-system atomicity claim、compiler/model state mutation |
 
 ## Terminal and non-terminal semantics
 
@@ -1201,6 +1557,7 @@ Only after trusted inputs and every required model pass execute correctly may th
 | Condition | `run_status` | `result_class` | Proposal-admission disposition / behavior |
 |---|---|---|---|
 | unauthorized/malformed signed proposal/entity/upstream/observation input | `COMPLETED` | `INPUT_REJECTION` | none；typed input code；semantic stages skipped |
+| supplied input has unregistered preimage、ID/digest mismatch or descendant/back-reference | `COMPLETED` | `INPUT_REJECTION` | none；`INPUT_REJECTED_HASH_DAG` / `CONTENT_ADDRESS_CYCLE` |
 | unversioned/future/mixed/bypass governed observation | `COMPLETED` | `INPUT_REJECTION` | none；`INPUT_REJECTED_OBSERVATION_PROVENANCE` |
 | model schema/enum/local ID invalid、model emits forbidden target/ref/entity | `FAILED` | `EXECUTION_FAILURE` | none；`MODEL_PROTOCOL_INTEGRITY_FAILURE`；retryable policy applies |
 | transport timeout/truncation/missing receipt after a call starts | `FAILED` | `EXECUTION_FAILURE` | none；partial output audit-only；retry whole immutable attempt |
@@ -1217,13 +1574,16 @@ Only after trusted inputs and every required model pass execute correctly may th
 | matching valid proposal with all preconditions | `COMPLETED` | `SEMANTIC_RESULT` | `ACCEPTED` + canonical output |
 | accepted envelope intersects newer ChangeSet、upstream invalid or expired | authorization denied | Runtime authorization result | no side effect；lazy stale projection may follow |
 | final execution reauthorization detects relevant change/range gap/expiry/upstream invalid | ledger transition | Runtime authorization result | `CANCELLED_STALE_AUTHORIZATION`；external call not issued |
+| compiler creates a cyclic/unregistered derived hash or violates core→envelope→justification→final layering | `FAILED` | `EXECUTION_FAILURE` | none；`COMPILER_HASH_DAG_INVARIANT`；no Runtime acceptance |
+| Runtime candidate has self/exact-ID/lineage cycle、future upstream or D→D `AUTHORIZES` | acceptance rejected | Runtime acceptance result | typed `DECISION_DEPENDENCY_*` / `INVALID_DECISION_RELATION`；no canonical mutation |
+| Side Effect transition chain/head has gap、fork、rewrite、illegal edge or hash mismatch | execution blocked | Runtime ledger-integrity result | `SIDE_EFFECT_LEDGER_INTEGRITY_FAILURE`；external call not issued |
 | internal persistence/invariant defect | `FAILED` | `EXECUTION_FAILURE` | none；retryability is typed |
 
 ## Deterministic acceptance gate
 
 Preconditions for any normal gate evaluation：
 
-1. immutable `DecisionProposal`、authorized producer/version、`DecisionEntityContext`、complete `GovernedObservationSet`、one executable `GovernedReadView`、active `EnterpriseWorldSnapshot`、`CompilerPolicyBundle` and all hashes validate；
+1. immutable `DecisionProposal`、authorized producer/version、`DecisionEntityContext`、complete `GovernedObservationSet`、one executable `GovernedReadView`、active `EnterpriseWorldSnapshot`、`CompilerPolicyBundle` and every registered ancestor hash/DAG edge validate；
 2. `SourceUniverseSnapshot=COMPLETE`、`RuleNormalizationManifest=COMPLETE` and `SourceSetManifest=DECLARED_COMPLETE` for the decision class；
 3. Runtime-selective coverage boundary/rule-set/evidence-eligibility/contradiction-eligibility guards have been derived；
 4. every trusted template/obligation is accounted exactly once and every governing obligation has a validated `APPLICABLE | NOT_APPLICABLE` justification；
@@ -1251,7 +1611,19 @@ Proposal-admission disposition：
 These values never mean that Continuum made a new business decision. Example: `DecisionProposal.proposed_outcome=APPROVED` plus insufficient evidence yields `proposal_admission_disposition=REJECTED_INCOMPLETE_REQUIREMENTS` and no canonical Decision；the business proposal remains APPROVED but **not admitted**. It must never be rendered or audited as `business outcome=DENIED`。
 
 ```text
+CompilationCore
+  compilation_core_id: content-addressed ID
+  pipeline_version / compiler_version / schema_versions
+  exact trusted input IDs/hashes
+  exact compiler-derived semantic artifact IDs/hashes
+  run_status / result_class / proposal_admission_disposition?
+  input_rejection_or_execution_failure_code? / retryability?
+  evidence_supported_validation_class?
+  executed_stage_trace[] / prompt_model_config_output_hashes[]
+  compilation_core_hash: SHA-256
+
 DecisionJustification
+  justification_id: content-addressed ID
   proposal_id / proposal_hash
   proposal_outcome_binding_hash
   producing_agent_id / producing_agent_version
@@ -1271,10 +1643,21 @@ DecisionJustification
   evidence_eligibility_dependency_keys[]
   contradiction_eligibility_dependency_keys[]
   temporal_validity_guard_ids[]
-  decision_validity_envelope_id
+  compilation_core_hash
+  decision_validity_envelope_id / envelope_hash
   derivation_binding_hash: SHA-256
   semantic_proof_key: SHA-256
   selection_rule: ALL_APPROVAL_ROOTS | STABLE_FAILED_PROOF_PATH
+  justification_hash: SHA-256
+
+FinalCompilationRecord
+  final_record_id: content-addressed ID
+  compilation_core_id / compilation_core_hash
+  decision_validity_envelope_id / envelope_hash
+  decision_justification_id / justification_hash
+  canonical_graph_hash
+  finalization_schema_version
+  final_record_hash: SHA-256
 ```
 
 APPROVE selects all satisfied root closures. DENY selects one failed proof path with the smallest tuple：
@@ -1289,6 +1672,8 @@ APPROVE selects all satisfied root closures. DENY selects one failed proof path 
 ```
 
 `proposition_display`、model local ID、case ID、domain 和 iteration order 均不参与选择。相同 structured semantics/context 下的 paraphrase 必须得到相同 proof slice。
+
+The Gate seals `CompilationCore` before the envelope exists。Only `ACCEPTED` cores proceed to envelope、justification and accepted `FinalCompilationRecord` construction；non-accepted/failed/blocked cores may still be wrapped in a final record whose envelope/justification/graph fields are absent under the registered `FinalCompilationRecord,v7` variant。No layer hashes a descendant layer。
 
 ## Canonical graph and Runtime invalidation
 
@@ -1307,9 +1692,13 @@ GovernedObservationSet(executable read closure)
     --VALIDATED_AS / BINDS_ENTITY / OBSERVED_AT[CRITICAL]-->
 Decision
 
-UpstreamDecision(exact compilation + validity envelope + epoch)
-    --REQUIRES / AUTHORIZES[CRITICAL]-->
 DownstreamDecision
+    --REQUIRES[CRITICAL]-->
+UpstreamDecision(exact final record + validity envelope + epoch)
+
+Decision
+    --AUTHORIZES[CRITICAL]-->
+Action / SideEffectIntentCore
 
 EnterpriseWorldFragment(selected applicability fact)
     --SUPPORTED_BY[CRITICAL]-->
@@ -1349,7 +1738,7 @@ Rules：
 6. Supporting/analysis-only evidence has no critical Runtime edge and cannot cause stale propagation。
 7. Both APPLICABLE and accepted NOT_APPLICABLE exclusions have critical applicability guards；a mutable selected binding can stale the Decision in either direction。
 8. Unresolved contradiction、incomplete universe/normalization/selection coverage、unsupported logic/predicate and REVIEW produce no canonical graph。
-9. RuntimeAcceptanceService rechecks exact proposal/entity/observation/upstream/compilation hash、mission revision、governed world/universe/policy snapshots、clock horizon、all intervening ChangeSets、derived-artifact hashes and selective guard derivation before conditional atomic commit/authorization。
+9. RuntimeAcceptanceService rechecks exact proposal/entity/observation/upstream/final-record and envelope hashes、the registered hash DAG、Decision exact-ID/lineage acyclicity、mission revision、governed world/universe/policy snapshots、clock horizon、all intervening ChangeSets、derived-artifact hashes and selective guard derivation before conditional atomic commit/authorization。
 10. No canonical Decision outcome may differ from the policy-validated class of immutable `DecisionProposal.proposed_outcome`；non-accepted validation results never create an alternate Decision。
 
 ### Exact invalidation semantics
@@ -1363,7 +1752,7 @@ Rules：
 | contradiction-eligibility change | Map changed predicate/authority/scope membership to `ContradictionEligibilityGuard`. | Decisions whose complete contradiction inventory may change become `STALE` |
 | evidence-eligibility/source-search policy change | Map changed predicate/entity-role/namespace eligibility to `EvidenceEligibilityGuard`. | Decisions whose complete proof candidate inventory may change become `STALE` |
 | selected governing、state、authorization or applicability source content/revision | Existing critical source/guard reachability applies. | reachable Decision `STALE` |
-| upstream Decision becomes STALE/SUPERSEDED/INVALID or its exact envelope is replaced | Follow canonical Decision→Decision critical reachability；never rewrite the old binding to a successor. | downstream Decision and its transitive dependents cannot authorize；lazy projections become `STALE` |
+| upstream Decision becomes STALE/SUPERSEDED/INVALID or its exact envelope is replaced | Follow the reverse index of canonical `downstream --REQUIRES--> upstream` edges；never rewrite the old binding to a successor. | downstream Decision and its transitive dependents cannot authorize；lazy projections become `STALE` |
 | selected proof/applicability/attestation reaches `valid_until` | Trusted-clock authorization checks the guard synchronously；scheduler emits expiry event. | authorization denied at expiry；Decision becomes `STALE` without source-byte change |
 | world/universe/policy/catalog semantic sequence advances | Final execution check intersects exact envelope keys with every intervening executable ChangeSet/range proof. | relevant older Decision cannot enter EXECUTING even before async stale row update；irrelevant range may be cached |
 | unselected supporting or analysis-only source content | No critical proof/guard edge and no governing/eligibility membership effect. | no automatic stale |
@@ -1446,7 +1835,7 @@ Safety-by-blocking is necessary but not sufficient. Every integrated DEV report 
 
 ```text
 OperationalLimitProfile
-  profile_id / provider / model_config_hash / pricing_snapshot_id
+  profile_id / provider / model_config_hash / pricing_snapshot_id / pricing_snapshot_hash
   median_model_calls_ceiling: 16
   p95_model_calls_ceiling: 48
   median_input_tokens_ceiling: 100_000
@@ -1455,9 +1844,9 @@ OperationalLimitProfile
   p95_output_tokens_ceiling: 60_000
   median_compiler_latency_ms_ceiling: 90_000
   p95_compiler_latency_ms_ceiling: 240_000
-  median_settled_cost_usd_ceiling: 0.05
-  p95_settled_cost_usd_ceiling: 0.20
-  experiment_total_budget_usd: separately preregistered hard cap
+  median_settled_cost_usd_decimal_ceiling: "0.050000"
+  p95_settled_cost_usd_decimal_ceiling: "0.200000"
+  experiment_total_budget_usd_decimal: separately preregistered fixed-scale string
   profile_hash / approved_by / frozen_at
 ```
 
@@ -1844,15 +2233,15 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 - **Failure**：new relevant fact/policy becomes executable, old Decision row is still VALID while impact event waits, and a side effect executes before invalidator marks it STALE。
 - **Corrected flow**：`PublishEpochTxn` atomically publishes the sealed complete `SemanticChangeSet`、new governed read fence and executable sequence pointer；it does not wait for Decision-row writes. Final `ReauthorizeForExecutionTxn` checks the exact envelope against all intervening executable ChangeSets while atomically transitioning the ledger intent to `EXECUTING`；the later external call is not inside that transaction。
 - **Fail closed**：unknown/partial impact summary、ChangeSet range gap、relevant key intersection、sequence-pointer race or expired envelope denies authorization；no stale projection/certificate must pre-exist for safety。
-- **Canonical provenance**：`DecisionValidityEnvelope` binds proposal/entity/observation/compilation hashes、validated epoch vector、temporal horizon and every selective dependency key；authorization receipt binds exact ChangeSet range root。
+- **Canonical provenance**：`DecisionValidityEnvelope` binds proposal/entity/observation/`compilation_core_hash`、validated epoch vector、temporal horizon and every selective dependency key；authorization receipt binds exact ChangeSet range root。
 - **Runtime invalidation**：enterprise revision、new governing membership、policy/catalog/selector revision and temporal expiry each follow the documented barrier behavior. Models/compiler cannot advance epochs or mint irrelevance。
 
 ### P0-28 — Upstream Decision remains a first-class dependency
 
 - **Failure**：Procurement Decision D50 relies on Security Decision D42, but the compiler degrades D42 to a copied document fragment. When D42 becomes STALE/SUPERSEDED, D50 and activation remain VALID because no Decision→Decision edge exists。
-- **Corrected flow**：D50's signed proposal names exact D42 under a contract-declared `UPSTREAM_DECISION` role. Stage 0D emits an `UpstreamDecisionBinding` over D42's decision ID、compilation hash、validity-envelope hash、required outcome、VALID status and epoch。
+- **Corrected flow**：D50's signed proposal names exact D42 under a contract-declared `UPSTREAM_DECISION` role. Stage 0D emits an `UpstreamDecisionBinding` over D42's decision ID、final-record hash、validity-envelope hash、required outcome、VALID status and epoch。
 - **Fail closed**：STALE/SUPERSEDED/INVALID D42 or hash/epoch/outcome mismatch cannot satisfy the role. Superseding D42 with D42' does not rewrite D50；revalidation must explicitly bind D42' in a new proposal。
-- **Canonical provenance**：D42 --`REQUIRES[CRITICAL]`→ D50 --`REQUIRES[CRITICAL]`→ activation, with each exact envelope/binding hash in D50's justification and validity envelope。
+- **Canonical provenance**：D50 --`REQUIRES[CRITICAL]`→ D42 and D50 --`AUTHORIZES[CRITICAL]`→ activation, with each exact final-record/envelope/binding hash in D50's justification and validity envelope。Invalidation traverses the reverse `REQUIRES` index from D42 to D50。
 - **Runtime invalidation**：D42's relevant ChangeSet/status invalidation denies D50 immediately at authorization and stale propagates transitively through D50 to activation, even if lazy rows lag。
 
 ### P0-29 — Mixed-world governed observations cannot become proof
@@ -1906,9 +2295,9 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 ### P0-35 — Final reauthorization closes external-effect TOCTOU
 
 - **Failure**：intent is authorized at sequence 187；a relevant ChangeSet publishes at 188 before `activate_vendor` is called；the old design still issues the external call because authorization and network execution were incorrectly described as one transaction。
-- **Corrected flow**：`ReauthorizeForExecutionTxn` checks the exact envelope、all upstream envelopes、clock/policy and contiguous ChangeSets through the current sequence, then atomically writes an `EXECUTION_START` receipt and `INTENDED → EXECUTING` under unchanged pointer/hashes. A sequence-188 relevant change instead writes `CANCELLED_STALE_AUTHORIZATION` and makes zero external calls。
+- **Corrected flow**：`ReauthorizeForExecutionTxn` checks the immutable intent core/transition head、exact envelope、all upstream envelopes、clock/policy and contiguous ChangeSets through the current sequence, then atomically seals an `EXECUTION_START` receipt and appends `INTENDED → EXECUTING` under unchanged pointers/hashes. A sequence-188 relevant change instead appends `CANCELLED_STALE_AUTHORIZATION` and makes zero external calls。
 - **Fail closed**：range gap、relevant intersection、invalid upstream、expiry、policy denial or CAS race cannot enter `EXECUTING`. After `EXECUTING`, crash/timeout never blindly reissues；idempotency/reconciliation governs the already-started logical attempt。
-- **Canonical provenance**：Side Effect Ledger binds side-effect/request/idempotency identity、authorizing Decision/envelope、execution-start receipt、authorized sequence/horizon、executor fence and external reconciliation result。
+- **Canonical provenance**：immutable `SideEffectIntentCore` binds side-effect/request/idempotency identity and admission authorization；each execution-start/status/result is a contiguous `SideEffectTransition` whose previous hash is the ledger head。No mutable status or receipt enters `intent_core_hash`。
 - **Runtime invalidation**：changes before the execution linearization point cancel stale authorization；changes after it cannot erase an in-flight external effect and instead block later intents/retries. No cross-system atomicity is claimed。
 
 ### P0-36 — Every disposition-critical model claim is independently verified
@@ -1927,11 +2316,41 @@ Policy says “manager approval OR emergency authorization”。Normalized rule 
 - **Canonical provenance**：`GovernedReadView`、observations/proposal、upstream bindings、`DecisionValidityEnvelope`、ChangeSet/range proof、authorization/execution receipt all record the exact sequence plus component epoch/hash。
 - **Runtime invalidation**：replay/recovery rebuilds only a contiguous verified prefix and never skips to the pointer. Each Decision/upstream envelope is checked from its own validated sequence through current before execution begins。
 
+### P0-38 — Content-addressed identities form a constructible DAG
+
+- **Failure A — proposal/observation fixed point**：`DecisionProposal.proposal_id = H(...observation_set_id...)` while `GovernedObservationSet.observation_set_id = H(...proposal_id...)`；neither ID can be constructed first。
+- **Corrected flow A**：seal observations、then `GovernedObservationSet(request_correlation_id, observation_ids, view hash)`、then `DecisionProposal(material_observation_set_id/set_hash)`。The set contains no proposal ID/hash；correlation is opaque and excluded from proof dereference。
+- **Failure B — universe/read-view fixed point**：`GovernedReadView` names `universe_snapshot_id` while `SourceUniverseSnapshot` hashes `governed_read_view_hash`。
+- **Corrected flow B**：seal the universe snapshot against the executable world/sequence/epoch, then seal the read view from universe/policy/world snapshot IDs and the published epoch hash。The universe contains no view descendant。
+- **Failure C — compilation/envelope fixed point**：the validity envelope hashes a final compilation while the final justification hashes the envelope。
+- **Corrected flow C**：`CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`；each child preimage contains only ancestor hashes under `continuum-hash-v1`。Legacy `compilation_hash` is a read-only alias of `final_record_hash` and is forbidden in v7 preimages。
+- **Failure D — mutable intent hash**：one `intent_hash` covers status、execution receipt and result fields that change over time, so its identity is neither stable nor append-only。
+- **Corrected flow D**：seal immutable `SideEffectIntentCore` once；append transitions `0..n` with exact previous hashes and maintain a non-content-addressed CAS head。A fork、gap、mutation or illegal status edge blocks execution/reconciliation。
+- **Attestation/signature fixture**：`UniverseCompletenessAttestation` contains only the pre-existing catalog fence and `GatewayAuthorizationAttestation` contains only the authorization/read fence。Injecting `universe_snapshot_id`、`observation_id` or a descendant `signature_record_hash` into either parent preimage yields `CONTENT_ADDRESS_CYCLE` / schema rejection；creating a detached signature later leaves the signed content ID byte-identical。
+- **Recursive-rank fixture**：valid ChangeSets、accepted Decisions and SideEffectTransitions point only to lower registered ordinals。A same-sequence/wrong-predecessor/self/future edge fails rank validation；the finite instance graph remains unchanged。
+- **Normative assertion**：the collapsed per-batch strata admit a full topological sort；every finite fixture instance satisfies parent-first admission plus the recursive-family ordinal proof。Injecting any removed reverse edge yields `CONTENT_ADDRESS_CYCLE` / `UNREGISTERED_HASH_PREIMAGE` before canonical acceptance；all ancestor IDs remain byte-identical under child creation。
+
+### P0-39 — Decision proof is well-founded and acyclic
+
+- **Direct self-cycle fixture**：candidate D77's upstream list contains exact candidate `decision_id` or its own `decision_lineage_id`。`RuntimeAcceptanceTxn` returns `DECISION_DEPENDENCY_SELF_CYCLE` before writing a Decision、edge、receipt or graph-head update。
+- **Two-node cycle-attempt fixture**：accepted immutable D80 exists；accepted D81 has `D81 --REQUIRES--> D80`。A proposed graph delta inserting `D80 --REQUIRES--> D81` deterministically returns `DECISION_DEPENDENCY_CYCLE` (cycle precedence is earlier than generic history-mutation failure) because D81 already reaches D80。The original two nodes/edge/root remain byte-identical；an acyclic rewrite of D80 would instead return `DECISION_IMMUTABLE_HISTORY_MUTATION`。
+- **Supersession-mediated cycle fixture**：lineage A contains D90；D91 in lineage B already `REQUIRES` D90。Candidate D90' supersedes D90 and proposes `D90' --REQUIRES--> D91`。Exact IDs alone are fresh, but the lineage projection would add `A → B` while `B → A` exists；acceptance returns `DECISION_LINEAGE_CYCLE`。D90 is not rewritten and D91 remains bound to D90。
+- **Already-existing fixture**：two concurrent candidates reference one another but neither is committed。Both refs fail the “already-existing accepted immutable upstream” check；serialization cannot admit a mutually dependent pair。
+- **Relation fixture**：any D→D `AUTHORIZES` edge is `INVALID_DECISION_RELATION`。The valid graph is `D50 --REQUIRES--> D42` plus `D50 --AUTHORIZES--> activation/SideEffectIntentCore`; staling D42 traverses reverse-REQUIRES to D50 and blocks that authorization。
+- **Determinism assertion**：cycle traversal uses canonical sorted adjacency under one graph-root CAS transaction and emits the same typed failure for the same graph root/candidate。Missing adjacency、limit exhaustion or CAS conflict fails closed and cannot publish a partial canonical graph。
+
 ## Regression matrix
 
 Implementation must eventually add method-level tests for：
 
-- every P0-1…P0-37 counterexample above；
+- every P0-1…P0-39 counterexample above；
+- hash-registry completeness：every v7 ID/hash field resolves to exactly one `(type_tag, schema_version, preimage)` row and unregistered digests reject；
+- registry-to-stratum coverage is one-to-one；the collapsed strata topologically sort and finite instance graphs satisfy predecessor rank；proposal↔observation-set、universe↔read-view、attestation↔descendant、core↔envelope/final and intent-core↔transition reverse-edge mutations each fail；
+- observation set is constructible before proposal and carries only opaque correlation；creating/signing the proposal never changes `set_hash`；
+- `CompilationCore → Envelope → Justification → FinalCompilationRecord` hashes recompute exactly, while changing a child cannot change any ancestor hash；
+- immutable intent-core hash remains stable across every legal transition；transition chain rejects gap、fork、wrong predecessor、status-illegal edge and mutable-history rewrite；
+- Decision exact-ID and lineage graphs reject direct self-cycle、two-node insertion、supersession-mediated cycle and uncommitted mutual refs before canonical mutation；
+- D→D accepts only `REQUIRES`，D→Action/SideEffect accepts only `AUTHORIZES`，and reverse-REQUIRES invalidation preserves D42→D50 stale propagation；
 - APPLICABLE requires all current predicate proofs；NOT_APPLICABLE requires a stable determinate false guard；unsupported model N/A becomes INDETERMINATE；
 - both `handles_pii true→false` and `false→true` stale the prior accepted applicability guard；
 - normalization manifest accounts for every in-boundary fragment exactly once；silent empty parser output and missing reviewer receipt fail closed；
@@ -1951,7 +2370,7 @@ Implementation must eventually add method-level tests for：
 - Alice/Bob and Vendor-A/Vendor-B adversarial matches cannot satisfy/canonicalize across entities；
 - time-sensitive selected proof emits a finite guard；authorization at exact expiry and after expiry is denied with no byte change；
 - `NOT_EXISTS` and retrieval-derived false EXISTS obligations return typed unsupported result；
-- exact upstream Decision binding、D42→D50→activation transitive stale、supersession non-rewrite and authorization denial；
+- exact upstream Decision binding、`D50 --REQUIRES--> D42` reverse stale propagation、`D50 --AUTHORIZES--> activation` denial and supersession non-rewrite；
 - unversioned/future/mixed/bypass governed observations are input rejection, and compiler/model reads share the executable fence；
 - epoch publication requires zero Decision-row writes；enterprise、membership、policy、catalog/selector and temporal races cannot authorize across a relevant ChangeSet；
 - model/schema/ref/transport/verifier execution failures never emit a proposal-admission disposition and retries never reuse partial outputs；
@@ -1991,11 +2410,13 @@ Implementation must eventually add method-level tests for：
 - If full DEV passes but blind holdout fails any P0，do not tune against revealed cases；redesign or acquire a newly independent holdout after method changes。
 - If applicability proof cannot prevent unsupported NOT_APPLICABLE suppression or cannot stale on fact transition, stop before integrated paid run。
 - If temporal expiry、a newer uncovered semantic sequence，or a relevant change before `INTENDED → EXECUTING` can authorize even one side effect, stop Module 01/02 progression；the Continuum safety thesis is falsified for that Runtime contract。
-- If a STALE/SUPERSEDED/INVALID upstream Decision can satisfy D→D proof、supersession silently rebinds a downstream Decision，or D42→D50→activation can escape transitive invalidation, stop progression。
+- If a STALE/SUPERSEDED/INVALID upstream Decision can satisfy D→D proof、supersession silently rebinds a downstream Decision，or reverse-`REQUIRES` propagation from D42 to D50 can fail to block D50's activation authorization, stop progression。
 - If an unversioned/future/mixed/bypass observation can enter canonical proof，or epoch publication depends on fleet-wide Decision-row atomic fan-out, reject the Runtime contract。
 - If any compiler/model/protocol failure is persisted as proposal non-admission，or any proposal-admission rejection/review is rendered as a new business DENY/REVIEW outcome, reject the result contract before model integration。
 - If a broken/gapped/reordered owner-scope ChangeSet sequence can become executable or replay/authorization can skip it, reject the Runtime contract。
 - If a false model contradiction can become a confirmed block without verification of both material sides, reject N1 before integrated paid run。
+- If any v7 content identity requires a fixed-point/cyclic hash、has an unregistered/ambiguous preimage、or hashes mutable Side Effect state, reject the persistence contract before implementation planning。
+- If Runtime acceptance can admit a Decision self-edge、exact-ID cycle、lineage cycle、future/unaccepted upstream ref or D→D `AUTHORIZES` edge, reject canonical acceptance before implementation planning。
 - If the 30-case integrated subset misses the operational success/block thresholds or its numeric p95 limit profile, optimize/narrow/redesign before any 120-case paid run；blocked missions remain in denominators。
 - If normalization or authoritative universe completeness relies on silent omission/self-attestation, architecture remains `REDESIGN REQUIRED`。
 - If safe coverage invalidation requires routinely staling unrelated Decisions and cannot satisfy the preregistered coverage-induced unnecessary-invalidation threshold, the design contradicts selective revalidation and must be narrowed/redesigned。
@@ -2005,7 +2426,7 @@ Implementation must eventually add method-level tests for：
 
 ## Product-owner blocker resolution matrix
 
-| Blocker | Revision-6 mechanism | Fail-closed condition | Normative fixture |
+| Blocker | Revision-7 mechanism | Fail-closed condition | Normative fixture |
 |---|---|---|---|
 | P0-1 requirement omission | complete trusted template inventory + deterministic instantiation | missing/accounting conflict cannot fall back to proposal rationale | P0-1 |
 | P0-2 model materiality | model emits no canonical materiality; Stage 4 proof role derives it | no selected proof for required role → insufficient | P0-2 |
@@ -2044,17 +2465,19 @@ Implementation must eventually add method-level tests for：
 | P0-35 effect TOCTOU | Side Effect Ledger + atomic final reauthorization/`EXECUTING` transition | stale pre-execution authorization cancels without external call；post-start reconciles | P0-35 |
 | P0-36 critical verification | purpose-typed minimal verifier for proof/guard/both contradiction sides | unconfirmed observation cannot become proof or confirmed contradiction | P0-36 |
 | P0-37 total order | contiguous owner-scope `semantic_sequence` + exact range/replay proof | gap/duplicate/reorder/hash mismatch blocks fence and authorization | P0-37 |
+| P0-38 content identity DAG | registered `continuum-hash-v1` preimages + observation-before-proposal + core/envelope/final layering + immutable intent/transition chain | cycle、unknown preimage、mutable hash、chain fork/gap rejects before acceptance/execution | P0-38 |
+| P0-39 Decision well-foundedness | exact-ID and lineage DAGs + already-accepted upstream rule + pre-acceptance deterministic cycle check；D→D=`REQUIRES` | self/two-node/lineage/future-ref/illegal-relation attempt performs no canonical mutation | P0-39 |
 
 ## Product-owner review checklist
 
 本 revision 请求确认：
 
-1. `proposal_admission_disposition` 是否与 immutable business outcome 完全分离，APPROVED+insufficient 是否只显示 NOT ADMITTED；
-2. `ReauthorizeForExecutionTxn` + Side Effect Ledger 是否在 `EXECUTING` 前关闭 TOCTOU，并准确覆盖全部 crash/unknown-outcome 状态；
-3. Stage 4V 是否只验证 exact preselected disposition-critical claims，且 contradiction 两侧、REFUTED recompute、INDETERMINATE uncertainty 均有确定语义；
-4. owner-scope `semantic_sequence` 是否为 publication/range/replay/authorization 提供无 gap/duplicate/reorder 的全序；
-5. N0/N1 是否共享完全相同 primary outputs，且 false contradiction block、confirmed precision、human-review false-positive 和 safety/cost/latency delta 可归因；
-6. P0-1～P0-33 guarantees 是否全部 preserved，且 P0-34～P0-37 fixtures/tests/metrics 是否完整；
+1. `continuum-hash-v1` registry 是否为每个 v7 hash 给出唯一 exact preimage/version，且完整依赖图可拓扑排序；
+2. observation set→proposal、universe→read view 与 core→envelope→justification→final record 是否均可按顺序构造且不存在反向 hash；
+3. Side Effect Ledger 是否以 immutable intent core + append-only transition chain + mutable CAS head 取代含 mutable status/receipt 的 ambiguous intent hash；
+4. exact Decision ID graph 与 supersession-lineage projection 是否都拒绝 self/two-node/supersession-mediated cycle，且 upstream 必须 already accepted immutable；
+5. D→D 是否仅为 `REQUIRES`、D→Action/SideEffect 是否仅为 `AUTHORIZES`，reverse-REQUIRES invalidation 是否保持 P0-28；
+6. P0-1～P0-37 是否完全冻结，Revision 7 是否只增加 P0-38/P0-39 contracts、fixtures 与 regressions；
 7. 本 Revision 是否仍严格禁止 implementation plan、live model、blind access、full 120 paid run 和 Module 02，直到 Product Owner 批准架构。
 
 批准本文只允许下一步编写 implementation plan；不代表 Module 01 P0 PASS。

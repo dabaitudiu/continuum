@@ -74,9 +74,11 @@ Use mission `epoch` to make major world-state changes explicit.
 
 Epoch is explanatory metadata; dependency edges, not epoch alone, determine invalidation.
 
-Module 01 Revision 6 adds a distinct owner-scope `semantic_sequence:uint64` for executable semantic publication. It is a strict total order over hash-chained ChangeSets；world/universe/policy/catalog component epochs describe which domains changed. Authorization/recovery must verify the exact contiguous sequence range, while dependency-key intersection still determines relevance。
+Module 01 Revision 6 added a distinct owner-scope `semantic_sequence:uint64` for executable semantic publication. Revision 7 freezes that contract and adds only constructible content identity plus acyclic Decision proof acceptance。The sequence remains a strict total order over hash-chained ChangeSets；world/universe/policy/catalog component epochs describe which domains changed. Authorization/recovery must verify the exact contiguous sequence range, while dependency-key intersection still determines relevance。
 
-Before an external side effect begins, `ReauthorizeForExecutionTxn` atomically checks the current sequence、Decision/upstream envelopes、clock/policy and transitions the Side Effect Ledger intent to `EXECUTING` or `CANCELLED_STALE_AUTHORIZATION`. The network call is not part of this transaction. Once `EXECUTING` persists, crash/unknown outcomes use the stable idempotency key and reconciliation rather than pretending the effect never started。
+Before an external side effect begins, `ReauthorizeForExecutionTxn` atomically checks the immutable `SideEffectIntentCore`、append-only transition head、current sequence、Decision/upstream envelopes and clock/policy, then appends `EXECUTING` or `CANCELLED_STALE_AUTHORIZATION`. Status/receipts/results never mutate `intent_core_hash`。The network call is not part of this transaction. Once `EXECUTING` persists, crash/unknown outcomes append reconciliation transitions using the stable idempotency key rather than pretending the effect never started。
+
+Accepted Decision proof is also deterministic：`downstream Decision --REQUIRES--> upstream Decision` and `Decision --AUTHORIZES--> Action/SideEffect`。Runtime rejects self、exact-ID、two-node and supersession-lineage cycles before canonical acceptance；staleness propagates from upstream through the reverse `REQUIRES` index。
 
 ## Deterministic vs agentic responsibility
 

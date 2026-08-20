@@ -2,7 +2,7 @@
 
 ## Status
 
-The persistence/API replacement below is Revision-6 design-only and awaits product-owner review after Revision 5 was rejected. P0-1～P0-33 remain fixed. Existing v1 records remain readable and immutable. Any replacement uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as new stage outputs.
+The persistence/API replacement below is Revision-7 design-only and awaits product-owner review. P0-1～P0-37 are architecturally accepted and frozen；Revision 7 changes only the P0-38 hash DAG and P0-39 Decision acyclicity boundary. Existing v1 records remain readable and immutable. Any replacement uses an explicit `pipeline_version` and cannot silently reinterpret `CriticReview` as new stage outputs.
 
 ## Persistence entities
 
@@ -40,10 +40,12 @@ The replacement stores immutable records across enterprise-world、compiler-poli
 - `UnsupportedLogicFindingRecord`
 - `UnsupportedPredicateFindingRecord`
 - `TemporalValidityGuardRecord`
+- `CompilationCoreRecord`
 - `DecisionValidityEnvelopeRecord`
-- `SemanticEpochRecord` / `SemanticChangeSetRecord` / `ChangeSetRangeProofRecord` / `DecisionIrrelevanceCertificateRecord` / `AuthorizationReceiptRecord`（Runtime/Drift-owned interface records）
-- `SideEffectIntentRecord` / external reconciliation records（Runtime Side Effect Ledger-owned）
-- `DecisionJustificationRecord` for accepted APPROVE/DENY only;
+- `DecisionJustificationRecord` / `FinalCompilationRecord`
+- `CanonicalDecisionCoreRecord` / `DecisionDependencyAcyclicityReceiptRecord` / `DecisionDependencyGraphHead`（Runtime-owned）
+- `SemanticEpochRecord` / `SemanticChangeSetRecord` / `SemanticPublicationReceiptRecord` / `ChangeSetRangeProofRecord` / `DecisionIrrelevanceCertificateRecord` / `AuthorizationReceiptRecord`（Runtime/Drift-owned interface records）
+- `SideEffectIntentCoreRecord` / append-only `SideEffectTransitionRecord` / `SideEffectLedgerHead` / external reconciliation records（Runtime Side Effect Ledger-owned）
 - `CompilerFindingRecord`
 - `CompilationResultRecord`
 - per-stage `ModelInvocationRecord` / ledger settlement linkage.
@@ -52,7 +54,8 @@ Every stage record includes request ID, pipeline/schema/prompt version, input ha
 
 ```text
 CompilationAttemptRecord
-  attempt_id / request_id / attempt_number
+  attempt_id: content-addressed ID
+  request_id / attempt_number
   retry_of_attempt_id?
   started_at / ended_at
   run_status
@@ -61,30 +64,43 @@ CompilationAttemptRecord
   model_invocation_ids[]
   ledger_reservation_ids[] / settlement_ids[]
   actual_input/output/cache_read/cache_write tokens
-  settled_cost
+  settled_cost_usd_decimal                    # normalized fixed-scale string, never float
   partial_output_refs[]                       # audit_only=true
+  final_record_id / final_record_hash?        # present only for a completed semantic result
   attempt_hash
 ```
 
-A retry always creates a new attempt ID、fresh budget reservation and full stage execution from immutable trusted inputs. It cannot import partial semantic/model output from the failed attempt. Request-level proposal-admission disposition remains null until one correctly executed semantic attempt completes；exhausted retries leave the request FAILED/BLOCKED, never admission rejection/review or business DENY/REVIEW。
+A retry always creates a new attempt、fresh budget reservation and full stage execution from immutable trusted inputs. `CompilationAttemptRecord` is sealed exactly once after that attempt terminates；live progress is non-authoritative telemetry and is not a mutable hash preimage。It cannot import partial semantic/model output from the failed attempt. Request-level proposal-admission disposition remains null until one correctly executed semantic attempt completes；exhausted retries leave the request FAILED/BLOCKED, never admission rejection/review or business DENY/REVIEW。
 
 ```text
-SideEffectIntentRecord
-  side_effect_id / mission_id / effect_type / normalized_request_hash
+SideEffectIntentCoreRecord                  # immutable/content-addressed
+  side_effect_intent_id
+  owner_scope / mission_id / effect_type / normalized_request_hash
   idempotency_key
-  authorizing_decision_id / decision_validity_envelope_hash
-  intent_admission_receipt_hash / authorization_receipt_hash?
-  authorized_semantic_sequence
+  authorizing_decision_id / decision_hash / decision_validity_envelope_hash
+  intent_admission_receipt_hash
+  admitted_semantic_sequence
   authorization_not_after
-  execution_attempt / executor_fence_token?
-  status: INTENDED | EXECUTING | COMMITTED |
-          CANCELLED_STALE_AUTHORIZATION | RETRYABLE_FAILURE |
-          FAILED_FINAL | RECONCILIATION_REQUIRED
-  external_operation_ref? / result_hash? / last_failure_code?
-  record_hash
+  created_at
+  intent_core_hash
+
+SideEffectTransitionRecord                 # immutable/append-only
+  transition_id / intent_core_hash
+  transition_sequence / previous_transition_hash
+  from_status / to_status / transition_kind
+  authorization_receipt_hash? / authorized_semantic_sequence?
+  execution_attempt? / executor_fence_token?
+  external_operation_ref? / result_hash? / failure_code?
+  occurred_at / actor_id
+  transition_hash
+
+SideEffectLedgerHead                       # mutable CAS projection; not content-addressed
+  intent_core_hash
+  latest_transition_sequence / latest_transition_hash / current_status
+  cas_version
 ```
 
-Historical v1 `FAILED_RETRYABLE` records remain immutable and are exposed through a versioned reader mapping to Revision-6 `RETRYABLE_FAILURE`; no stored history is rewritten. `CANCELLED_STALE_AUTHORIZATION` proves the external adapter was not invoked. Once `EXECUTING` commits, later semantic changes do not rewrite the attempt；idempotency/reconciliation determines the external outcome。
+Historical v1 `FAILED_RETRYABLE` records remain immutable and are exposed through a versioned reader mapping to Revision-7 `RETRYABLE_FAILURE`; no stored history is rewritten. A legacy mutable `record_hash` is never promoted to `intent_core_hash`；migration emits an explicit legacy envelope and a new transition chain only after deterministic validation。`CANCELLED_STALE_AUTHORIZATION` proves the external adapter was not invoked. Once an `EXECUTING` transition commits, later semantic changes do not rewrite the attempt；idempotency/reconciliation appends the external outcome。
 
 ## Result and stage trace
 
@@ -124,17 +140,21 @@ unsupported_logic_findings[]
 unsupported_predicate_findings[]
 selective_coverage_guard_keys[]
 temporal_validity_guards[]
+compilation_core_ref / compilation_core_hash
 decision_validity_envelope?
 derivation_binding_hash
 decision_justification? only when ACCEPTED
 findings[]
 canonical graph fields only when ACCEPTED
-compilation_hash only when ACCEPTED
+final_record_ref / final_record_hash
 ```
+
+The active hash stack is `CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`。`DecisionValidityEnvelope` contains `compilation_core_hash`, never `final_record_hash`。A read-only legacy adapter may label `final_record_hash` as `compilation_hash` only with an explicit alias-version field；that label cannot enter a v7 hash preimage。
 
 Executed stages use the replacement vocabulary:
 
 ```text
+CONTENT_HASH_DAG_VALIDATED
 POLICY_BUNDLE_VALIDATED
 GOVERNED_OBSERVATIONS_VALIDATED
 DECISION_PROPOSAL_AND_ENTITY_CONTEXT_VALIDATED
@@ -223,7 +243,7 @@ SideEffectLedger.reconcile(intent, idempotency_key, external_observation)
 
 ## Transaction boundary
 
-Compiler stage persistence and Runtime Decision commit remain separate transactions linked by immutable compilation ID/hash. A compilation may be semantically accepted yet fail Runtime acceptance because mission revision or world snapshot advanced.
+Compiler stage persistence and Runtime Decision commit remain separate transactions linked by immutable final-record ID/hash. A compilation may be semantically accepted yet fail Runtime acceptance because mission revision or world snapshot advanced、its hash DAG is invalid or its proposed D→D edges are cyclic.
 
 Runtime acceptance revalidates:
 
@@ -235,9 +255,11 @@ Runtime acceptance revalidates:
 - trusted time is before exclusive `authorization_not_after`; upstream Decisions remain current/VALID；every intervening executable semantic sequence/ChangeSet is contiguous、hash-chain complete and non-intersecting；
 - executable sequence pointer/upstream hashes remain unchanged through Runtime Decision acceptance. This transaction does not contain an external side effect。
 
+Before those checks can mutate canonical state, Runtime validates every v7 digest against the closed `continuum-hash-v1` registry and the order `SourceUniverseSnapshot → GovernedReadView → GovernedObservationSet → DecisionProposal` plus `CompilationCore → Envelope → Justification → FinalRecord`。Under one owner-scope `DecisionDependencyGraphHead` transaction it computes the candidate Decision ID/acceptance sequence, requires exact already-existing accepted immutable upstream Decisions, checks exact-ID and lineage `REQUIRES` reachability, rejects D→D `AUTHORIZES`, then atomically appends the Decision、reverse invalidation index and acyclicity receipt。Any self/two-node/lineage cycle、future ref、missing adjacency or graph-root CAS conflict writes no canonical mutation。
+
 `PublishEpochTxn` is a separate serializable transaction: verify predecessor/current sequence、assign exactly `s+1`、seal/publish one complete ChangeSet、advance one owner-scope executable pointer and expose one governed read fence. It requires **zero Decision-row writes**. Decision status/index/certificate records are lazy projections。
 
-Side-effect intent admission may persist `INTENDED`, but `ReauthorizeForExecutionTxn` performs the final sequence/range/upstream/clock/policy check and atomically writes an execution-start receipt plus `INTENDED | RETRYABLE_FAILURE → EXECUTING` under unchanged pointer/hashes. Stale authorization becomes `CANCELLED_STALE_AUTHORIZATION` with no network call. The external adapter is invoked only after that transaction with the persisted idempotency key；crash/unknown outcome follows `RECONCILIATION_REQUIRED`, never a claim of cross-system atomicity。
+Side-effect intent admission seals an immutable core plus transition `0: NONE→INTENDED`；status is never hashed into that core。`ReauthorizeForExecutionTxn` performs the final sequence/range/upstream/clock/policy and transition-chain check, then atomically writes an execution-start receipt plus the next append-only `INTENDED | RETRYABLE_FAILURE → EXECUTING` transition under unchanged semantic/ledger pointers and hashes. Stale authorization appends `CANCELLED_STALE_AUTHORIZATION` with no network call. The external adapter is invoked only after that transaction with the persisted idempotency key；crash/unknown outcome appends `RECONCILIATION_REQUIRED`, never mutates history or claims cross-system atomicity。
 
 ## Events
 

@@ -2,9 +2,9 @@
 
 ## Status and versioning
 
-The product owner approved Option B's direction but rejected concrete specifications through Revision 5 while accepting P0-1～P0-33 architecturally. These Revision-6 contracts are **design contracts under review, not implemented contracts**. Their normative definitions are in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
+The product owner approved Option B's direction and has architecturally accepted/frozen P0-1～P0-37. These Revision-7 P0-38/P0-39 contracts are **design contracts under review, not implemented contracts**. Their normative definitions are in [15_REPLACEMENT_ARCHITECTURE.md](15_REPLACEMENT_ARCHITECTURE.md).
 
-Implemented `DecisionDraft`、`ClaimDraft`、`DependencyRef`、`CriticProposal` and `CriticReview` remain immutable v1 legacy types for persisted evidence and ablation replay. They are not production fallbacks and cannot be silently reinterpreted as Revision-6 objects.
+Implemented `DecisionDraft`、`ClaimDraft`、`DependencyRef`、`CriticProposal` and `CriticReview` remain immutable v1 legacy types for persisted evidence and ablation replay. They are not production fallbacks and cannot be silently reinterpreted as Revision-7 objects.
 
 ## Design goal
 
@@ -42,11 +42,11 @@ The authoritative registry snapshot envelope enumerates owner scope、namespaces
 
 ### `DecisionProposal` / `DecisionEntityContext`
 
-The immutable proposal records producing agent ID/version、decision type、unchanged proposed outcome、entity context、material observation set、exact upstream Decision role refs、world snapshot/epoch、time and hash. A deterministic `ProposalOutcomeBinding` maps that exact outcome through versioned policy into the gate vocabulary；the source value is never rewritten. `DecisionEntityContext` maps contract roles such as REQUESTER/RESOURCE/VENDOR to stable typed entities. Models receive already-instantiated predicate keys and cannot supply entity IDs。
+The immutable proposal records producing agent ID/version、decision type、unchanged proposed outcome、entity context、material observation set、exact upstream Decision role refs、world snapshot/epoch、time and hash. Construction is strictly `GovernedObservation → GovernedObservationSet(request_correlation_id, no proposal back-ref) → DecisionProposal` under `continuum-hash-v1`. A deterministic `ProposalOutcomeBinding` maps that exact outcome through versioned policy into the gate vocabulary；the source value is never rewritten. `DecisionEntityContext` maps contract roles such as REQUESTER/RESOURCE/VENDOR to stable typed entities. Models receive already-instantiated predicate keys and cannot supply entity IDs。
 
 ### `GovernedObservationSet` / `UpstreamDecisionBinding`
 
-Each material proposal/compiler read maps to a signed `GovernedObservation` and one executable `GovernedReadView`. Unversioned、future、mixed or bypass reads are typed input rejection. A contract-required `UPSTREAM_DECISION` role resolves to an exact accepted/current/VALID Decision ID、compilation hash、validity-envelope hash、required outcome/condition、observed status and epoch. A successor never silently rewrites this binding；canonical graph keeps a first-class Decision→Decision critical edge。
+Each material proposal/compiler read maps to a signed `GovernedObservation` and one executable `GovernedReadView`. `SourceUniverseSnapshot` is sealed before—and never hashes—the view；the view may hash the universe snapshot. Unversioned、future、mixed or bypass reads are typed input rejection. A contract-required `UPSTREAM_DECISION` role resolves to an exact accepted/current/VALID Decision ID、final-record hash、validity-envelope hash、lineage、required outcome/condition、observed status and epoch. A successor never silently rewrites this binding；canonical graph keeps `downstream Decision --REQUIRES--> upstream Decision` and a reverse invalidation index. D→D `AUTHORIZES` is illegal。
 
 ### `PredicateIdentity`
 
@@ -207,13 +207,13 @@ Deterministic completeness computes one assessment per **template-instantiated e
 
 ### `TemporalValidityGuard` / `DecisionValidityEnvelope`
 
-A finite guard binds each time-sensitive selected proof/applicability result to trusted clock policy、`evaluated_at`、`[valid_from, valid_until)` and expiry semantics. The validity envelope binds proposal/entity/observation/upstream/verification/compilation hashes、`validated_semantic_sequence`、component epoch vector、minimum exclusive `authorization_not_after` and every selective dependency key. Runtime denies execution start at expiry、invalid upstream or any relevant intervening executable ChangeSet；a scheduler/Decision row is not the safety barrier。
+A finite guard binds each time-sensitive selected proof/applicability result to trusted clock policy、`evaluated_at`、`[valid_from, valid_until)` and expiry semantics. The validity envelope binds proposal/entity/observation/upstream/verification/`compilation_core_hash`、`validated_semantic_sequence`、component epoch vector、minimum exclusive `authorization_not_after` and every selective dependency key. Runtime denies execution start at expiry、invalid upstream or any relevant intervening executable ChangeSet；a scheduler/Decision row is not the safety barrier。
 
-### `SemanticEpoch` / `ChangeSetRangeProof` / `SideEffectIntent`
+### `SemanticEpoch` / `ChangeSetRangeProof` / immutable Side Effect records
 
 `SemanticEpoch` adds one owner-scope `semantic_sequence:uint64` to the component epoch vector and predecessor hash. `PublishEpochTxn` assigns exactly `current+1`; range proofs、read views、envelopes、upstream checks and authorization receipts order by sequence, not by component-wise comparison. Replay accepts only a contiguous hash-linked prefix。
 
-`SideEffectIntent` binds idempotency/request identity、authorizing Decision/envelope、execution-start authorization receipt、authorized sequence/horizon and ledger status. `ReauthorizeForExecutionTxn` atomically checks the exact ordered ChangeSet ranges and transitions `INTENDED | RETRYABLE_FAILURE → EXECUTING` or `CANCELLED_STALE_AUTHORIZATION`. The external call follows outside the transaction；`EXECUTING` crash/unknown outcomes use idempotency and `RECONCILIATION_REQUIRED`, never blind replay。
+`SideEffectIntentCore` binds only stable idempotency/request identity、authorizing Decision/envelope、intent-admission receipt、admitted sequence/horizon and `intent_core_hash`. Status、execution receipt、attempt/fence and result exist only in contiguous append-only `SideEffectTransition` records；`SideEffectLedgerHead` is a mutable CAS projection and never a content identity. `ReauthorizeForExecutionTxn` atomically checks exact ordered ChangeSet ranges and appends `INTENDED | RETRYABLE_FAILURE → EXECUTING` or `CANCELLED_STALE_AUTHORIZATION`. The external call follows outside the transaction；`EXECUTING` crash/unknown outcomes use idempotency and append-only reconciliation, never blind replay。
 
 ### `UnsupportedLogicResult`
 
@@ -255,13 +255,14 @@ ReplacementCompilationResult
   coverage_boundary / rule_set / evidence_eligibility /
     contradiction_eligibility guards[]
   temporal_validity_guards[]
+  compilation_core_id / compilation_core_hash
   decision_validity_envelope?
   decision_justification?
+  final_record_id / final_record_hash
   canonical_decision?
   canonical_claims[] / canonical_edges[]
   findings[] / executed_stages[]
   pipeline/compiler/schema versions
-  compilation_hash?
   stage_model_metadata[]
 ```
 
@@ -286,15 +287,19 @@ DecisionJustification
   applicability_justification_ids[]
   selective_coverage_dependency_keys[]
   temporal_validity_guard_ids[]
-  decision_validity_envelope_id
+  compilation_core_hash
+  decision_validity_envelope_id / envelope_hash
   derivation_binding_hash
   semantic_proof_key
   selection_rule
+  justification_hash
 ```
+
+The active identity stack is `CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`. `compilation_hash` is not a v7 field；a legacy read adapter may expose it only as an explicitly versioned alias of `final_record_hash`. Runtime then constructs `CanonicalDecisionCore` and checks both exact-ID and supersession-lineage `REQUIRES` DAGs before any canonical write。
 
 APPROVE selects all necessary root closures. DENY selects one failed proof by a stable tuple over predicate semantic key、selected source identities and normalized topology. Proposition display text、case/domain/local IDs and iteration order are excluded.
 
-Independently confirmed evidence maps Source → DIRECT Claim；ALL_OF maps Claim → Claim；roots map Claim → Decision；exact upstream proof maps Decision → Decision。Proposal/entity/observation context validate the exact Decision；selected applicability facts map to applicability guard Claims；material policy and selective boundary/rule/Evidence/contradiction eligibility guards map through `DecisionInterpretation`；temporal/envelope guards authorize only while current. Full manifests remain audit derivation, preventing unrelated inventory changes from staling every Decision。
+Independently confirmed evidence maps Source → DIRECT Claim；ALL_OF maps Claim → Claim；roots map Claim → Decision；exact upstream proof maps downstream Decision `--REQUIRES-->` upstream Decision，while Decision `--AUTHORIZES-->` Action/SideEffect only。Proposal/entity/observation context validate the exact Decision；selected applicability facts map to applicability guard Claims；material policy and selective boundary/rule/Evidence/contradiction eligibility guards map through `DecisionInterpretation`；temporal/envelope guards authorize only while current. Full manifests remain audit derivation, preventing unrelated inventory changes from staling every Decision。
 
 ## Determinism requirement
 

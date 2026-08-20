@@ -10,7 +10,10 @@ Focus on deterministic code:
 - fragment resolution;
 - proposal producer/outcome immutability、entity-role binding and cross-entity rejection；
 - governed-observation closure、gateway signature、executable read fence and future/mixed/bypass rejection；
-- exact upstream Decision ID/compilation/envelope/outcome/status/epoch binding、supersession non-rewrite and D→D reachability；
+- exact upstream Decision ID/final-record/envelope/outcome/status/epoch binding、supersession non-rewrite and reverse-`REQUIRES` reachability；
+- `continuum-hash-v1` type/version/preimage registry completeness、ID/digest equality and full type-DAG topological sort；
+- constructible universe→read-view→observation-set→proposal and CompilationCore→Envelope→Justification→FinalRecord layers with no back-reference；
+- exact-ID and supersession-lineage Decision cycle checks；already-accepted immutable upstream requirement and D→D relation legality；
 - temporal validity guard and exclusive authorization horizon;
 - scope checks;
 - separate enterprise-world/policy snapshots and exact derived-artifact envelope validation;
@@ -26,12 +29,12 @@ Focus on deterministic code:
 - scalable fragment contradiction partition/receipt union、actual-match output、cross-partition entity-aware join、precedence and impact;
 - deterministic RequirementAssessment truth table, support paths, blocking IDs, and one-assessment-per-requirement;
 - deterministic proof-role selection and opposite-truth conflict preservation;
-- transitive Source → Claim → Claim → Decision and Decision → Decision reachability;
+- transitive Source → Claim → Claim → Decision and reverse-indexed Decision `REQUIRES` reachability;
 - deterministic `APPROVE | DENY | REVIEW` acceptance rules;
 - proposal outcome mismatch rejects without replacement；
 - `DecisionValidityEnvelope` observation/upstream/verification/semantic-sequence/component-epoch binding and authorization denial across relevant ChangeSets；
 - contiguous owner-scope sequence assignment/range proof/replay and zero required Decision-row writes in publication；
-- `ReauthorizeForExecutionTxn` exact envelope/range/upstream/horizon/policy check plus atomic ledger transition to `EXECUTING | CANCELLED_STALE_AUTHORIZATION`；
+- immutable SideEffect intent-core hash plus contiguous transition hashing/head CAS；`ReauthorizeForExecutionTxn` exact envelope/range/upstream/horizon/policy check plus atomic appended transition to `EXECUTING | CANCELLED_STALE_AUTHORIZATION`；
 - disjoint INPUT_REJECTION / EXECUTION_FAILURE / SEMANTIC_RESULT records；model/protocol failure has no proposal-admission disposition；
 - immutable proposed business outcome versus proposal-admission disposition serialization/UI/audit mapping；
 - deterministic minimal DecisionJustification independent of proposition display、case/domain/local-ID order;
@@ -39,7 +42,7 @@ Focus on deterministic code:
 - canonical edge normalization;
 - duplicate edge handling;
 - materiality rules;
-- compilation hashing;
+- compilation-core/envelope/justification/final-record hashing;
 - schema rejection.
 
 ### Property tests
@@ -66,6 +69,10 @@ Useful invariants:
 - after `EXECUTING`, later sequence changes never rewrite history or permit duplicate logical external effects；
 - changing an irrelevant inventory artifact may change audit manifest hash but not selective Runtime guard/edge set;
 - semantically relevant catalog/rule/selection changes alter only matching coverage guards.
+- every registered hash type has exactly one preimage rule；adding any removed reverse edge makes the type graph cyclic；
+- creating a proposal、envelope、justification、final record or ledger transition never changes an ancestor digest；
+- append-only SideEffect transitions form one contiguous non-forking chain and never change `intent_core_hash`；
+- every accepted D→D `REQUIRES` edge strictly targets an already-accepted exact node, and both exact-ID/lineage graphs remain acyclic；
 
 ### Integration tests
 
@@ -111,6 +118,12 @@ Cases:
 - sequence 187 intent、relevant publication 188、then execution start → `CANCELLED_STALE_AUTHORIZATION` and external adapter call count 0；
 - crash before reauthorization、between check/commit、after `EXECUTING`/before call、after call/before `COMMITTED` and unknown outcome all follow the normative idempotency/reconciliation table；
 - sequence publication CAS assigns exactly next value；range 188…194 rejects gap、duplicate、reorder、bad predecessor and pointer/log mismatch；recovery exposes only verified prefix；
+- observation-set hash is sealed before proposal and unchanged by proposal/signature creation；SourceUniverseSnapshot contains no read-view descendant；completeness/gateway attestations contain no snapshot/observation/signature descendant and detached signing leaves ancestors byte-identical；
+- every registered hash profile maps to exactly one preimage/stratum；collapsed strata topologically sort, while ChangeSet/Decision/SideEffectTransition instance edges reject self/future/non-decreasing ordinals；
+- accepted hash layering recomputes `CompilationCore → Envelope → Justification → FinalRecord` exactly and rejects legacy/cyclic `compilation_hash` use；
+- direct Decision self-cycle、two-node edge-insertion cycle、supersession-lineage cycle and concurrent unaccepted mutual refs all fail before canonical writes；
+- D→D `AUTHORIZES` is rejected；`D50 --REQUIRES--> D42` plus `D50 --AUTHORIZES--> activation` preserves transitive invalidation；
+- intent core remains byte-identical across `NONE→INTENDED→EXECUTING→COMMITTED`；wrong predecessor、gap、fork、illegal edge or mutable rewrite blocks；
 
 ### Live Gemini contract tests
 
@@ -182,7 +195,7 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - time-sensitive proof missing horizon is insufficient；exact expiry denies authorization without source revision；
 - valid proposal whose proof supports another class is rejected without outcome substitution；
 - uncovered semantic-epoch races for enterprise/new-rule/policy/catalog changes deny authorization；
-- D42→D50→activation first-class Decision dependency、stale propagation and D42' supersession non-rewrite；
+- `D50 --REQUIRES--> D42`、`D50 --AUTHORIZES--> activation`、reverse stale propagation and D42' supersession non-rewrite；
 - governed W17/W18 future/mixed/bypass observations are input rejected；
 - epoch publication has zero required Decision writes；authorization intersects every intervening ChangeSet under unchanged pointer；
 - flaky/malformed primary、contradiction or verifier call yields retryable RUN_FAILED and null proposal-admission disposition；
@@ -192,6 +205,8 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - N0/N1 report false contradiction block、confirmed contradiction precision、human-review false-positive and paired resource delta from identical primary outputs；
 - `INTENDED→EXECUTING` final reauthorization cancels on relevant intervening sequence and issues no call；all five crash/unknown-outcome points preserve idempotency/reconciliation；
 - owner-scope sequence assignment and 188…194 range/replay reject gap、duplicate、reorder、bad predecessor and pointer mismatch；
+- P0-38 direct cycle fixtures：proposal↔observation-set、universe↔read-view、compilation↔envelope/final and mutable intent-record hash；
+- P0-39 fixtures：direct self-cycle、two-node insertion、supersession-mediated lineage cycle、uncommitted mutual refs and illegal D→D `AUTHORIZES`；
 - direct contradiction/registered cross-predicate constraint/unsupported relation metrics cannot share a denominator；
 - operational metrics retain blocked missions and publish per-domain/class median/p95 calls、tokens、latency and cost；
 - K6 fixtures contain zero case-specific predicates/rules/dependency templates and new in-scope cases reuse frozen schemas；
@@ -205,7 +220,7 @@ New Option B regression fixtures must be method-level and must not branch on ben
 - method-blind DEV annotation is frozen before replacement output、versioned/hashed/append-only and unavailable to production;
 - experiment order is OpenAI DEV → Gemini DEV → freeze → Gemini-primary blind；production/agents cannot access blind bodies.
 
-The synthetic normative P0-1…P0-37 counterexamples in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify contracts only and cannot be reported as live-model or benchmark evidence.
+The synthetic normative P0-1…P0-39 counterexamples in `15_REPLACEMENT_ARCHITECTURE.md` are mandatory architecture fixtures. They verify contracts only and cannot be reported as live-model or benchmark evidence.
 
 ## Mutation tests
 

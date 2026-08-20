@@ -4,9 +4,9 @@
 
 Structural integrity is checked immediately after the stage that introduces a typed object. Semantic uncertainty is preserved until the relevant semantic stage; source/context incompleteness blocks execution rather than being mistaken for semantic rejection.
 
-### S0G/S0I/S0D Proposal/entity/observation/upstream、universe、normalization、policy and source coverage
+### S0H/S0G/S0I/S0D Proposal/entity/observation/upstream、hash DAG、universe、normalization、policy and source coverage
 
-Validate one complete `GovernedObservationSet` against the executable `GovernedReadView`、immutable `DecisionProposal` producer/version/outcome/world/semantic-sequence/component-epoch binding、trusted `DecisionEntityContext` roles，and every exact contract-required upstream Decision ID/compilation/envelope/status/outcome/sequence/epoch. Unversioned/future/mixed/bypass material reads are input rejection；a successor never auto-rebinds an upstream role. Then validate registry/universe、normalization and SourceSet hashes. Every deterministic semantic component emits `PolicyUsageTrace`；an interpretation-affecting config read outside the bundle is execution failure `UNVERSIONED_POLICY_INPUT`. Derived manifests bind these inputs but cannot be members of the input world snapshot。
+Validate the `continuum-hash-v1` type/preimage registry and topological dependency order first。`SourceUniverseSnapshot → GovernedReadView → GovernedObservation → GovernedObservationSet → DecisionProposal` must be constructible；the observation set carries only opaque request correlation and no proposal back-reference。Then validate one complete set against the executable view、immutable proposal producer/version/outcome/world/semantic-sequence/component-epoch binding、trusted `DecisionEntityContext` roles，and every exact contract-required upstream Decision ID/final-record/envelope/status/outcome/sequence/epoch. Unversioned/future/mixed/bypass material reads、unregistered hashes or content-address cycles are input rejection；a successor never auto-rebinds an upstream role. Then validate registry/universe、normalization and SourceSet hashes. Every deterministic semantic component emits `PolicyUsageTrace`；an interpretation-affecting config read outside the bundle is execution failure `UNVERSIONED_POLICY_INPUT`. Derived manifests bind these inputs but cannot be members of the input world snapshot。
 
 Unavailable/incomplete universe、normalization or selection before model calls yields `RUN_BLOCKED`. Post-call malformed/partial partition coverage yields `RUN_FAILED` with no proposal-admission disposition. A model cannot override either；silent parser omission cannot become `NO_GOVERNING_RULE`。
 
@@ -32,13 +32,13 @@ Globally join actual determinate opposing matches only by the same stable predic
 
 ### S4A/S4V/S4R/S4B Proof selection、disposition-critical verification and completeness
 
-First reduce provisional applicability/direct contradictions/precedence and freeze deterministic candidate order. Stage 4V independently verifies every preselected model-interpreted enterprise proof/applicability role and both material sides of each provisional `VALIDITY_CRITICAL` direct conflict. Only `CONFIRMED` proof/guards can become `CRITICAL`，and only two confirmed model sides can form a blocking `Contradiction`. `REFUTED` removes the observation and S4R reselects/re-reduces；`INDETERMINATE` proof candidates are skipped, while a critical conflict side becomes typed semantic uncertainty rather than confirmed contradiction. Verifier failure is execution failure, not a verdict. Contract-required upstream roles accept only exact current/VALID `UpstreamDecisionBinding`s and become first-class Decision→Decision critical edges。
+First reduce provisional applicability/direct contradictions/precedence and freeze deterministic candidate order. Stage 4V independently verifies every preselected model-interpreted enterprise proof/applicability role and both material sides of each provisional `VALIDITY_CRITICAL` direct conflict. Only `CONFIRMED` proof/guards can become `CRITICAL`，and only two confirmed model sides can form a blocking `Contradiction`. `REFUTED` removes the observation and S4R reselects/re-reduces；`INDETERMINATE` proof candidates are skipped, while a critical conflict side becomes typed semantic uncertainty rather than confirmed contradiction. Verifier failure is execution failure, not a verdict. Contract-required upstream roles accept only exact current/VALID `UpstreamDecisionBinding`s and later become `downstream Decision --REQUIRES--> upstream Decision` critical edges。
 
 Compute one assessment per template-instantiated effective Requirement. DIRECT_ATOM uses selected role evidence and contradiction state. ALL_OF uses the fixed conjunction truth table. Verify every time-sensitive selected proof/applicability fact against immutable source time fields and emit finite `[valid_from, valid_until)` guards. Do not demand redundant direct evidence on derived Requirements.
 
 ### S5 Outcome and acceptance
 
-Compute an evidence-supported `APPROVE | DENY | REVIEW` validation class from root assessments and compare it with immutable domain-agent `DecisionProposal`. Mismatch rejects/reviews **proposal admission**；it cannot generate a substitute Decision or business outcome. Admitted APPROVE/DENY emits a `DecisionJustification` plus sequence-bound `DecisionValidityEnvelope` and exact unchanged proposal outcome。
+Compute an evidence-supported `APPROVE | DENY | REVIEW` validation class from root assessments and compare it with immutable domain-agent `DecisionProposal`. Mismatch rejects/reviews **proposal admission**；it cannot generate a substitute Decision or business outcome. Seal `CompilationCore` first；an admitted APPROVE/DENY then seals the sequence-bound `DecisionValidityEnvelope`、`DecisionJustification` and `FinalCompilationRecord` in that order with the exact unchanged proposal outcome。Runtime acceptance computes the candidate Decision ID and rejects any exact-ID/lineage self or dependency cycle before canonical mutation。
 
 ## Result-class boundaries
 
@@ -83,7 +83,8 @@ Canonicalization runs only after `ACCEPTED`.
 - every selected ALL_OF relationship maps prerequisite Claim → derived Claim;
 - selected roots map Claim → Decision;
 - exact `DecisionProposal`、`DecisionEntityContext` and `GovernedObservationSet` bind the canonical Decision and unchanged outcome；
-- exact `UpstreamDecisionBinding` maps upstream Decision → downstream Decision through `REQUIRES | AUTHORIZES[CRITICAL]`；
+- exact `UpstreamDecisionBinding` maps downstream Decision → exact upstream Decision through `REQUIRES[CRITICAL]`；D→D `AUTHORIZES` is invalid；
+- accepted Decision → Action/`SideEffectIntentCore` uses `AUTHORIZES[CRITICAL]`；stale propagation traverses the reverse index of `REQUIRES`；
 - selected applicability facts map through APPLICABLE/NOT_APPLICABLE guard Claims；
 - materially used policy refs and selective boundary/rule-set/Evidence/contradiction-eligibility guards map through a `DecisionInterpretation` Claim；full manifests remain audit-only derivation;
 - `TemporalValidityGuard` and `DecisionValidityEnvelope` bind trusted expiry/semantic sequence/component epoch to side-effect authorization；
@@ -124,25 +125,16 @@ failure_class_priority from versioned proof policy
 
 Human-readable proposition text is excluded. Semantically equivalent paraphrases over the same structured predicates/context must select the same Runtime critical dependency set.
 
-## Compilation hash
+## Hash validation and compilation layering
 
-The Revision-6 hash covers at least:
+The normative registry in `15_REPLACEMENT_ARCHITECTURE.md` is closed：every v7 digest has exactly one `(type_tag, schema_version, exact preimage)` and every dependency must follow its registered DAG edge。Validators recompute both digest and derived ID、reject a bare/untyped hash、reject a descendant/back-reference and topologically sort the complete registered type graph in tests。
 
-- exact proposal/producer/outcome/entity/observation/upstream context plus stable predicate/template semantics;
-- exact `CompilerPolicyBundle` refs/hashes;
-- exact world/universe/policy input IDs and derived `RuleNormalizationManifest`/`SourceSetManifest`/partition receipts;
-- requirement template/obligation instantiation receipts、validated applicability justifications and selective guards;
-- Evidence plan/partitions/fragment observations/receipts、validated bindings、purpose-typed disposition-critical verification receipts、proof selection and canonical materiality;
-- contradiction plan/fragment observations/receipts、provisional global pairs、both-side verification/semantic uncertainty、precedence and deterministic impact;
-- RequirementAssessments、validation class、unchanged proposal comparison and DecisionJustification;
-- temporal guards、authorization horizon、validated semantic sequence/component epoch and DecisionValidityEnvelope；
-- canonical refs/source hashes、world snapshot and stage trace;
-- pipeline/compiler/schema/prompt/model metadata required for provenance.
+The compilation order is exactly `CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`。The core contains trusted inputs、all semantic outputs、Gate result and provenance metadata but no envelope/justification/final/Runtime state；the envelope contains only `compilation_core_hash` and validity dependencies；the justification may point to the already-sealed envelope；the final record points to the prior three。Changing only `proposition_display` must not change the semantic proof key or canonical edge set。Legacy `compilation_hash` is at most an explicitly versioned read alias of `final_record_hash` and is forbidden in any active v7 preimage/envelope。
 
-Changing only `proposition_display` must not change the semantic proof key or canonical edge set.
+`RuntimeAcceptanceTxn` seals `CanonicalDecisionCore` under the next acceptance sequence, requires every exact upstream to be already accepted/immutable, and checks both exact-ID and supersession-lineage `REQUIRES` graphs under one graph-root CAS. Self、two-node、lineage-mediated cycle、future ref、missing adjacency、limit exhaustion or D→D `AUTHORIZES` produces no canonical write。
 
 ## Runtime invalidation contract
 
 Accepted graph validity depends on proposal/entity/observation/upstream binding、independently confirmed enterprise evidence/applicability facts、temporal horizon and interpretation/coverage semantics. Relevant revisions of upstream Decision status/envelope、selected fragments、catalog/entity roles/normalization/selection/authority/outcome/proof policies、governing rule set or Evidence/contradiction eligibility enter invalidation through stable guards. A full manifest hash change caused only by irrelevant inventory/supporting content must not automatically stale all Decisions。
 
-`RuntimeAcceptanceService` rechecks exact proposal/entity/observation/upstream/mission/world/universe/policy snapshots、derived envelope、selective guards、trusted clock and compilation hash. `PublishEpochTxn` assigns the next contiguous semantic sequence and publishes the complete ChangeSet/read fence without Decision-row fan-out. `ReauthorizeForExecutionTxn` checks every ordered intervening ChangeSet、upstream currentness/horizons and unchanged sequence pointer while atomically transitioning the Side Effect Ledger intent to `EXECUTING` or stale-cancelled. The external call is outside the transaction and uses idempotency/reconciliation. Runtime—not the compiler/model—owns status transitions、sequences/epochs、certificates and authorization.
+`RuntimeAcceptanceService` rechecks exact proposal/entity/observation/upstream/mission/world/universe/policy snapshots、derived envelope、selective guards、trusted clock and final-record hash plus the acyclic Decision proof contract. `PublishEpochTxn` assigns the next contiguous semantic sequence and publishes the complete ChangeSet/read fence without Decision-row fan-out. `ReauthorizeForExecutionTxn` checks every ordered intervening ChangeSet、upstream currentness/horizons and unchanged sequence/ledger heads while atomically appending the Side Effect transition to `EXECUTING` or stale-cancelled. The immutable intent core never changes；the external call is outside the transaction and uses idempotency/reconciliation. Runtime—not the compiler/model—owns graph acceptance、status transitions、sequences/epochs、certificates and authorization.

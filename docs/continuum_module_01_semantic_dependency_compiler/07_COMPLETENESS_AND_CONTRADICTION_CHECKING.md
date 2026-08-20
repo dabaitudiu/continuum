@@ -2,12 +2,12 @@
 
 ## Architecture decision
 
-The old Completeness Critic remains rejected. Revision 6 preserves the Revision-5 decomposition and amends it with admission、execution-start and total-order contracts:
+The old Completeness Critic remains rejected. The Revision-6 completeness/verification design is frozen within P0-1～P0-37. Revision 7 does not change its semantics；it only adds the P0-38/P0-39 deterministic identity and Decision-acceptance guards around it:
 
 1. governed observations prove proposal/compiler reads came from one executable world/epoch；
 2. authoritative universe + fragment-complete normalization prove the obligation input inventory;
 3. approved reusable templates plus trusted entity roles deterministically instantiate every semantic Requirement/applicability/upstream target；
-4. exact `UpstreamDecisionBinding`s preserve first-class Decision→Decision proof；
+4. exact `UpstreamDecisionBinding`s preserve first-class acyclic `downstream Decision --REQUIRES--> upstream Decision` proof；
 5. no-top-K `EvidenceCoveragePlan` and fragment receipts cover Evidence/applicability discovery；
 6. scalable independent fragment contradiction observation guarantees direct same-predicate conflicts only；
 7. narrow independent disposition-critical verification covers selected proof/applicability and both material sides of critical direct conflicts；
@@ -92,7 +92,7 @@ The model never supplies canonical CRITICAL/SUPPORTING. For each contract-derive
 - unselected explanatory candidate → `SUPPORTING`;
 - indeterminate/ineligible/irrelevant candidate → analysis-only;
 - absent confirmed candidate for a required role → `INSUFFICIENT_EVIDENCE`;
-- exact accepted/current/VALID upstream Decision → `UPSTREAM_DECISION` proof and first-class Decision→Decision critical edge；stale/superseded/invalid never satisfies and a successor is never auto-bound。
+- exact accepted/current/VALID upstream Decision → `UPSTREAM_DECISION` proof and first-class downstream-to-upstream `REQUIRES` critical edge；stale/superseded/invalid never satisfies and a successor is never auto-bound。Runtime rejects exact-ID/lineage cycles before acceptance。
 
 For a provisional `VALIDITY_CRITICAL` direct conflict, code also verifies both exact model-interpreted observations. Both `CONFIRMED` receipts are required before the conflict is a confirmed blocking `Contradiction`. `REFUTED` removes/recomputes；`INDETERMINATE` becomes typed semantic uncertainty and admission review, not a confirmed contradiction. The verifier never discovers conflicts or chooses impact/disposition。
 
@@ -127,7 +127,7 @@ Source → DIRECT Claim → zero or more ALL_OF Claims → Decision
 Upstream Decision → Downstream Decision
 ```
 
-A valid transitive source/claim path is sufficient；no redundant direct source edge is required. A contract-required upstream Decision is not a source and keeps its separate Decision→Decision critical edge. Applicability facts and selective policy/coverage guards use parallel critical paths；full manifests/receipts remain audit derivation。
+A valid transitive source/claim path is sufficient；no redundant direct source edge is required. A contract-required upstream Decision is not a source and keeps its separate `downstream --REQUIRES--> upstream` critical edge；invalidation follows the reverse index. Applicability facts and selective policy/coverage guards use parallel critical paths；full manifests/receipts remain audit derivation。
 
 ## Gate effects
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-This is the provider-neutral Option B Revision-6 protocol under product-owner review. The direction and Revision-5 P0-1～P0-33 guarantees are approved；the concrete Revision-6 amendments are not. OpenAI remains a provider-neutral falsification lane and Gemini is the competition-provider DEV/blind acceptance lane. No live calls are authorized by this document.
+This provider-neutral model protocol is frozen from Revision 6 as part of accepted P0-1～P0-37. Revision 7 changes only deterministic identity/Runtime acceptance P0-38/P0-39 and does not alter prompts、model schemas or experiment methodology. OpenAI remains a provider-neutral falsification lane and Gemini is the competition-provider DEV/blind acceptance lane. No live calls are authorized by this document.
 
 The implemented reasoner/critic protocol is frozen as the v1 ablation baseline. The old critic prompt must not be tuned or preserved as production fallback.
 

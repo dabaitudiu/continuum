@@ -67,7 +67,7 @@ Across domains include:
 - cross-entity adversaries（Alice/Bob、Vendor A/B）；
 - time passage beyond a proof horizon with no source revision；
 - enterprise/rule/policy/catalog changes racing an authorization；
-- D42→D50→activation upstream Decision dependencies、stale/supersession/non-rewrite；
+- `D50 --REQUIRES--> D42` plus `D50 --AUTHORIZES--> activation`、reverse stale propagation、supersession/non-rewrite；
 - governed-read future/mixed/bypass observation attempts；
 - model schema/ref/transport failures that must not become business rejection；
 - primary-interpreter false proof with independent verifier confirm/refute/reselection；

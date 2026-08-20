@@ -8,13 +8,13 @@ This is a planning range, not a timer-based definition of done. If the work fini
 
 ## Implementation status — 2026-08-19
 
-The v1 Phases A–G code exists, but its model method is not accepted. The authenticated OpenAI lane failed the Phase F quality gate, and paired Experiment 1 triggered K3 for the current critic. The product owner selected Option B's direction、rejected the vague critic and rejected concrete Revisions 1～5 while accepting P0-1～P0-33 architecturally. Option A、old critic and N0 unverified semantics remain benchmark baselines only；Option C is rejected.
+The v1 Phases A–G code exists, but its model method is not accepted. The authenticated OpenAI lane failed the Phase F quality gate, and paired Experiment 1 triggered K3 for the current critic. The product owner selected Option B's direction、rejected the vague critic and accepted/froze P0-1～P0-37 after Revision 6. Option A、old critic and N0 unverified semantics remain benchmark baselines only；Option C is rejected.
 
-Revision 6 is specified in `15_REPLACEMENT_ARCHITECTURE.md` and is **under review, not approved or implemented**. Revision 5's P0-1～P0-33 guarantees are preserved；the product owner explicitly prohibited writing a replacement implementation plan at this stage. No production compiler change、blind-holdout generation/read、live model call、full 120 paid benchmark、live Gemini acceptance or Module 02 work is authorized.
+Revision 7 is specified in `15_REPLACEMENT_ARCHITECTURE.md` and is **under review, not approved or implemented**. It adds only P0-38/P0-39 while preserving frozen P0-1～P0-37；the product owner explicitly prohibited writing a replacement implementation plan at this stage. No production compiler change、blind-holdout generation/read、live model call、full 120 paid benchmark、live Gemini acceptance or Module 02 work is authorized.
 
 ## Replacement planning gate
 
-No Revision-6 implementation sequence is specified here because the concrete architecture has not been approved. After product-owner approval, a separate planning step may translate the approved contracts into verification checkpoints.
+No Revision-7 implementation sequence is specified here because the concrete architecture has not been approved. After product-owner approval, a separate planning step may translate the approved contracts into verification checkpoints.
 
 The independently owned blind holdout is **not** a development-plan artifact. The implementation agent may see only metadata until both OpenAI/Gemini full DEV and methodology freeze；it must not generate、read or commit holdout bodies。
 

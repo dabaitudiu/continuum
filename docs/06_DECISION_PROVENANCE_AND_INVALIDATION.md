@@ -22,6 +22,8 @@ The control plane validates references before accepting the decision.
 
 Compiler validation decides only whether to admit/canonicalize that immutable proposal. `REJECTED_* | NEEDS_HUMAN_REVIEW` are proposal-admission dispositions, not newly authored domain outcomes. If admitted, the canonical Decision outcome is the exact unchanged proposal outcome。
 
+Content identity is constructed without fixed points：governed observations seal before their observation set；the set contains opaque request correlation but no proposal back-reference；the proposal then hashes the set。Compilation seals `CompilationCore → DecisionValidityEnvelope → DecisionJustification → FinalCompilationRecord`。The envelope contains only the core hash, never a final-record hash。
+
 ## Dependency extraction strategy
 
 Prefer dependencies that correspond to concrete, versioned resources:
@@ -49,8 +51,11 @@ When v13 supersedes v12, D42 becomes stale.
 For each newly stale node:
 
 - traverse outgoing edges;
+- for `downstream Decision --REQUIRES--> upstream Decision`, traverse the maintained reverse index from upstream to dependent downstream；
 - if an edge's relation is validity-bearing (`REQUIRES`, `DERIVED_FROM`, `AUTHORIZES`), mark dependent decisions stale or actions blocked;
 - do not automatically invalidate unrelated siblings.
+
+D→D is always `REQUIRES`; D→Action/`SideEffectIntentCore` is `AUTHORIZES`。Before acceptance, Runtime requires every upstream exact Decision to already exist as immutable `ACCEPTED` and rejects cycles in both the exact-ID graph and supersession-lineage projection。Supersession never rewrites old proof edges。
 
 ## Selective revalidation plan
 
@@ -92,4 +97,4 @@ Expected:
 
 This must be deterministic and covered by automated tests before agent integration.
 
-Side-effect execution also checks provenance synchronously: before the ledger enters `EXECUTING`, Runtime validates the authorizing Decision/upstream envelopes against every ChangeSet from each envelope's validated `semantic_sequence` through current. A relevant pre-execution change cancels the intent without issuing the external call；after `EXECUTING`, idempotency/reconciliation owns the external outcome。
+Side-effect execution also checks provenance synchronously: before appending the ledger's `EXECUTING` transition, Runtime validates the immutable intent core and transition head plus authorizing Decision/upstream envelopes against every ChangeSet from each envelope's validated `semantic_sequence` through current. A relevant pre-execution change appends cancellation without issuing the external call；after `EXECUTING`, idempotency/reconciliation owns append-only external-outcome transitions。
