@@ -4,7 +4,7 @@
 
 This package defines the first full-build module after the feasibility spike.
 
-The module turns **probabilistic Gemini decisions** into **machine-verifiable dependency state** that the Continuum runtime can later invalidate deterministically.
+The module validates an immutable **domain-agent DecisionProposal** against machine-verifiable Requirement/evidence state that the Continuum Runtime can later invalidate deterministically. Gemini/OpenAI interpret Evidence and contradictions；they do not author the business outcome or governing Requirements.
 
 It is intentionally deeper than the current ACME reference scenario. The module is not complete merely because a single vendor-onboarding path works.
 
@@ -17,14 +17,15 @@ The compiler therefore transforms:
 ```text
 unstructured enterprise artifacts
 + tool observations
-+ Gemini decision proposal
++ immutable domain-agent DecisionProposal / DecisionEntityContext
++ trusted reusable rule/decision-class templates
 
         ↓
 
 validated Decision IR
 + canonical source references
 + material dependency graph
-+ provenance record
++ proposal/entity/temporal/epoch provenance envelope
 + confidence / review status
 ```
 
@@ -53,6 +54,7 @@ The budget is expected to be consumed by real uncertainty: document identity, de
 13. `12_IMPLEMENTATION_PLAN.md`
 14. `13_ACCEPTANCE_MATRIX_AND_KILL_CRITERIA.md`
 15. `14_CODEX_HANDOFF.md`
+16. `15_REPLACEMENT_ARCHITECTURE.md`
 
 ## Definition of done
 
@@ -60,4 +62,6 @@ This module is done only when all P0 rows in `13_ACCEPTANCE_MATRIX_AND_KILL_CRIT
 
 ## Current status
 
-Phases A–G are implemented and Compiler Lab is locally deliverable. The module itself remains **not done**: authenticated OpenAI evidence now exists but fails the precision, contradiction, outcome, must-block, and stale-escape gates, while the required live Gemini row remains `BLOCKED`. See the current acceptance matrix and `docs/reports/module-01-dependency-compiler.md`.
+Phases A–G v1 code exists and Compiler Lab is locally deliverable. The module itself remains **not done**. The preserved 120-case evidence fails canonical dependency quality, contradiction, outcome, must-block, and acceptance-coverage requirements; the required live Gemini row remains `BLOCKED`. The bounded live paired ablation in `docs/reports/module-01-critic-ablation.md` triggers K3 for the current critic, which recovered no true omission or contradiction signal and added false refs/false blocks.
+
+On 2026-08-19/20 the product owner selected Option B's direction、rejected the vague critic and accepted/froze P0-1～P0-37 after Revision 6. `15_REPLACEMENT_ARCHITECTURE.md` Revision 7 changes only P0-38/P0-39：an acyclic content-addressed/hash DAG with immutable Side Effect intent history, and well-founded exact-ID/lineage Decision proof. It awaits product-owner review and is not implemented. Do not write the replacement implementation plan、modify production compiler、generate/read the blind holdout、call live models、run full paid DEV or begin Module 02.

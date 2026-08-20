@@ -356,9 +356,11 @@ class SchemaInvalidResponses:
 
     @staticmethod
     def _invalid_output() -> str:
-        return _proposal("source-ref").model_copy(
-            update={"decision_type": " PRIVILEGED_ACCESS_REVIEW"}
-        ).model_dump_json()
+        return (
+            _proposal("source-ref")
+            .model_copy(update={"decision_type": " PRIVILEGED_ACCESS_REVIEW"})
+            .model_dump_json()
+        )
 
 
 def _invocation(source_ref: str) -> ModelInvocation:

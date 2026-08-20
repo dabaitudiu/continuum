@@ -44,6 +44,8 @@ Owns domain semantics that Google Agent Runtime should not be expected to infer:
 - invalidation;
 - commitments;
 - side-effect ledger;
+- owner-scope semantic-sequence publication、ordered ChangeSet replay and execution-start reauthorization;
+- closed content-addressed hash DAG、immutable intent-core/append-only transition history and acyclic Decision proof acceptance;
 - selective revalidation.
 
 The Continuum runtime is primarily a durable state machine + graph semantics service, not a competing generic agent host.
@@ -77,6 +79,8 @@ Pub/Sub carries events such as:
 - `agent.work.completed`
 
 The runtime remains the authority for state transitions.
+
+For semantic safety, each owner scope has a contiguous monotonic `semantic_sequence`. Publishing the next governed world/read fence and ChangeSet serializes on that pointer；component epochs describe what changed. Content identity follows `SourceUniverseSnapshot → GovernedReadView → ObservationSet → Proposal` and `CompilationCore → Envelope → Justification → FinalRecord` without reverse hashes。Before Runtime accepts a Decision it rejects exact-ID or supersession-lineage `REQUIRES` cycles。Before a Side Effect transition enters `EXECUTING`, Runtime checks the immutable intent core、transition-chain head、Decision envelope and every intervening ordered ChangeSet in the same conditional append. The external call itself remains outside the database transaction and uses idempotency/reconciliation。
 
 ## Deployment
 

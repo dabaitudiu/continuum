@@ -24,6 +24,7 @@ from app.compiler.benchmark.metrics import (
 )
 from app.compiler.context import RiskClass
 from app.compiler.models import (
+    CanonicalClaim,
     CanonicalEdge,
     CompilationDisposition,
     CompilationResult,
@@ -65,6 +66,21 @@ class EvidenceStatus(StrEnum):
     BLOCKED = "BLOCKED"
 
 
+class MutationTerminal(StrEnum):
+    STALE = "STALE"
+    VALID = "VALID"
+    NOT_ACCEPTED = "NOT_ACCEPTED"
+
+
+class RuntimeMutationEvidence(FrozenModel):
+    terminal: MutationTerminal
+    final_decision_status: DecisionStatus | None = None
+    mutation_event_id: str | None = None
+    decision_id: str | None = None
+    runtime_claim_count: int = Field(default=0, ge=0)
+    runtime_edge_count: int = Field(default=0, ge=0)
+
+
 class RunConfiguration(FrozenModel):
     baseline: BaselineKind
     evidence_lane: EvidenceLane
@@ -82,6 +98,13 @@ class Prediction(FrozenModel):
     critical_refs: tuple[str, ...] = ()
     accepted_canonical_refs: tuple[str, ...] = ()
     accepted_dependency_edges: tuple[tuple[str, str, str], ...] = ()
+    accepted_decision_candidate: DecisionCandidate | None = None
+    accepted_canonical_claims: tuple[CanonicalClaim, ...] = ()
+    accepted_canonical_edges: tuple[CanonicalEdge, ...] = ()
+    accepted_compilation_hash: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{64}$",
+    )
     detected_contradictions: tuple[tuple[str, str], ...] = ()
     detected_contradiction_severities: tuple[tuple[str, str, str], ...] = ()
     proposed_outcome: str
@@ -362,8 +385,19 @@ def _prediction(
 
 def evaluate_runtime_mutation(case: BenchmarkCase, prediction: Prediction) -> bool:
     """Accept the predicted graph, apply the concrete mutation, and read runtime state."""
+    return (
+        evaluate_runtime_mutation_evidence(case, prediction).terminal
+        is MutationTerminal.STALE
+    )
+
+
+def evaluate_runtime_mutation_evidence(
+    case: BenchmarkCase,
+    prediction: Prediction,
+) -> RuntimeMutationEvidence:
+    """Return an explicit terminal so rejection cannot masquerade as VALID."""
     if prediction.compilation_disposition is not CompilationDisposition.ACCEPTED:
-        return False
+        return RuntimeMutationEvidence(terminal=MutationTerminal.NOT_ACCEPTED)
     world_snapshot_id = f"world:{case.case_id}"
     graph = GraphSnapshot(
         mission_id=f"mission:{case.case_id}",
@@ -418,48 +452,58 @@ def evaluate_runtime_mutation(case: BenchmarkCase, prediction: Prediction) -> bo
         ),
     )
     compiler_repository.put_draft(request_id, draft)
-    compilation_hash = _digest(
+    synthetic_compilation_hash = _digest(
         {
             "case_id": case.case_id,
             "accepted": prediction.accepted_canonical_refs,
             "outcome": prediction.proposed_outcome,
         }
     )
-    decision_id = f"decision:{case.case_id}"
+    decision_candidate = prediction.accepted_decision_candidate or DecisionCandidate(
+        decision_id=f"decision:{case.case_id}",
+        decision_type=case.decision_type,
+        outcome=prediction.proposed_outcome,
+        rationale_summary="Benchmark runtime mutation evaluation.",
+    )
+    decision_id = decision_candidate.decision_id
+    compilation_hash = (
+        prediction.accepted_compilation_hash or synthetic_compilation_hash
+    )
+    canonical_edges = (
+        list(prediction.accepted_canonical_edges)
+        if prediction.accepted_decision_candidate is not None
+        else [
+            CanonicalEdge(
+                edge_id=f"edge:{index}:{compilation_hash[:16]}",
+                source_kind="SOURCE_FRAGMENT",
+                source_id=source_ref,
+                target_kind="DECISION",
+                target_id=decision_id,
+                relation=DependencyRelation(relation),
+                materiality=Materiality(materiality),
+            )
+            for index, (source_ref, relation, materiality) in enumerate(
+                prediction.accepted_dependency_edges
+                or tuple(
+                    (
+                        source_ref,
+                        DependencyRelation.SUPPORTED_BY.value,
+                        Materiality.CRITICAL.value,
+                    )
+                    for source_ref in prediction.accepted_canonical_refs
+                )
+            )
+        ]
+    )
     compiler_repository.put_result(
         request_id,
         CompilationResult(
             compilation_id=f"compilation:{compilation_hash}",
             request_id=request_id,
             status=CompilationDisposition.ACCEPTED,
-            decision_candidate=DecisionCandidate(
-                decision_id=decision_id,
-                decision_type=case.decision_type,
-                outcome=prediction.proposed_outcome,
-                rationale_summary="Benchmark runtime mutation evaluation.",
-            ),
-            canonical_edges=[
-                CanonicalEdge(
-                    edge_id=f"edge:{index}:{compilation_hash[:16]}",
-                    source_kind="SOURCE_FRAGMENT",
-                    source_id=source_ref,
-                    target_kind="DECISION",
-                    target_id=decision_id,
-                    relation=DependencyRelation(relation),
-                    materiality=Materiality(materiality),
-                )
-                for index, (source_ref, relation, materiality) in enumerate(
-                    prediction.accepted_dependency_edges
-                    or tuple(
-                        (
-                            source_ref,
-                            DependencyRelation.SUPPORTED_BY.value,
-                            Materiality.CRITICAL.value,
-                        )
-                        for source_ref in prediction.accepted_canonical_refs
-                    )
-                )
-            ],
+            decision_candidate=decision_candidate,
+            canonical_claims=list(prediction.accepted_canonical_claims),
+            canonical_edges=canonical_edges,
             compiler_version="benchmark-runtime-v1",
             validation_policy_version="benchmark-runtime-v1",
             compilation_hash=compilation_hash,
@@ -475,26 +519,39 @@ def evaluate_runtime_mutation(case: BenchmarkCase, prediction: Prediction) -> bo
     )
     mutation_ref = SourceRef.parse(case.mutation.source_ref)
     replacement_digest = _digest(case.mutation.replacement_content)[:16]
+    mutation_event = DomainEvent(
+        event_id=f"mutation:{case.case_id}:{replacement_digest}",
+        event_type=case.mutation.mutation_kind,
+        payload={
+            "logical_key": mutation_ref.artifact_id,
+            "old_artifact_id": mutation_ref.artifact_id,
+            "new_artifact_id": (
+                f"{mutation_ref.artifact_id}@mutation:{replacement_digest}"
+            ),
+            "old_version": mutation_ref.revision_label,
+            "new_version": f"mutation:{replacement_digest}",
+            "changed_source_ref": case.mutation.source_ref,
+        },
+    )
     changed = InvalidationService(
         RuntimeGraphRepositoryAdapter(runtime_repository)
     ).process_artifact_change(
         graph.mission_id,
-        DomainEvent(
-            event_id=f"mutation:{case.case_id}:{replacement_digest}",
-            event_type=case.mutation.mutation_kind,
-            payload={
-                "logical_key": mutation_ref.artifact_id,
-                "old_artifact_id": mutation_ref.artifact_id,
-                "new_artifact_id": (
-                    f"{mutation_ref.artifact_id}@mutation:{replacement_digest}"
-                ),
-                "old_version": mutation_ref.revision_label,
-                "new_version": f"mutation:{replacement_digest}",
-                "changed_source_ref": case.mutation.source_ref,
-            },
-        ),
+        mutation_event,
     )
-    return changed.decisions[decision_id].status is DecisionStatus.STALE
+    final_status = changed.decisions[decision_id].status
+    return RuntimeMutationEvidence(
+        terminal=(
+            MutationTerminal.STALE
+            if final_status is DecisionStatus.STALE
+            else MutationTerminal.VALID
+        ),
+        final_decision_status=final_status,
+        mutation_event_id=mutation_event.event_id,
+        decision_id=decision_id,
+        runtime_claim_count=len(changed.claims),
+        runtime_edge_count=len(changed.edges),
+    )
 
 
 def _digest(value: object) -> str:
@@ -515,10 +572,13 @@ __all__ = [
     "EvidenceLane",
     "EvidenceStatus",
     "FullPipelineReferenceSubject",
+    "MutationTerminal",
     "Prediction",
     "RunConfiguration",
+    "RuntimeMutationEvidence",
     "SinglePassReferenceSubject",
     "blocked_evidence_run",
     "evaluate_runtime_mutation",
+    "evaluate_runtime_mutation_evidence",
     "failed_evidence_run",
 ]

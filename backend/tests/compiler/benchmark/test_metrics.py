@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.compiler.benchmark import metrics as benchmark_metrics
 from app.compiler.benchmark.corpus import BenchmarkDomain
 from app.compiler.benchmark.metrics import (
     EvaluationRecord,
@@ -37,7 +38,7 @@ def _record(
         must_block=must_block,
         expected_stale_after_mutation=expected_stale,
         predicted_critical_refs=predicted,
-        accepted_canonical_refs=accepted or predicted,
+        accepted_canonical_refs=predicted if accepted is None else accepted,
         detected_contradictions=detected_contradictions,
         detected_contradiction_severities=detected_severities,
         predicted_outcome=predicted_outcome,
@@ -195,3 +196,47 @@ def test_correct_refs_cannot_hide_wrong_outcome_or_downgraded_contradiction() ->
         "outcome_compliance",
         "blocking_disposition_compliance",
     } <= failed
+
+
+def test_corrected_metrics_separate_canonical_quality_from_acceptance_coverage() -> (
+    None
+):
+    measure_corrected = getattr(benchmark_metrics, "measure_corrected", None)
+    assert measure_corrected is not None
+    accepted = _record(
+        case_id="accepted",
+        domain=BenchmarkDomain.VENDOR_ONBOARDING,
+        required=("required-a",),
+        predicted=("required-a", "support-a"),
+        known=("required-a", "support-a"),
+        accepted=("required-a",),
+        expected_stale=True,
+        predicted_stale=True,
+    )
+    blocked = _record(
+        case_id="blocked",
+        domain=BenchmarkDomain.PRODUCTION_RELEASE,
+        required=("required-b",),
+        predicted=("required-b", "invalid-b"),
+        known=("required-b",),
+        accepted=(),
+        expected_stale=True,
+        predicted_stale=False,
+        disposition="REJECTED_INVALID_REFERENCE",
+        hashes=(),
+    )
+
+    corrected = measure_corrected(
+        [accepted, blocked],
+        mutation_terminals={
+            "accepted": "STALE",
+            "blocked": "NOT_ACCEPTED",
+        },
+    )
+
+    assert corrected.proposal_critical_precision == 0.5
+    assert corrected.canonical_critical_precision == 1.0
+    assert corrected.canonical_critical_recall == 0.5
+    assert corrected.acceptance_coverage == 0.5
+    assert corrected.accepted_stale_escape_rate == 0.0
+    assert corrected.counts.not_accepted_expected_stale == 1

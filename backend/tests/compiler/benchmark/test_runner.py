@@ -5,7 +5,8 @@ from pathlib import Path
 
 import httpx
 import pytest
-from openai import InternalServerError
+from app.compiler.benchmark import cli as benchmark_cli
+from app.compiler.benchmark import runner as benchmark_runner
 from app.compiler.benchmark.cli import _openai_client, _reasoner_error_evidence, main
 from app.compiler.benchmark.corpus import load_corpus
 from app.compiler.benchmark.report import write_report_bundle
@@ -16,14 +17,24 @@ from app.compiler.benchmark.runner import (
     EvidenceLane,
     EvidenceStatus,
     FullPipelineReferenceSubject,
+    Prediction,
     RunConfiguration,
     SinglePassReferenceSubject,
     UsageSummary,
     blocked_evidence_run,
     evaluate_runtime_mutation,
 )
-from app.compiler.models import CompilationDisposition
+from app.compiler.models import (
+    CanonicalClaim,
+    CanonicalEdge,
+    ClaimType,
+    CompilationDisposition,
+    DecisionCandidate,
+    DependencyRelation,
+    Materiality,
+)
 from app.compiler.reasoner import ReasonerError
+from openai import InternalServerError
 
 
 def _configuration(
@@ -119,6 +130,91 @@ def test_mutation_metric_is_read_from_runtime_not_subject_self_report() -> None:
     lied = prediction.model_copy(update={"predicted_stale_after_mutation": False})
 
     assert evaluate_runtime_mutation(case, lied)
+
+
+def test_mutation_evidence_distinguishes_not_accepted_from_valid() -> None:
+    evaluate_evidence = getattr(
+        benchmark_runner,
+        "evaluate_runtime_mutation_evidence",
+        None,
+    )
+    assert evaluate_evidence is not None
+    case = next(
+        case
+        for case in load_corpus().cases
+        if case.mutation.expected_stale_decision_ids
+    )
+    blocked = Prediction(
+        critical_refs=tuple(case.ground_truth.required_critical_refs),
+        proposed_outcome=case.proposed_outcome,
+        compilation_disposition=CompilationDisposition.NEEDS_HUMAN_REVIEW,
+    )
+
+    evidence = evaluate_evidence(case, blocked)
+
+    assert evidence.terminal == "NOT_ACCEPTED"
+    assert evidence.final_decision_status is None
+    assert evidence.mutation_event_id is None
+
+
+def test_mutation_evidence_accepts_exact_canonical_claim_topology() -> None:
+    assert "accepted_canonical_edges" in Prediction.model_fields
+    case = next(
+        case
+        for case in load_corpus().cases
+        if case.mutation.expected_stale_decision_ids
+    )
+    source_ref = case.mutation.source_ref
+    prediction = Prediction(
+        critical_refs=(source_ref,),
+        accepted_canonical_refs=(source_ref,),
+        accepted_decision_candidate=DecisionCandidate(
+            decision_id="decision:exact-topology",
+            decision_type=case.decision_type,
+            outcome=case.proposed_outcome,
+            rationale_summary="Exact topology evaluator fixture.",
+        ),
+        accepted_canonical_claims=(
+            CanonicalClaim(
+                claim_id="claim:exact-topology",
+                claim_local_id="c1",
+                claim_type=ClaimType.RULE,
+                statement="The changed source is material.",
+                materiality=Materiality.CRITICAL,
+                confidence=1.0,
+            ),
+        ),
+        accepted_canonical_edges=(
+            CanonicalEdge(
+                edge_id="edge:source-to-claim",
+                source_kind="SOURCE_FRAGMENT",
+                source_id=source_ref,
+                target_kind="CLAIM",
+                target_id="claim:exact-topology",
+                relation=DependencyRelation.SUPPORTED_BY,
+                materiality=Materiality.CRITICAL,
+            ),
+            CanonicalEdge(
+                edge_id="edge:claim-to-decision",
+                source_kind="CLAIM",
+                source_id="claim:exact-topology",
+                target_kind="DECISION",
+                target_id="decision:exact-topology",
+                relation=DependencyRelation.REQUIRES,
+                materiality=Materiality.CRITICAL,
+            ),
+        ),
+        accepted_compilation_hash="a" * 64,
+        proposed_outcome=case.proposed_outcome,
+        compilation_disposition=CompilationDisposition.ACCEPTED,
+    )
+
+    evidence = benchmark_runner.evaluate_runtime_mutation_evidence(case, prediction)
+
+    assert evidence.terminal == "STALE"
+    assert evidence.runtime_claim_count == 1
+    assert evidence.runtime_edge_count == 2
+    assert evidence.decision_id == "decision:exact-topology"
 
 
 def test_gate_rejects_a_subject_with_non_deterministic_compilation_hashes() -> None:
@@ -265,3 +361,21 @@ def test_openai_client_disables_sdk_level_retries(monkeypatch) -> None:  # type:
 
     assert client.max_retries == 0
     assert requests == 1
+
+
+def test_critic_ablation_entrypoint_fails_closed_without_openai_key(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    execute = getattr(
+        benchmark_cli,
+        "_run_live_openai_critic_ablation",
+        None,
+    )
+    assert execute is not None
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    with pytest.raises(ReasonerError) as raised:
+        execute(tmp_path / "budget.db")
+
+    assert raised.value.code == "MODEL_CREDENTIALS_MISSING"

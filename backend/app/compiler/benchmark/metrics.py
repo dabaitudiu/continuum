@@ -81,6 +81,38 @@ class MetricSnapshot(FrozenModel):
     counts: MetricCounts
 
 
+class CorrectedMetricCounts(FrozenModel):
+    canonical_recovered_critical: int = Field(ge=0)
+    canonical_selected_critical: int = Field(ge=0)
+    required_critical: int = Field(ge=0)
+    accepted_cases: int = Field(ge=0)
+    total_cases: int = Field(ge=0)
+    accepted_expected_stale: int = Field(ge=0)
+    accepted_stale_escapes: int = Field(ge=0)
+    accepted_expected_unchanged: int = Field(ge=0)
+    accepted_unnecessary_invalidations: int = Field(ge=0)
+    not_accepted_expected_stale: int = Field(ge=0)
+
+
+class CorrectedMetricSnapshot(FrozenModel):
+    proposal_critical_recall: float = Field(ge=0.0, le=1.0)
+    proposal_critical_precision: float = Field(ge=0.0, le=1.0)
+    canonical_critical_recall: float = Field(ge=0.0, le=1.0)
+    canonical_critical_precision: float = Field(ge=0.0, le=1.0)
+    unsupported_reference_rate: float = Field(ge=0.0, le=1.0)
+    contradiction_recall: float = Field(ge=0.0, le=1.0)
+    contradiction_severity_recall: float = Field(ge=0.0, le=1.0)
+    outcome_compliance: float = Field(ge=0.0, le=1.0)
+    blocking_disposition_compliance: float = Field(ge=0.0, le=1.0)
+    acceptance_coverage: float = Field(ge=0.0, le=1.0)
+    legacy_stale_escape_rate: float = Field(ge=0.0, le=1.0)
+    accepted_stale_escape_rate: float = Field(ge=0.0, le=1.0)
+    legacy_unnecessary_invalidation_rate: float = Field(ge=0.0, le=1.0)
+    accepted_unnecessary_invalidation_rate: float = Field(ge=0.0, le=1.0)
+    compilation_determinism: float = Field(ge=0.0, le=1.0)
+    counts: CorrectedMetricCounts
+
+
 class GateComparison(StrEnum):
     MINIMUM = "MINIMUM"
     MAXIMUM_EXCLUSIVE = "MAXIMUM_EXCLUSIVE"
@@ -255,6 +287,104 @@ def measure(records: list[EvaluationRecord]) -> MetricSnapshot:
     )
 
 
+def measure_corrected(
+    records: list[EvaluationRecord],
+    *,
+    mutation_terminals: dict[str, str],
+) -> CorrectedMetricSnapshot:
+    """Separate proposal quality, canonical quality, and Runtime coverage."""
+    if set(mutation_terminals) != {record.case_id for record in records}:
+        raise ValueError("mutation terminals must classify every record exactly once")
+    legacy = measure(records)
+    canonical_recovered = 0
+    canonical_selected = 0
+    required_critical = 0
+    accepted_cases = 0
+    accepted_expected_stale = 0
+    accepted_stale_escapes = 0
+    accepted_expected_unchanged = 0
+    accepted_unnecessary_invalidations = 0
+    not_accepted_expected_stale = 0
+
+    for record in records:
+        terminal = mutation_terminals[record.case_id]
+        if terminal not in {"STALE", "VALID", "NOT_ACCEPTED"}:
+            raise ValueError(f"unknown mutation terminal: {terminal}")
+        accepted = record.compilation_disposition == "ACCEPTED"
+        if accepted is (terminal == "NOT_ACCEPTED"):
+            raise ValueError("mutation terminal conflicts with compilation disposition")
+        required = set(record.required_critical_refs)
+        canonical = set(record.accepted_canonical_refs)
+        canonical_recovered += len(required & canonical)
+        canonical_selected += len(canonical)
+        required_critical += len(required)
+
+        if not accepted:
+            if canonical:
+                raise ValueError(
+                    "non-accepted compilation cannot expose canonical refs"
+                )
+            if record.expected_stale_after_mutation:
+                not_accepted_expected_stale += 1
+            continue
+        accepted_cases += 1
+        if record.expected_stale_after_mutation:
+            accepted_expected_stale += 1
+            if terminal != "STALE":
+                accepted_stale_escapes += 1
+        else:
+            accepted_expected_unchanged += 1
+            if terminal == "STALE":
+                accepted_unnecessary_invalidations += 1
+
+    counts = CorrectedMetricCounts(
+        canonical_recovered_critical=canonical_recovered,
+        canonical_selected_critical=canonical_selected,
+        required_critical=required_critical,
+        accepted_cases=accepted_cases,
+        total_cases=len(records),
+        accepted_expected_stale=accepted_expected_stale,
+        accepted_stale_escapes=accepted_stale_escapes,
+        accepted_expected_unchanged=accepted_expected_unchanged,
+        accepted_unnecessary_invalidations=accepted_unnecessary_invalidations,
+        not_accepted_expected_stale=not_accepted_expected_stale,
+    )
+    return CorrectedMetricSnapshot(
+        proposal_critical_recall=legacy.critical_recall,
+        proposal_critical_precision=legacy.critical_precision,
+        canonical_critical_recall=_ratio(
+            canonical_recovered,
+            required_critical,
+            empty=1.0,
+        ),
+        canonical_critical_precision=_ratio(
+            canonical_recovered,
+            canonical_selected,
+            empty=1.0,
+        ),
+        unsupported_reference_rate=legacy.unsupported_reference_rate,
+        contradiction_recall=legacy.contradiction_recall,
+        contradiction_severity_recall=legacy.contradiction_severity_recall,
+        outcome_compliance=legacy.outcome_compliance,
+        blocking_disposition_compliance=legacy.blocking_disposition_compliance,
+        acceptance_coverage=_ratio(accepted_cases, len(records), empty=0.0),
+        legacy_stale_escape_rate=legacy.stale_escape_rate,
+        accepted_stale_escape_rate=_ratio(
+            accepted_stale_escapes,
+            accepted_expected_stale,
+            empty=0.0,
+        ),
+        legacy_unnecessary_invalidation_rate=(legacy.unnecessary_invalidation_rate),
+        accepted_unnecessary_invalidation_rate=_ratio(
+            accepted_unnecessary_invalidations,
+            accepted_expected_unchanged,
+            empty=0.0,
+        ),
+        compilation_determinism=legacy.compilation_determinism,
+        counts=counts,
+    )
+
+
 def evaluate_gate(metrics: MetricSnapshot) -> GateResult:
     rows = [
         _minimum("critical_recall", metrics.critical_recall, 0.92),
@@ -334,9 +464,12 @@ def _exact(metric: str, value: float, target: float) -> GateRow:
 
 
 __all__ = [
+    "CorrectedMetricCounts",
+    "CorrectedMetricSnapshot",
     "EvaluationRecord",
     "GateResult",
     "MetricSnapshot",
     "evaluate_gate",
     "measure",
+    "measure_corrected",
 ]

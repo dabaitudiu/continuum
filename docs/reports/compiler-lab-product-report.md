@@ -57,4 +57,4 @@ Desktop measurement produced the intended `264px / 856px / 320px` source, proven
 
 ## Stop condition
 
-The Compiler Lab product and Phases B–G implementation are delivered. Do not proceed to a full Drift Engine build while the OpenAI quality rows are `FAIL` or the required Gemini row is `BLOCKED`. The next bounded work is compiler-method redesign/ablation against the failed precision, contradiction, outcome, must-block, and stale-escape rows—not expansion into Module 02.
+The Compiler Lab product and Phases B–G implementation are delivered. Do not proceed to a full Drift Engine build while the OpenAI quality rows are `FAIL` or the required Gemini row is `BLOCKED`. The bounded current-critic ablation is now complete and triggers K3; the next step is product-owner review of critic removal/redesign, not expansion into Module 02 or another paid benchmark.

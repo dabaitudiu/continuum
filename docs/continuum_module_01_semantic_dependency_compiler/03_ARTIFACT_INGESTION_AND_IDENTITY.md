@@ -138,11 +138,80 @@ Do not require permanent storage of long quoted text. Store safe excerpts only w
 
 Do not build a universal ingestion engine in this module.
 
+## P0 normalized governing-rule contract
+
+Reading a policy fragment is not enough to claim support for arbitrary policy logic. A governing fragment may participate in a normal accepted P0 compilation only when its active `ParsedRepresentation` exposes a versioned, trusted normalized-rule record:
+
+```text
+NormalizedRuleCore
+  normalized_rule_id         stable content-addressed identity
+  obligation_key             stable within the logical policy artifact
+  governing_source_ref       exact current fragment
+  requirement_templates[]     reusable predicate code + subject/object roles +
+                              typed context bindings + expected state + proof roles
+  applicability_templates[]
+  logic_form                 DIRECT_ATOM | ALL_OF | OR | THRESHOLD |
+                             EXCEPTION | QUANTIFIED | UNPARSED | OTHER
+  child_obligation_keys[]
+  scope_qualifiers
+  temporal_qualifiers
+  normalized_rule_hash
+```
+
+P0 accepts only `DIRECT_ATOM | ALL_OF`. Applicable `OR`、threshold、exception、quantified or other unsupported forms produce `REJECTED_UNSUPPORTED_LOGIC`；a material rule outside the pre-registered catalog, including `NOT_EXISTS` or `EXISTS + expected_state=FALSE` absence semantics, produces `REJECTED_UNSUPPORTED_PREDICATE`。Templates are reusable domain/decision-class semantics and may not contain case IDs、exact benchmark graphs/outcomes or concrete source revisions. The compiler must never reinterpret、invent or omit them. The normalized rule core must be source-authored structured policy or produced by a controlled versioned parser；a later detached independent approval receipt points to `normalized_rule_hash` and is included by the manifest, never by the rule core itself。Unreviewed model normalization is not a trusted acceptance input.
+
+Every in-boundary fragment is accounted exactly once in a content-addressed `RuleNormalizationManifest` as `NORMALIZED_RULES | NO_GOVERNING_RULE | UNSUPPORTED_LOGIC | UNSUPPORTED_PREDICATE | UNPARSED_REVIEW_REQUIRED`, with parser/reviewer receipts. Raw Markdown/PDF prose may still be shown as context, but missing/unreviewed normalization blocks；silent parser omission is never “no rule”。
+
+## Artifact namespaces
+
+Immutable identity is shared, but lifecycle/membership is not：
+
+- `EnterpriseWorldArtifact` lives in an immutable enterprise world snapshot；
+- `CompilerPolicyArtifact` lives in a separate policy snapshot；
+- `CompilerDerivedArtifact` lives in the provenance store and points to its input world/universe/policy hashes；it never joins the same input world snapshot。
+
+At minimum the following are versioned `CompilerPolicyArtifact` records：
+
+- authority precedence policy;
+- authority classification policy;
+- outcome semantics policy;
+- source-selection policy;
+- source-universe/completeness policy;
+- rule-normalization and reviewer policy;
+- decision-class contract;
+- predicate catalog;
+- entity-binding policy;
+- proof-selection policy;
+- Evidence-coverage policy;
+- context-partition policy;
+- governed-read policy;
+- upstream-Decision binding policy;
+- disposition-critical verification policy;
+- registered cross-predicate constraint policy;
+- operational limit profile;
+- temporal-validity policy;
+- semantic-epoch policy;
+- supported-logic policy;
+
+`SourceUniverseSnapshot` is a signed authoritative-registry snapshot envelope, not an artifact member of the world it enumerates. `DecisionProposal`/`DecisionEntityContext`/`GovernedObservationSet` are signed immutable request inputs in separate stores；they reference but are not members of the input world and do not create a fourth compiler artifact namespace. `UpstreamDecisionBinding` references a first-class Continuum Decision/envelope and never re-encodes it as an enterprise fragment. `RuleNormalizationManifest`、`SourceSetManifest`、Evidence/contradiction/disposition-critical verification certificates、applicability/temporal guards、`DecisionValidityEnvelope` and `DecisionInterpretation` are compiler-derived records。
+
+Every material agent/tool/compiler read has a signed `GovernedObservation` with tool/source identity/version、content hash、authorization context、world snapshot and executable semantic sequence/component epoch. All material proposal inputs form a complete `GovernedObservationSet` under one `GovernedReadView`. Unversioned、future、mixed or bypass reads are typed input rejection and cannot become canonical proof。
+
+All Continuum content identities use the closed `continuum-hash-v1` profile and exact preimage registry in `15_REPLACEMENT_ARCHITECTURE.md`。A content ID is the tagged encoding of its digest；its own ID/hash、detached signature、mutable storage/projection fields and descendant hashes are excluded from its preimage。Every registered type dependency must admit a topological sort。
+
+Request construction is `GovernedObservation → GovernedObservationSet → DecisionProposal`。The set contains `request_correlation_id` but no proposal ID/hash；the later proposal contains the exact set ID/hash。Creating or signing the proposal cannot change the set digest。
+
+## Source-universe coverage
+
+Every compilation first seals a content-addressed authoritative `SourceUniverseSnapshot` against the owner scope、semantic sequence/component epoch、executable world snapshot、registry/catalog source、namespaces、complete artifact revisions、sync/index watermarks、snapshot hash and completeness authority。It contains no `GovernedReadView` ID/hash。Runtime then seals the executable `GovernedReadView` from that universe snapshot plus the epoch/world/policy snapshot IDs。Normalization and selection manifests derive from these already-built ancestors and contain exact input snapshot IDs/policy bundle ID、coverage boundaries、fragment/rule accounting、included/excluded inventories、retrieval versions、contradiction eligibility and partitions.
+
+Required hash chain is `SourceUniverseSnapshot → GovernedReadView` and `SourceUniverseSnapshot + SourceSelectionPolicy + RuleNormalizationManifest → SourceSetManifest`。A selector cannot claim completeness without a validated complete universe root. Unknown/incomplete attestation or retrieved subset causes `RUN_BLOCKED: CONTEXT_COVERAGE_INCOMPLETE`。Runtime invalidation uses selective boundary/rule/eligibility guards so unrelated inventory changes do not stale all Decisions merely because a manifest hash changed.
+
 ## Revision semantics
 
-A compiler request is bound to a `world_snapshot_id`. Every referenced revision must be valid in that snapshot, and every current revision is bound to one active parsed representation.
+A compiler request is bound to a `world_snapshot_id` and executable semantic sequence/component epoch/read fence. Every referenced revision must be valid in that governed snapshot, and every current revision is bound to one active parsed representation.
 
-If a model cites an older revision that exists but was not current for the snapshot, validation fails with `STALE_SOURCE_REFERENCE` unless the task explicitly allows historical reasoning.
+If trusted input references an older revision outside the declared snapshot it is input rejection. If a model emits any stale/forbidden ref outside its partition schema, the compiler attempt is `RUN_FAILED: MODEL_PROTOCOL_INTEGRITY_FAILURE` with no proposal-admission disposition。
 
 ## Parser versioning
 
